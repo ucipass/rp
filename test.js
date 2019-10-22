@@ -1,41 +1,58 @@
 let SERVER_PORT = 3333;
-let CLIENT_PORT = 2222;
-let numberOfConnections = 1;
-let concurrency = true
-
+let CLIENT_PORT = 2222;        
+let room = {
+    name: "default",
+    members: [
+        {
+            name: "client1",
+            listener: {
+                srcPort: CLIENT_PORT
+            },
+            forwarder: null
+        },
+        {
+            name: "client2",
+            listener: null,
+            forwarder: {
+                dstPort: SERVER_PORT,
+                dstIP: "127.0.0.1"
+            }
+        }
+    ],
+    activeMember: [],
+    connections: []
+}
 let RP = require("./rp.js")
-let rp = new RP();
-let Listener = require("./listener.js")
-let listener = new Listener();
-let Forwarder = require("./forwarder.js")
-let forwarder = new Forwarder();
+let Client = require("./client.js")
 let Echoserver = require("./echoserver.js")
-let echoserver = new Echoserver(SERVER_PORT)
 let Echoclient = require("./echoclient.js")
+let rp = new RP(room);
+let client1 = new Client("client1");
+let client2 = new Client("client2");
+let echoserver = new Echoserver(SERVER_PORT) 
 
 async function test(){
-    // let RP = require("./rp2.js")
-    await rp.start();
-    await listener.start()
-    await forwarder.start()
-    await echoserver.start()
     try {
-        let echoclient = new Echoclient(CLIENT_PORT);
-        await echoclient.send("ABCD")
-        // echoclient = new Echoclient(CLIENT_PORT);
-        // await echoclient.send("EFGH")
+        await rp.start();
+        await client1.start()
+        await client2.start()
+        await echoserver.start()
+        let echoclient1 = new Echoclient(CLIENT_PORT);
+        let echoclient2 = new Echoclient(CLIENT_PORT);
+        echoclient1.send("ABCD")
+        echoclient2.send("EFGH")
 
     } catch (error) {
         console.log(error)
     }
-    
-
     return true
 }
+
 test()
 .then((d)=>{
-    echoserver.stop()
+    console.log("Success")
+    // echoserver.stop()
 })
 .catch((e)=>{
-    console.log("Failure!!!")
+    console.log("Failure!!!",e)
 })

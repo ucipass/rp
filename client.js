@@ -5,7 +5,7 @@ const websocket = require('websocket-stream')
 class Client {
     
   constructor(clientName,url) {
-    this.url = url ? url : 'ws://localhost:3000/ctrl'
+    this.url = url ? url : 'ws://localhost:3000/rp'
     this.room = null
     this.connections = []
     this.clientName = clientName;
@@ -22,7 +22,8 @@ class Client {
     var res,rej
 
     // Send initial registration to RP and receive 'room' info
-    let ctrl = websocket(this.url)
+    let url = this.url+"/ctrl"
+    let ctrl = websocket(url)
     this.ctrl = ctrl;
     ctrl.write( registration.toString(), ()=> {
       console.log(`${ this.clientName }: Registration Sent`) 
@@ -68,28 +69,27 @@ class Client {
     ctrl.on('end', () => {
       // This may not been called since we are destroying the stream
       // the first time 'data' event is received
-      console.log(`${this.clientName}: stream end data in the file has been read`);
+      console.log(`${this.clientName}: End websocket control channel`);
   })
 
     ctrl.on('finish', (o) => {
-      console.log(`${this.clientName}: Control channel to server is broken.`);
-      process.exit(1);
+      console.log(`${this.clientName}: Finish websocket control channel`);
+      // process.exit(1);
     })
 
     ctrl.on('error', (err) => {
       if (err.errno == 'ECONNREFUSED') console.log(`${this.clientName}: Websocket connection refused.`); 
       else console.log(`${this.clientName}: UNKNOWN ERROR:`,err); 
     })
-
-
+    
     return p;
   }  
 
   listener(port){
     return new Promise((resolve, reject) => {
       var server = net.createServer( (c) => { //'connection' listener
-        c.on('end', function() {
-          console.log('DISCONNECT: TCP port',port,' -> Websocket');
+        c.on('end', () => {
+          console.log(`${this.clientName}: End localhost:${port} -> Websocket`);
           // ws.destroy();
         });
         let connection = {
@@ -160,8 +160,8 @@ class Client {
         })
       })
 
-      socket.on('end', function() {
-        console.log('DISCONNECT: Websocket ->', address, port);
+      socket.on('end', () => {
+        console.log(`${this.clientName}: Disconnected Websocket -> ${address}:${port}`);
         // ws.destroy();
       }); 
     });
@@ -180,23 +180,23 @@ class Client {
         tcpConnection = con.tcpListener
       }
     })
-    let url = 'ws://localhost:3000/data/'+ wsConnection.wsName
+    let url = this.url+'/data/'+ wsConnection.wsName
     wsConnection.stream = websocket(url)
-    console.log(`StartTunnel started`)
 
     wsConnection.stream.on('end', () => {
       // This may not been called since we are destroying the stream
       // the first time 'data' event is received
-      console.log(`${this.clientName}: data stream end ${url}`);
+      console.log(`${this.clientName}: End ${url}`);
     })
 
     wsConnection.stream.on('finish', (o) => {
-      console.log(`${this.clientName}: data channel is broken ${url}`);
+      console.log(`${this.clientName}: Finish ${url}`);
     })
 
     wsConnection.stream.on('error', (err) => {
       if (err.errno == 'ECONNREFUSED') console.log(`${this.clientName}: Websocket connection refused.${url}`); 
       else console.log(`${this.clientName}: UNKNOWN ERROR:${url}`,err); 
+      console.log(err)
     })
     //tcpConnection.socket.on("data",(d)=>{console.log("Listener",d.toString())})
     tcpConnection.socket.pipe(wsConnection.stream)
@@ -222,8 +222,8 @@ module.exports = Client
 
 if (require.main === module) {
   var argv = require('minimist')(process.argv.slice(2));
-  if ( argv.c && argv.u){
-    let client = new Client(argv.c,argv.u)
+  if ( argv.c ){
+    let client = new Client(argv.c ? argv.c : "ws://127.0.0.1:3000",argv.u)
     client.start()
   }else{
     console.log( "need -c for clientName and -u for url")

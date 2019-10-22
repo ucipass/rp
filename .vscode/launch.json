@@ -13,14 +13,11 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "test2",
-            "program": "${workspaceFolder}/test2.js"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "rp2",
-            "program": "${workspaceFolder}/rp2.js"
+            "name": "rp",
+            "args": [
+                "-s", "2222", "-i", "127.0.0.1", "-d", "22"
+            ],
+            "program": "${workspaceFolder}/rp.js"
         },
         {
             "type": "node",
@@ -31,7 +28,7 @@
             // ],
             "program": "${workspaceFolder}/client.js",
             "args": [
-                "-c", "client1", "-u", "ws://localhost:3000/ctrl"
+                "-c", "client1", "-u", "ws://172.18.100.8:3000/rp"
             ]
         }
     ]
