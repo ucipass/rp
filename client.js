@@ -12,7 +12,7 @@ class Client {
     this.ctrl = null
   }
 
-	start(){
+	start() {
 		let resolve, reject
     let p = new Promise((res, rej) => { resolve =res ; reject = rej });
     // import io from 'socket.io-client';

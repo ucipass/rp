@@ -1,4 +1,4 @@
-class RP {
+class RP  {
     constructor(room, port) {
         this.defaultRoom = {
             name: "default",
