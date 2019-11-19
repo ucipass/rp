@@ -66,16 +66,15 @@ class Client {
 
     })
 
-    ctrl.on('end', () => {
-      // This may not been called since we are destroying the stream
-      // the first time 'data' event is received
-      console.log(`${this.clientName}: End websocket control channel`);
-  })
-
     ctrl.on('finish', (o) => {
-      console.log(`${this.clientName}: Finish websocket control channel`);
-      // process.exit(1);
+      console.log(`${this.clientName}: Finish called on websocket control channel`);
+      process.exit(1);
     })
+
+    ctrl.on('end', () => {
+      // This may not been called since we are destroying the stream the first time 'data' event is received
+      console.log(`${this.clientName}: End called on websocket control channel`);
+  })
 
     ctrl.on('error', (err) => {
       if (err.errno == 'ECONNREFUSED') console.log(`${this.clientName}: Websocket connection refused.`); 
@@ -123,7 +122,6 @@ class Client {
 
   forwarder(jsondata){
     return new Promise((resolve, reject) => {
-      // let ws = websocket('ws://localhost:3000/forwarder')
       let remoteConnection = jsondata.att.connection
       let member = this.findClientMember(this.clientName)
       let port = member.forwarder.dstPort
@@ -223,7 +221,7 @@ module.exports = Client
 if (require.main === module) {
   var argv = require('minimist')(process.argv.slice(2));
   if ( argv.c ){
-    let client = new Client(argv.c ? argv.c : "ws://127.0.0.1:3000",argv.u)
+    let client = new Client(argv.c,argv.u)
     client.start()
   }else{
     console.log( "need -c for clientName and -u for url")

@@ -23,12 +23,9 @@
             "type": "node",
             "request": "launch",
             "name": "client",
-            // "runtimeArgs": [
-            //     "-c", "client1", "-u", "ws://localhost:3000/ctr"
-            // ],
             "program": "${workspaceFolder}/client.js",
             "args": [
-                "-c", "client1", "-u", "ws://172.18.100.8:3000/rp"
+                "-c", "client1", "-u", "ws://aws.arato.biz/rp"
             ]
         }
     ]
