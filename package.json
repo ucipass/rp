@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node ./node_modules/mocha/bin/mocha"
   },
   "author": "",
   "license": "ISC",
@@ -13,5 +13,9 @@
     "express-ws": "^4.0.0",
     "minimist": "^1.2.0",
     "websocket-stream": "^5.5.0"
+  },
+  "devDependencies": {
+    "expect": "^24.9.0",
+    "mocha": "^6.2.2"
   }
 }

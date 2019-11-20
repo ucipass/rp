@@ -20,11 +20,11 @@ class echoClient {
             if (recvData == sendData){
                 let message = 'EchoClient: received data matching: '+recvData
                 console.log(message);
-                resolve(message)
+                resolve(recvData.toString())
             }else{
                 let message = 'EchoClient: received data' + recvData+ ' NOT matching: '+ sendData
                 console.log(message);
-                reject(message)
+                reject(recvData)
             }
             _client.destroy(); // kill client after server's response
         });
