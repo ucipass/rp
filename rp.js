@@ -24,6 +24,9 @@ class RP  {
         }
         this.rooms = room ? [room] : [this.defaultRoom]
         this.port = port ? port : 3000
+        this.server = null
+        this.lastSocketKey = 0;
+        this.socketMap = {};
 	}
 	
 	start(){
@@ -136,16 +139,47 @@ class RP  {
         //******************************************/
         // WEBSOCKET EXPRESS SERVER
         //******************************************/        
-        var server = app.listen(this.port, "0.0.0.0", () => {
-			var host = server.address().address;
-			var port = server.address().port;
+        this.server = app.listen(this.port, "0.0.0.0", () => {
+			var host = this.server.address().address;
+			var port = this.server.address().port;
 			console.log('RP: Rendezvous Point started at http://%s:%s', host, this.port);
 			resolve(true)
         });
 
+        this.server.on('connection',  (socket) => {
+            // Add a newly connected socket
+            let socketId = this.lastSocketKey++;
+            this.socketMap[socketId] = socket;
+            // console.log('socket', socketId, 'opened');
+          
+            // Remove the socket when it closes
+            socket.on('close',  () => {
+            //   console.log('socket', socketId, 'closed');
+              delete this.socketMap[socketId];
+            });
+          
+          });
+
         return p;
     }
 
+    stop(){
+        return new Promise((resolve, reject) => {
+            let host = this.server.address().address;
+            let port = this.server.address().port;
+            this.server.close(()=>{
+                console.log('RP: Rendezvous Point stopped at http://%s:%s', host, port);
+                setTimeout(() => {
+                    this.server.unref()
+                    resolve(true)
+                }, 1000);
+            })
+            for (var socketId in this.socketMap) {
+                // console.log('socket', socketId, 'destroyed');
+                this.socketMap[socketId].destroy();
+            }         
+        });
+    }
     dataStreamHandler(connection){
         if(connection.wsListener.stream && connection.wsForwarder.stream){
             connection.wsListener.stream.pipe(connection.wsForwarder.stream)

@@ -10,6 +10,10 @@ class Client {
     this.connections = []
     this.clientName = clientName;
     this.ctrl = null
+    this.ctrlTerminated = false
+    this.server = null
+    this.lastSocketKey = 0;
+    this.socketMap = {};
   }
 
 	start() {
@@ -68,7 +72,7 @@ class Client {
 
     ctrl.on('finish', (o) => {
       console.log(`${this.clientName}: Finish called on websocket control channel`);
-      process.exit(1);
+      // process.exit(1);
     })
 
     ctrl.on('end', () => {
@@ -78,15 +82,55 @@ class Client {
 
     ctrl.on('error', (err) => {
       if (err.errno == 'ECONNREFUSED') console.log(`${this.clientName}: Websocket connection refused.`); 
-      else console.log(`${this.clientName}: UNKNOWN ERROR:`,err); 
+      else {
+        if (this.ctrlTerminated = false) {
+          console.log(`${this.clientName}: UNKNOWN ERROR:`,err); 
+        }
+      }
     })
     
     return p;
   }  
 
+  stop(){
+
+    return new Promise((resolve, reject) => {
+      this.ctrlTerminated = true
+      this.ctrl.end(() => {
+        console.log("CLIENT END")
+      })
+      this.ctrl.destroy(()=>{
+        console.log("CLIENT DESTROY")
+      })
+      if (this.server){
+        let host = this.server.address().address;
+        let port = this.server.address().port;
+        this.server.close(()=>{
+          console.log('Client stopped listening at', host, port);
+          this.server.unref()
+          resolve(true)
+        })        
+      }else{
+        resolve(true) 
+      }
+
+      // for (var socketId in this.socketMap) {
+      //     // console.log('socket', socketId, 'destroyed');
+      //     this.socketMap[socketId].destroy();
+      // }  
+      // this.tcpsocket.
+      // resolve(true) 
+      // client1: End localhost:2222 -> Websocket client.js:103
+      // client1: Finish ws://localhost:3000/rp/data/client1RemotePort60179LocalPort2222 client.js:203
+      // client1: Finish called on websocket control channel client.js:70
+    });    
+
+  }
+
   listener(port){
     return new Promise((resolve, reject) => {
-      var server = net.createServer( (c) => { //'connection' listener
+      this.server = net.createServer( (c) => { //'connection' listener
+        this.tcpsocket = c;
         c.on('end', () => {
           console.log(`${this.clientName}: End localhost:${port} -> Websocket`);
           // ws.destroy();
@@ -112,7 +156,7 @@ class Client {
 
       });
     
-      server.listen(port, ()=> { //'listening' listener
+      this.server.listen(port, ()=> { //'listening' listener
         console.log(`${this.clientName}: Listening on port ${port}`)
         resolve(true)
       });
