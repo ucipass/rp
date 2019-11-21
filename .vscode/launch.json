@@ -18,11 +18,20 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "rp",
+            "name": "test local",
             "args": [
-                "-s", "2222", "-i", "127.0.0.1", "-d", "22"
+                ""
             ],
-            "program": "${workspaceFolder}/rp.js"
+            "program": "${workspaceFolder}/test-local.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "server",
+            "args": [
+                ""
+            ],
+            "program": "${workspaceFolder}/server.js"
         },
         {
             "type": "node",
@@ -30,7 +39,7 @@
             "name": "client",
             "program": "${workspaceFolder}/client.js",
             "args": [
-                "-c", "client1", "-u", "ws://aws.arato.biz/rp"
+                "-c", "client1", "-u", "ws://127.0.0.1:3000/rp"
             ]
         }
     ]

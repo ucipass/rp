@@ -4,10 +4,10 @@ const RP = require("./rp.js")
 const createError = require('http-errors');
 
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: false }));
 
-app.get('/', (req, res) => res.send('Hello World!'))
+// app.get('/', (req, res) => res.send('Hello World!'))
 let rp = new RP(app)
 rp.start()
 

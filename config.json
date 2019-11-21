@@ -12,8 +12,8 @@
             "name": "client2",
             "listener": null,
             "forwarder": {
-                "dstPort": "2224",
-                "dstIP": "127.0.0.1"
+                "dstPort": "22",
+                "dstIP": "localhost"
             }
         }
     ],

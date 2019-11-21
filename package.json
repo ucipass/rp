@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node ./node_modules/mocha/bin/mocha"
+    "test": "node ./node_modules/mocha/bin/mocha",
+    "build": "node ./node_modules/pkg/lib-es5/bin.js client.js && node ./node_modules/pkg/lib-es5/bin.js server.js"
   },
   "author": "",
   "license": "ISC",
