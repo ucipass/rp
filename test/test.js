@@ -1,7 +1,7 @@
 const expect = require('expect');
 const fs = require('fs');
-const Echoserver = require("../echoserver.js")
-const Echoclient = require("../echoclient.js")
+const Echoserver = require("./echoserver.js")
+const Echoclient = require("./echoclient.js")
 const server = require("../server.js")
 const Client = require("../client.js")
 

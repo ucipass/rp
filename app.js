@@ -1,9 +1,7 @@
 const express = require('express');
 const app = express();
-const createError = require('http-errors');
-const expressWebSocket = require('express-ws');
 const RP = require("./rp.js")
-expressWebSocket(app, null, { perMessageDeflate: false, });
+const createError = require('http-errors');
 
 
 app.use(express.json());

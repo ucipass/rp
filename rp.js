@@ -12,6 +12,9 @@ class RP  {
         //******************************************/
         // WEBSOCKET CONTROL CHANNELS
         //******************************************/
+        const expressWebSocket = require('express-ws');
+        expressWebSocket(this.app, null, { perMessageDeflate: false, });
+        
         const websocketStream = require('websocket-stream/stream');
         const JSONData = require('./jsondata.js')
  

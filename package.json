@@ -16,6 +16,7 @@
   },
   "devDependencies": {
     "expect": "^24.9.0",
-    "mocha": "^6.2.2"
+    "mocha": "^6.2.2",
+    "pkg": "^4.4.0"
   }
 }
