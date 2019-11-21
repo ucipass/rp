@@ -1,22 +1,22 @@
 {
-    "name": "default",
-    "members": [
-        {
-            "name": "client1",
-            "listener": {
-                "srcPort": "2222"
-            },
-            "forwarder": null
-        },
-        {
-            "name": "client2",
-            "listener": null,
-            "forwarder": {
-                "dstPort": "22",
-                "dstIP": "aws.arato.biz"
-            }
-        }
-    ],
-    "activeMember": [],
-    "connections": []
+  "name": "default",
+  "members": [
+    {
+      "name": "client1",
+      "listener": {
+        "srcPort": 2222
+      },
+      "forwarder": null
+    },
+    {
+      "name": "client2",
+      "listener": null,
+      "forwarder": {
+        "dstPort": 22,
+        "dstIP": "aws.arato.biz"
+      }
+    }
+  ],
+  "activeMember": [],
+  "connections": []
 }

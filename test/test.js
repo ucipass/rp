@@ -2,7 +2,6 @@ const expect = require('expect');
 const fs = require('fs');
 const Echoserver = require("./echoserver.js")
 const Echoclient = require("./echoclient.js")
-const server = require("../server.js")
 const Client = require("../client.js")
 
 describe('simple get request', () => {
@@ -22,12 +21,20 @@ describe('simple get request', () => {
     });
 
     it('Basic Test1', async () => {
-        let room = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-        let CLIENT_PORT = room.members[0].listener.srcPort;
-        let SERVER_PORT = room.members[1].forwarder.dstPort;
+        let CLIENT_PORT = 3331
+        let SERVER_PORT = 4441
+        let SERVER_ADDR = "localhost"
+        let oldroom = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+        let newroom = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+        newroom.members[0].listener.srcPort = CLIENT_PORT
+        newroom.members[1].forwarder.dstPort = SERVER_PORT
+        newroom.members[1].forwarder.dstIP = SERVER_ADDR
+        fs.writeFileSync("config.json", JSON.stringify(newroom,null,2), 'utf8')
+        
         let client1 = new Client("client1");
         let client2 = new Client("client2");
 
+        const server = require("../server.js")
         await server.started;
         await client1.start()
         await client2.start()
@@ -43,6 +50,7 @@ describe('simple get request', () => {
         await client1.stop();
         await client2.stop();
         await server.stop();
+        fs.writeFileSync("config.json", JSON.stringify(oldroom,null,2), 'utf8')
         expect(reply1).toEqual("ABCD");
         expect(reply2).toEqual("EFGH");
     });
