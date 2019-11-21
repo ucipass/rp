@@ -1,15 +1,14 @@
 const fs = require('fs');
 class RP  {
-    constructor(room, app) {
-        this.defaultRoom = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-        this.rooms = room ? [room] : [this.defaultRoom]
+    constructor(app) {
+        this.rooms = []
         this.app = app
         this.lastSocketKey = 0;
         this.socketMap = {};
 	}
 	
 	async start(){
-
+        this.rooms.push( JSON.parse(fs.readFileSync('config.json', 'utf8')) )
         //******************************************/
         // WEBSOCKET CONTROL CHANNELS
         //******************************************/
@@ -177,41 +176,7 @@ module.exports = RP
 
 if (require.main === module) {
 
-    let room = null
-    try {
-        room = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-    } catch (error) {
-        let argv = require('minimist')(process.argv.slice(2));
-        if ( argv.s && argv.d && argv.i){
-            let room = {
-                name: "default",
-                members: [
-                    {
-                        name: "client1",
-                        listener: {
-                            srcPort: argv.s
-                        },
-                        forwarder: null
-                    },
-                    {
-                        name: "client2",
-                        listener: null,
-                        forwarder: {
-                            dstPort: argv.d,
-                            dstIP: argv.i
-                        }
-                    }
-                ],
-                activeMember: [],
-                connections: []
-            }        
-        }else{
-            console.log( "need -s <sourcePort> -i <destinationIP> -d <destinationPort>")
-            process.exit(1)
-        }
-    }
-
-    let rp = new RP(room)
+    let rp = new RP()
     rp.start()    
 
     }

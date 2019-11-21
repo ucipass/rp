@@ -27,20 +27,23 @@ describe('simple get request', () => {
         let SERVER_PORT = room.members[1].forwarder.dstPort;
         let client1 = new Client("client1");
         let client2 = new Client("client2");
+
         await server.started;
         await client1.start()
         await client2.start()
         let echoserver = new Echoserver(SERVER_PORT)    
         await echoserver.start()
+        
         let echoclient1 = new Echoclient(CLIENT_PORT);
         let echoclient2 = new Echoclient(CLIENT_PORT);
-        let r1 =  await echoclient1.send("ABCD")
-        let r2 =  await echoclient2.send("EFGH")
+        let reply1 =  await echoclient1.send("ABCD")
+        let reply2 =  await echoclient2.send("EFGH")
+        
         await echoserver.stop()
         await client1.stop();
         await client2.stop();
         await server.stop();
-        expect(r1).toEqual("ABCD");
-        expect(r2).toEqual("EFGH");
+        expect(reply1).toEqual("ABCD");
+        expect(reply2).toEqual("EFGH");
     });
   });
