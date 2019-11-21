@@ -22,7 +22,7 @@ describe('simple get request', () => {
 
     it('Basic Test1', async () => {
         let SERVER_PORT = 3333;
-        let CLIENT_PORT = 2222;
+        let CLIENT_PORT = 2224;
 
         let room = {
             name: "default",
