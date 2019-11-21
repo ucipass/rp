@@ -23,7 +23,6 @@ class Client {
     var net = require('net');
     const PORT = 2222
     const registration = new JSONData(this.clientName,"registration",{})
-    var res,rej
 
     // Send initial registration to RP and receive 'room' info
     let url = this.url+"/ctrl"

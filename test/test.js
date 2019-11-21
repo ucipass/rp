@@ -1,11 +1,13 @@
 const expect = require('expect');
+const Echoserver = require("../echoserver.js")
+const Echoclient = require("../echoclient.js")
+const RP = require("../rp.js")
+const Client = require("../client.js")
 
 describe('simple get request', () => {
     it('Echo Server Test', async () => {
 
         let SERVER_PORT = 3333;
-        let Echoserver = require("../echoserver.js")
-        let Echoclient = require("../echoclient.js/index.js.js")
         let echoserver = new Echoserver(SERVER_PORT) 
         let echoclient1 = new Echoclient(SERVER_PORT);
         let echoclient2 = new Echoclient(SERVER_PORT);
@@ -15,12 +17,12 @@ describe('simple get request', () => {
         await echoserver.stop()
         expect(r1).toEqual("ABCD");
         expect(r2).toEqual("EFGH");
+
     });
+
     it('Basic Test1', async () => {
         let SERVER_PORT = 3333;
         let CLIENT_PORT = 2222;
-        let Echoserver = require("../echoserver.js")
-        let Echoclient = require("../echoclient.js/index.js.js")
 
         let room = {
             name: "default",
@@ -44,8 +46,6 @@ describe('simple get request', () => {
             activeMember: [],
             connections: []
         }
-        let RP = require("../rp.js")
-        let Client = require("../client.js")
         let rp = new RP(room);
         let client1 = new Client("client1");
         let client2 = new Client("client2");
