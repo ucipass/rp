@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const createError = require('http-errors');
 const expressWebSocket = require('express-ws');
+const RP = require("./rp.js")
 expressWebSocket(app, null, { perMessageDeflate: false, });
 
 
@@ -9,6 +10,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.get('/', (req, res) => res.send('Hello World!'))
+let rp = new RP(null,app)
+rp.start()
 
 // catch 404 and forward to error handler
 // app.use((req, res, next) => {

@@ -1,34 +1,11 @@
 const app = require("./app.js")
 
 const port = 3000
+var lastSocketKey = 0;
+var socketMap = {};
 let startedFn = null
-let p = new Promise((resolve, reject) => { startedFn = resolve });
-const server = app.listen(port, "0.0.0.0", () => {
-    let host = server.address().address;
-    let port = server.address().port;
-    console.log('RP: Rendezvous Point started at http://%s:%s', host, port);
-    startedFn(true)             
-});
-server.started = p
-
-// this.server.on('connection',  (socket) => {
-//     // Add a newly connected socket
-//     let socketId = this.lastSocketKey++;
-//     this.socketMap[socketId] = socket;
-//     // console.log('socket', socketId, 'opened');
-  
-//     // Remove the socket when it closes
-//     socket.on('close',  () => {
-//     //   console.log('socket', socketId, 'closed');
-//       delete this.socketMap[socketId];
-//     });
-  
-//   });
-
-
-/**
- * Event listener for HTTP server "error " event.
- */
+const server = app.listen(port);
+server.started = new Promise((resolve, reject) => { startedFn = resolve });
 
 const onError = (error) => {
     if (error.syscall !== 'listen') {
@@ -52,30 +29,48 @@ const onError = (error) => {
       default:
         throw error;
     }
-  };
-  
-  /**
-   * Event listener for HTTP server "listening" event.
-   */
-  
-const onListening = () => {
-const addr = server.address();
-const bind = typeof addr === 'string'
-    ? `pipe ${addr}`
-    : `port ${addr.port}`;
-console.info('\n\n*********** STARTING service **************');
-console.info(`Web server listening at: ${bind}`);
 };
+
+const onListening = () => {
+  const addr = server.address();
+  const bind = typeof addr === 'string'
+      ? `pipe ${addr}`
+      : `port ${addr.port}`;
+  console.info('\n\n*********** STARTING service **************');
+  console.info(`Web server listening at: ${bind}`);
+  startedFn(true)
+};
+
+const onConnection = (socket) => {
+  /* generate a new, unique socket-key */
+  var socketKey = ++lastSocketKey;
+  /* add socket when it is connected */
+  socketMap[socketKey] = socket;
+  socket.on('close', function() {
+      /* remove socket when it is closed */
+      delete socketMap[socketKey];
+  });
+};
+  
 server.on('error', onError);
 server.on('listening', onListening);
-  
+server.on('connection', onConnection);
+server.stop = ()=>{
+  return new Promise((resolve, reject) => {
 
+    for (var socketId in this.socketMap) {
+      this.socketMap[socketId].destroy();
+    }        
 
-
-
-
-
-
-
+    server.close(()=>{
+      console.log("Server is stopped!");
+      setTimeout(() => {
+          server.unref()
+          resolve(true)
+      }, 1000);
+    })
+    
+  });
+}  
 
 module.exports = server;

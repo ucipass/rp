@@ -2,7 +2,7 @@ const expect = require('expect');
 const fs = require('fs');
 const Echoserver = require("../echoserver.js")
 const Echoclient = require("../echoclient.js")
-const RP = require("../rp.js")
+const server = require("../server.js")
 const Client = require("../client.js")
 
 describe('simple get request', () => {
@@ -25,10 +25,9 @@ describe('simple get request', () => {
         let room = JSON.parse(fs.readFileSync('config.json', 'utf8'));
         let CLIENT_PORT = room.members[0].listener.srcPort;
         let SERVER_PORT = room.members[1].forwarder.dstPort;
-        let rp = new RP();
         let client1 = new Client("client1");
         let client2 = new Client("client2");
-        await rp.start();
+        await server.started;
         await client1.start()
         await client2.start()
         let echoserver = new Echoserver(SERVER_PORT)    
@@ -40,7 +39,7 @@ describe('simple get request', () => {
         await echoserver.stop()
         await client1.stop();
         await client2.stop();
-        await rp.stop();
+        await server.stop();
         expect(r1).toEqual("ABCD");
         expect(r2).toEqual("EFGH");
     });

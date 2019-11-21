@@ -1,11 +1,9 @@
 const fs = require('fs');
 class RP  {
-    constructor(room, port) {
+    constructor(room, app) {
         this.defaultRoom = JSON.parse(fs.readFileSync('config.json', 'utf8'));
         this.rooms = room ? [room] : [this.defaultRoom]
-        this.port = port ? port : 3000
-        this.app = require("./app.js")
-        this.server = require("./server.js")
+        this.app = app
         this.lastSocketKey = 0;
         this.socketMap = {};
 	}
@@ -112,27 +110,9 @@ class RP  {
             })
         })
 
-        await this.server.started
 
     }
 
-    stop(){
-        return new Promise((resolve, reject) => {
-            let host = this.server.address().address;
-            let port = this.server.address().port;
-            this.server.close(()=>{
-                console.log('RP: Rendezvous Point stopped at http://%s:%s', host, port);
-                setTimeout(() => {
-                    this.server.unref()
-                    resolve(true)
-                }, 1000);
-            })
-            for (var socketId in this.socketMap) {
-                // console.log('socket', socketId, 'destroyed');
-                this.socketMap[socketId].destroy();
-            }         
-        });
-    }
     dataStreamHandler(connection){
         if(connection.wsListener.stream && connection.wsForwarder.stream){
             connection.wsListener.stream.pipe(connection.wsForwarder.stream)
@@ -235,3 +215,4 @@ if (require.main === module) {
     rp.start()    
 
     }
+
