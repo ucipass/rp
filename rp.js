@@ -24,25 +24,21 @@ class RP  {
         }
         this.rooms = room ? [room] : [this.defaultRoom]
         this.port = port ? port : 3000
-        this.server = null
+        this.app = require("./app.js")
+        this.server = require("./server2.js")
         this.lastSocketKey = 0;
         this.socketMap = {};
 	}
 	
-	start(){
-		let resolve, reject
-		let p = new Promise((res, rej) => { resolve =res ; reject = rej });
-		const express = require('express');
-		const expressWebSocket = require('express-ws');
-		const websocketStream = require('websocket-stream/stream');
-        const app = express();
-        const JSONData = require('./jsondata.js')
+	async start(){
 
         //******************************************/
         // WEBSOCKET CONTROL CHANNELS
         //******************************************/
-		expressWebSocket(app, null, {    perMessageDeflate: false, });
-		app.ws('/rp/ctrl', (ws, req) =>{
+        const websocketStream = require('websocket-stream/stream');
+        const JSONData = require('./jsondata.js')
+ 
+		this.app.ws('/rp/ctrl', (ws, req) =>{
 			let wsctrl = websocketStream(ws, {    binary: true,  });
 			wsctrl.on("data",(data)=>{
                 let jsondata = new JSONData()
@@ -105,7 +101,7 @@ class RP  {
         //******************************************/
         // WEBSOCKET DATA CHANNELS
         //******************************************/
-		app.ws('/rp/data*', (ws, req) =>{
+		this.app.ws('/rp/data*', (ws, req) =>{
             let room = null
             this.rooms.forEach((room)=>{
                 room.connections.forEach((connection)=>{
@@ -136,31 +132,8 @@ class RP  {
             })
         })
 
-        //******************************************/
-        // WEBSOCKET EXPRESS SERVER
-        //******************************************/        
-        this.server = app.listen(this.port, "0.0.0.0", () => {
-			var host = this.server.address().address;
-			var port = this.server.address().port;
-			console.log('RP: Rendezvous Point started at http://%s:%s', host, this.port);
-			resolve(true)
-        });
+        await this.server.started
 
-        this.server.on('connection',  (socket) => {
-            // Add a newly connected socket
-            let socketId = this.lastSocketKey++;
-            this.socketMap[socketId] = socket;
-            // console.log('socket', socketId, 'opened');
-          
-            // Remove the socket when it closes
-            socket.on('close',  () => {
-            //   console.log('socket', socketId, 'closed');
-              delete this.socketMap[socketId];
-            });
-          
-          });
-
-        return p;
     }
 
     stop(){

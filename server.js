@@ -3,7 +3,11 @@ const app = require('./app');
 
 const server = http.createServer(app);
 const port = 3000;
-server.listen(port);
+let startedFn = null
+server.started = new Promise((resolve, reject) => { startedFn = resolve });
+server.listen(port,()=>{
+  startedFn(true)
+});
 /**
  * Event listener for HTTP server "error " event.
  */
@@ -46,3 +50,5 @@ const onListening = () => {
 };
 server.on('error', onError);
 server.on('listening', onListening);
+
+module.exports = server;
