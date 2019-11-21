@@ -1,4 +1,5 @@
 const expect = require('expect');
+const fs = require('fs');
 const Echoserver = require("../echoserver.js")
 const Echoclient = require("../echoclient.js")
 const RP = require("../rp.js")
@@ -21,32 +22,10 @@ describe('simple get request', () => {
     });
 
     it('Basic Test1', async () => {
-        let SERVER_PORT = 3333;
-        let CLIENT_PORT = 2224;
-
-        let room = {
-            name: "default",
-            members: [
-                {
-                    name: "client1",
-                    listener: {
-                        srcPort: CLIENT_PORT
-                    },
-                    forwarder: null
-                },
-                {
-                    name: "client2",
-                    listener: null,
-                    forwarder: {
-                        dstPort: SERVER_PORT,
-                        dstIP: "127.0.0.1"
-                    }
-                }
-            ],
-            activeMember: [],
-            connections: []
-        }
-        let rp = new RP(room);
+        let room = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+        let CLIENT_PORT = room.members[0].listener.srcPort;
+        let SERVER_PORT = room.members[1].forwarder.dstPort;
+        let rp = new RP();
         let client1 = new Client("client1");
         let client2 = new Client("client2");
         await rp.start();

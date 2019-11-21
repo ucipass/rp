@@ -1,31 +1,11 @@
+const fs = require('fs');
 class RP  {
     constructor(room, port) {
-        this.defaultRoom = {
-            name: "default",
-            members: [
-                {
-                    name: "client1",
-                    listener: {
-                        srcPort: 2222
-                    },
-                    forwarder: null
-                },
-                {
-                    name: "client2",
-                    listener: null,
-                    forwarder: {
-                        dstPort: 3333,
-                        dstIP: "127.0.0.1"
-                    }
-                }
-            ],
-            activeMember: [],
-            connections: []
-        }
+        this.defaultRoom = JSON.parse(fs.readFileSync('config.json', 'utf8'));
         this.rooms = room ? [room] : [this.defaultRoom]
         this.port = port ? port : 3000
         this.app = require("./app.js")
-        this.server = require("./server2.js")
+        this.server = require("./server.js")
         this.lastSocketKey = 0;
         this.socketMap = {};
 	}
@@ -216,7 +196,7 @@ class RP  {
 module.exports = RP
 
 if (require.main === module) {
-    const fs = require('fs');
+
     let room = null
     try {
         room = JSON.parse(fs.readFileSync('config.json', 'utf8'));
