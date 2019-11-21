@@ -1,0 +1,22 @@
+{
+    "name": "default",
+    "members": [
+        {
+            "name": "client1",
+            "listener": {
+                "srcPort": "2222"
+            },
+            "forwarder": null
+        },
+        {
+            "name": "client2",
+            "listener": null,
+            "forwarder": {
+                "dstPort": "3333",
+                "dstIP": "127.0.0.1"
+            }
+        }
+    ],
+    "activeMember": [],
+    "connections": []
+}
