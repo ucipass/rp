@@ -83,7 +83,7 @@ class Client {
     ctrl.on('error', (err) => {
       if (err.errno == 'ECONNREFUSED') console.log(`${this.clientName}: Websocket connection refused.`); 
       else {
-        if (this.ctrlTerminated = false) {
+        if (this.ctrlTerminated == false) {
           console.log(`${this.clientName}: UNKNOWN ERROR:`,err); 
         }
       }
@@ -96,33 +96,34 @@ class Client {
 
     return new Promise((resolve, reject) => {
       this.ctrlTerminated = true
-      this.ctrl.end(() => {
-        console.log("CLIENT END")
-      })
-      this.ctrl.destroy(()=>{
-        console.log("CLIENT DESTROY")
-      })
       if (this.server){
+        this.ctrl.end(() => {
+          console.log(`${this.clientName}: END`); 
+        })
+        this.ctrl.destroy(()=>{
+          console.log("CLIENT DESTROY")
+        })
         let host = this.server.address().address;
         let port = this.server.address().port;
         this.server.close(()=>{
-          console.log('Client stopped listening at', host, port);
+          console.log(`${this.clientName}: stopped listening at`, host, port);
           this.server.unref()
           resolve(true)
-        })        
+        })
+        for (var socketId in this.socketMap) {
+          // console.log('socket', socketId, 'destroyed');
+          this.socketMap[socketId].destroy();
+        }          
       }else{
-        resolve(true) 
+        this.ctrlTerminated = true
+        this.ctrl.end(() => {
+          resolve(true) 
+          console.log(`${this.clientName}: END`);
+        })
+        this.ctrl.destroy(()=>{
+          console.log(`${this.clientName}: DESTROY`);
+        })
       }
-
-      // for (var socketId in this.socketMap) {
-      //     // console.log('socket', socketId, 'destroyed');
-      //     this.socketMap[socketId].destroy();
-      // }  
-      // this.tcpsocket.
-      // resolve(true) 
-      // client1: End localhost:2222 -> Websocket client.js:103
-      // client1: Finish ws://localhost:3000/rp/data/client1RemotePort60179LocalPort2222 client.js:203
-      // client1: Finish called on websocket control channel client.js:70
     });    
 
   }
@@ -172,7 +173,7 @@ class Client {
       let address = member.forwarder.dstIP
       let socket = new net.Socket();
       socket.connect(parseInt(port), address, () => {
-        console.log('CONNECT: Websocket ->', address, port);
+        console.log(`${this.clientName}: Connect Websocket ->`, address, port);
         remoteConnection.wsForwarder = {
           clientName: this.clientName,
           wsName: this.clientName+"LocalPort"+socket.localPort.toString()+"RemotePort"+socket.remotePort.toString()
@@ -237,8 +238,11 @@ class Client {
 
     wsConnection.stream.on('error', (err) => {
       if (err.errno == 'ECONNREFUSED') console.log(`${this.clientName}: Websocket connection refused.${url}`); 
-      else console.log(`${this.clientName}: UNKNOWN ERROR:${url}`,err); 
-      console.log(err)
+      else {
+        if (this.ctrlTerminated == false){
+          console.log(`${this.clientName}: UNKNOWN ERROR:${url}`,err);
+        }        
+      } 
     })
     //tcpConnection.socket.on("data",(d)=>{console.log("Listener",d.toString())})
     tcpConnection.socket.pipe(wsConnection.stream)

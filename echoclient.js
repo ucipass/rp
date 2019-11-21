@@ -43,20 +43,6 @@ class echoClient {
         return p
     }
 
-    multi_send(array,concurrent){
-        // for (let index = 0; index < conns.length; index++) {
-        //     curConnection = conns[index]
-        //     echoclient = new Echoclient(CLIENT_PORT);
-        //     if (concurrency){
-        //         curConnection.promise = echoclient.send(curConnection.message)
-        //     }else{
-        //         curConnection.promise = await echoclient.send(curConnection.message)
-        //     }
-        // }
-        // for (let index = 0; index < conns.length; index++) {
-        //     await conns[index].promise;
-        // }
-    }
 }
 
 module.exports = echoClient
