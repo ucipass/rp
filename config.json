@@ -3,7 +3,7 @@
   "members": [
     {
       "name": "client1",
-      "listener": { 
+      "listener": {
         "srcPort": 2222
       },
       "forwarder": null
