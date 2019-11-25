@@ -8,6 +8,7 @@ class SockeIoClient  {
         this.socket = null
         this.stopped = false
         this.sockedId = null
+        this.auth = false
     }
 
     onData (data,replyFn){
@@ -96,6 +97,18 @@ class SockeIoClient  {
             resolve(true)
         });
 
+    }
+
+    login(data){
+        return new Promise((resolve, reject) => {
+            this.socket.emit('auth',data,(replyData)=>{
+                if(replyData == 'ack'){
+                    resolve(replyData) 
+                }else{
+                    resolve(replyData)
+                }
+            })            
+        });
     }
 
     emit(json){

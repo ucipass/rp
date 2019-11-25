@@ -26,6 +26,14 @@ class SIO  {
 
     }
 
+    async auth(data){
+        if (data.username == 'test' && data.password == 'test'){
+            return true
+        }else{
+            return false
+        }
+    }
+
     onConnection(socket){
         let socketId = socket.id
         this.sockets.add(socket)
@@ -35,6 +43,17 @@ class SIO  {
         socket.on('disconnect', ()=>{
             this.sockets.delete(socket)
             log.info('Socket.io user disconnected:',socketId);
+        })
+
+        socket.on('auth', async (data,replyFn)=>{
+            data.socketId = socketId;
+            socket.auth = await this.auth(data)
+            if (socket.auth) {
+                replyFn('ack')
+            }else{
+                replyFn('reject')
+            }
+
         })
 
         socket.on('data', (data,replyFn) =>{

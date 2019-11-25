@@ -218,4 +218,36 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         expect(4).toEqual(4);
     });
 
+    it.only('Socket.io Authentication', async () => {
+        let app = require('express')();
+        let testServer = new TestServer(app,3000)
+        let server = await testServer.start()
+
+        let sio = new SIO()
+        await sio.start(server)
+        let client1 = new SIOClient()
+        let client2 = new SIOClient()
+        let clientSock1 = await client1.start("http://localhost:3000")
+        let clientSock2 = await client2.start("http://localhost:3000")
+        let clientSockId1 = clientSock1.id
+        let clientSockId2 = clientSock2.id
+        let serverSock1 = sio.getSocketById(clientSockId1)
+        let serverSock2 = sio.getSocketById(clientSockId2)
+        let serverSockId1 = serverSock1.id
+        let serverSockId2 = serverSock2.id
+        expect(serverSockId1).toEqual(clientSockId1);
+        expect(serverSockId2).toEqual(clientSockId2)
+        let clientauth1 = await client1.login({username:'test',password:'test'})
+        let clientauth2 = await client2.login({username:'test',password:'test2'})
+        expect(clientauth1).toEqual('ack');
+        expect(clientauth2).not.toEqual('ack')
+        expect(serverSock1.auth).toEqual(true);
+        expect(serverSock2.auth).toEqual(false)
+        
+        await client1.stop()
+        await client2.stop()
+        await sio.stop()
+        await testServer.stop()
+    });
+
   });
