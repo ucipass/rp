@@ -1,4 +1,8 @@
 const app = require("./app.js")
+const SIO = require("./sio-server.js")
+var log = require("ucipass-logger")("server")
+log.transports.console.level = 'debug'
+log.transports.file.level = 'error'
 
 const port = 3000
 var lastSocketKey = 0;
@@ -6,6 +10,8 @@ var socketMap = {};
 let startedFn = null
 const server = app.listen(port);
 server.started = new Promise((resolve, reject) => { startedFn = resolve });
+const sio = new SIO(app)
+sio.start(server)
 
 const onError = (error) => {
     if (error.syscall !== 'listen') {
@@ -36,8 +42,8 @@ const onListening = () => {
   const bind = typeof addr === 'string'
       ? `pipe ${addr}`
       : `port ${addr.port}`;
-  console.info('\n\n*********** STARTING service **************');
-  console.info(`Web server listening at: ${bind}`);
+  log.info('*********** STARTING service **************');
+  log.info(`Web server listening at: ${bind}`);
   startedFn(true)
 };
 
@@ -55,7 +61,8 @@ const onConnection = (socket) => {
 server.on('error', onError);
 server.on('listening', onListening);
 server.on('connection', onConnection);
-server.stop = ()=>{
+server.stop = async ()=>{
+  await sio.stop();
   return new Promise((resolve, reject) => {
 
     for (var socketId in this.socketMap) {
@@ -63,7 +70,7 @@ server.stop = ()=>{
     }        
 
     server.close(()=>{
-      console.log("Server is stopped!");
+      log.info("Server is stopped!");
       setTimeout(() => {
           server.unref()
           resolve(true)

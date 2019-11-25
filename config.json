@@ -4,7 +4,7 @@
     {
       "name": "client1",
       "listener": {
-        "srcPort": 2222
+        "srcPort": 3331
       },
       "forwarder": null
     },
@@ -12,8 +12,8 @@
       "name": "client2",
       "listener": null,
       "forwarder": {
-        "dstPort": 22,
-        "dstIP": "aws.arato.biz"
+        "dstPort": 4441,
+        "dstIP": "localhost"
       }
     }
   ],

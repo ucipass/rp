@@ -1,10 +1,20 @@
 const expect = require('expect');
 const fs = require('fs');
+const TestServer = require("./testserver.js")
 const Echoserver = require("./echoserver.js")
 const Echoclient = require("./echoclient.js")
-const Client = require("../client.js")
 
-describe('simple get request', () => {
+const Client = require("../client.js")
+const SIO = require("../sio-server.js")
+const SIOClient = require("../sio-client.js")
+const delay = require("../delay.js")
+var log = require("ucipass-logger")("mocha")
+log.transports.console.level = 'debug'
+log.transports.file.level = 'error'
+
+
+
+describe('\n\n=================== APP TESTS ========================', () => {
     it('Echo Server Test', async () => {
 
         let SERVER_PORT = 3333;
@@ -54,4 +64,157 @@ describe('simple get request', () => {
         expect(reply1).toEqual("ABCD");
         expect(reply2).toEqual("EFGH");
     });
+
+  });
+
+describe('\n\n=================== SOCKET.IO TESTS ========================', () => {
+
+    it('Socket.io Basic Client Test', async () => {
+        let app = require('express')();
+        let testServer = new TestServer(app,3000)
+        let server = await testServer.start()
+
+        let io = require('socket.io')(server);
+        io.on('connection', function(socket){
+          log.info('client connected');
+        });
+
+        let client = new SIOClient()
+        await client.start("http://localhost:3000")
+        await client.stop()
+
+        await testServer.stop()
+        delete testServer;
+    });
+
+    it('Socket.io Basic Server/Client Test', async () => {
+        let app = require('express')();
+        let testServer = new TestServer(app,3000)
+        let server = await testServer.start()
+
+
+        let sio = new SIO()
+        await sio.start(server)
+        let client = new SIOClient()
+        await client.start("http://localhost:3000")
+        await client.stop()
+        await sio.stop()
+
+        await testServer.stop()
+        delete testServer;
+    });
+
+    it('Socket.io Basic Server/Multi-Client Test', async () => {
+        let app = require('express')();
+        let testServer = new TestServer(app,3000)
+        let server = await testServer.start()
+
+        let sio = new SIO()
+        await sio.start(server)
+        let client1 = new SIOClient()
+        let client2 = new SIOClient()
+        let client3 = new SIOClient()
+        let client4 = new SIOClient()
+        await client1.start("http://localhost:3000")
+        await client2.start("http://localhost:3000")
+        await client3.start("http://localhost:3000")
+        await client4.start("http://localhost:3000")
+        await client1.stop()
+        await client2.stop()
+        await client3.stop()
+        await client4.stop()
+        await sio.stop()
+
+        await testServer.stop()
+        delete testServer;
+    });
+
+    it('Socket.io Server Error Test', async () => {
+        let app = require('express')();
+        let testServer = new TestServer(app,3000)
+        let server = await testServer.start()
+
+        let sio = new SIO()
+        await sio.start(server)
+        let client1 = new SIOClient()
+        await client1.start("http://localhost:3000")
+        await testServer.stop()
+    });
+
+    it('Socket.io echo Test', async () => {
+        let app = require('express')();
+        let testServer = new TestServer(app,3000)
+        let server = await testServer.start()
+
+        let sio = new SIO()
+        await sio.start(server)
+        let client1 = new SIOClient()
+        await client1.start("http://localhost:3000")
+        let reply = await client1.emit("ping")
+        await client1.stop()
+        await sio.stop()
+        await testServer.stop()
+        expect(reply).toEqual("ack");
+    });
+
+    it('Socket.io Room Test', async () => {
+        let app = require('express')();
+        let testServer = new TestServer(app,3000)
+        let server = await testServer.start()
+
+        let sio = new SIO()
+        await sio.start(server)
+        let client1 = new SIOClient()
+        let client2 = new SIOClient()
+        let client3 = new SIOClient()
+        let client4 = new SIOClient()
+        let socket1 = await client1.start("http://localhost:3000")
+        let socket2 = await client2.start("http://localhost:3000")
+        let socket3 = await client3.start("http://localhost:3000")
+        let socket4 = await client4.start("http://localhost:3000")
+        await sio.joinRoom("all",socket1.id)
+        await sio.joinRoom("all",socket2.id)
+        await sio.joinRoom("all",socket3.id)
+        await sio.joinRoom("all",socket4.id)
+
+        await client3.stop()
+        await sio.leaveRoom("all",socket2.id)
+        await client1.stop()
+        await client2.stop()
+        await client4.stop()
+        let members = await sio.getRoomMembers('all')
+        await sio.stop()
+        await testServer.stop()
+        expect(members.length).toEqual(3);
+    });
+
+    it('Socket.io Send to ALL Room Test', async () => {
+        let app = require('express')();
+        let testServer = new TestServer(app,3000)
+        let server = await testServer.start()
+
+        let sio = new SIO()
+        await sio.start(server)
+        let client1 = new SIOClient()
+        let client2 = new SIOClient()
+        let client3 = new SIOClient()
+        let client4 = new SIOClient()
+        let socket1 = await client1.start("http://localhost:3000")
+        let socket2 = await client2.start("http://localhost:3000")
+        let socket3 = await client3.start("http://localhost:3000")
+        let socket4 = await client4.start("http://localhost:3000")
+        await sio.joinRoom("all",socket1.id)
+        await sio.joinRoom("all",socket2.id)
+        await sio.joinRoom("all",socket3.id)
+        await sio.joinRoom("all",socket4.id)
+        await client1.emit("test1")
+        await client1.stop()
+        await client2.stop()
+        await client3.stop()
+        await client4.stop()
+        await sio.stop()
+        await testServer.stop()
+        expect(4).toEqual(4);
+    });
+
   });
