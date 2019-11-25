@@ -45,15 +45,21 @@ class SIO  {
             log.info('Socket.io user disconnected:',socketId);
         })
 
-        socket.on('auth', async (data,replyFn)=>{
+        socket.on('login', async (data,replyFn)=>{
             data.socketId = socketId;
             socket.auth = await this.auth(data)
             if (socket.auth) {
+                log.info(`${socket.id} login success`)
                 replyFn('ack')
             }else{
+                log.error(`${socket.id} login failure`)
                 replyFn('reject')
             }
+        })
 
+        socket.on('logout', async (data,replyFn)=>{
+            socket.auth = false
+            replyFn('ack')
         })
 
         socket.on('data', (data,replyFn) =>{

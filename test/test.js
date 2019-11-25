@@ -243,6 +243,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         expect(clientauth2).not.toEqual('ack')
         expect(serverSock1.auth).toEqual(true);
         expect(serverSock2.auth).toEqual(false)
+        await client1.logout()
+        expect(serverSock1.auth).toEqual(false)
         
         await client1.stop()
         await client2.stop()

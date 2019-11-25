@@ -101,10 +101,26 @@ class SockeIoClient  {
 
     login(data){
         return new Promise((resolve, reject) => {
-            this.socket.emit('auth',data,(replyData)=>{
+            this.socket.emit('login',data,(replyData)=>{
                 if(replyData == 'ack'){
+                    log.info(`${this.socket.id} login success`)
                     resolve(replyData) 
                 }else{
+                    log.error(`${this.socket.id} login failure`)
+                    resolve(replyData)
+                }
+            })            
+        });
+    }
+
+    logout(data){
+        return new Promise((resolve, reject) => {
+            this.socket.emit('logout',data,(replyData)=>{
+                if(replyData == 'ack'){
+                    log.info(`${this.socket.id} logout success`)
+                    resolve(replyData) 
+                }else{
+                    log.error(`${this.socket.id} logout failure`)
                     resolve(replyData)
                 }
             })            
