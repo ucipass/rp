@@ -9,16 +9,22 @@ class SockeIoClient  {
         this.stopped = false
         this.sockedId = null
     }
-    
+
+    onData (data,replyFn){
+        log.debug(`${this.socket.id} received data: ${data}`)
+        if (replyFn) {
+            log.debug(`${this.sockedId} sent ack`)
+            replyFn('ack')
+        }
+
+    }
+
     start(url,options){
         return new Promise((resolve, reject) => {
             let opt = options ? options : { reconnection: false }
             this.socket = io('http://localhost:3000', opt );
 
-            this.socket.on('data', (data,replyFn)=>{
-                log.debug(`${this.socket.id} received data: ${data}`)
-                if (replyFn) replyFn('ack')
-            });
+            this.socket.on('data', this.onData.bind(this));
 
             this.socket.on('connect', ()=>{
                 log.info("Connected:",this.socket.id)

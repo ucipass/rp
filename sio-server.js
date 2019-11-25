@@ -13,9 +13,6 @@ class SIO  {
     start(server){
         this.io = socketio(server)
         this.io.on('connection', this.onConnection.bind(this))
-        // setInterval(() => {
-        //     this.io.to('all').emit("data","hello")
-        // }, 1000);
     }
 
     stop(){
@@ -32,6 +29,7 @@ class SIO  {
     onConnection(socket){
         let socketId = socket.id
         this.sockets.add(socket)
+        socket.auth = true //temporary allowed
         log.info('Socket.io user connected:',socket.id);
 
         socket.on('disconnect', ()=>{
@@ -39,10 +37,15 @@ class SIO  {
             log.info('Socket.io user disconnected:',socketId);
         })
 
-        socket.on('data', (data,replyFn)=>{
-            log.debug("data recevied from",socket.id)
-            socket.to('all').emit('data','hello')
-            replyFn('ack')
+        socket.on('data', (data,replyFn) =>{
+            if (! socket.auth){
+                log.error(`invalid data, ${socket.id} is not authenticated`)
+                replyFn('denied')
+            }else{
+                log.debug("data recevied from",socket.id)
+                // socket.to('all').emit('data','hello')
+                replyFn('ack')
+            }
         });
 
         socket.on('pong', (latency) => {
