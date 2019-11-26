@@ -3,6 +3,7 @@ const fs = require('fs');
 const TestServer = require("./testserver.js")
 const Echoserver = require("./echoserver.js")
 const Echoclient = require("./echoclient.js")
+const File = require("ucipass-file")
 
 const Client = require("../client.js")
 const SIO = require("../sio-server.js")
@@ -246,6 +247,31 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         await client1.logout()
         expect(serverSock1.auth).toEqual(false)
         
+        await client1.stop()
+        await client2.stop()
+        await sio.stop()
+        await testServer.stop()
+    });
+
+    it.only('Socket.io Authentication', async () => {
+        let app = require('express')();
+        let testServer = new TestServer(app,3000)
+        let server = await testServer.start()
+        let file1 = new File("iperf.bin")
+        await file1.read()
+
+
+        let sio = new SIO()
+        await sio.start(server)
+        let client1 = new SIOClient()
+        let client2 = new SIOClient()
+        let clientSock1 = await client1.start("http://localhost:3000")
+        let clientSock2 = await client2.start("http://localhost:3000")
+        sio.joinRoom("all",clientSock1.id)
+        sio.joinRoom("all",clientSock2.id)
+        await client1.emit(file1.buffer)
+        await delay(5000)
+
         await client1.stop()
         await client2.stop()
         await sio.stop()

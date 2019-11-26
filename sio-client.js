@@ -2,9 +2,14 @@ const io = require('socket.io-client');
 var log = require("ucipass-logger")("sio-client")
 log.transports.console.level = 'debug'
 log.transports.file.level = 'error'
+const File = require("ucipass-file")
+const JSONData = require('./jsondata.js')
 
 class SockeIoClient  {
-    constructor() {
+    constructor(url,username,password) {
+        this.url = "http://localhost:3000"
+        this.username = username ? username : "test"
+        this.password = password ? password : "test"
         this.socket = null
         this.stopped = false
         this.sockedId = null
@@ -12,11 +17,26 @@ class SockeIoClient  {
     }
 
     onData (data,replyFn){
-        log.debug(`${this.socket.id} received data: ${data}`)
+        log.debug(`${this.socket.id} received data`)
         if (replyFn) {
             log.debug(`${this.sockedId} sent ack`)
             replyFn('ack')
         }
+
+    }
+
+    onJson (data,replyFn){
+        let json = (new JSONData()).setjson(JSON.parse(data))
+        if ( json.type() = 'ctrl' ) {
+            log.error(`${this.socket.id} received ctrl JSON message`)
+        } else{
+            log.error(`${this.socket.id} received unknown JSON Type`)
+        }
+        
+        if (replyFn) {
+            log.debug(`${this.sockedId} sent ack`)
+            replyFn('ack')
+        }     
 
     }
 
@@ -26,6 +46,8 @@ class SockeIoClient  {
             this.socket = io('http://localhost:3000', opt );
 
             this.socket.on('data', this.onData.bind(this));
+
+            this.socket.on('json', this.onJson.bind(this));
 
             this.socket.on('connect', ()=>{
                 log.info("Connected:",this.socket.id)
@@ -129,7 +151,8 @@ class SockeIoClient  {
 
     emit(json){
         return new Promise((resolve, reject) => {
-            this.socket.emit('data',json,(replyData)=>{
+            log.debug(`${this.sockedId} sent data`)
+            this.socket.emit('data',json,(replyData)=>{                
                 resolve(replyData) 
             })
         })

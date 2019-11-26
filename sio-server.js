@@ -68,7 +68,7 @@ class SIO  {
                 replyFn('denied')
             }else{
                 log.debug("data recevied from",socket.id)
-                // socket.to('all').emit('data','hello')
+                socket.to('all').emit('data',data)
                 replyFn('ack')
             }
         });
