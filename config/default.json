@@ -1,0 +1,24 @@
+{
+    "userDB" : [
+        {
+            "username": "client1",
+            "password": "client1",
+            "rooms": ["room1"]
+        },
+        {
+            "username": "client2",
+            "password": "client2",
+            "rooms": ["room1"]
+        }
+    ],
+    "roomDB" : [
+        {
+            "name": "room1",
+            "rcvName": "client1",
+            "rcvPort": "2222",
+            "fwdName": "client2",
+            "fwdHost": "localhost",
+            "fwdPort": "3333"
+        }
+    ]
+}

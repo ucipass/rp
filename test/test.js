@@ -1,5 +1,6 @@
 const expect = require('expect');
 const fs = require('fs');
+const config = require('config');
 const TestServer = require("./testserver.js")
 const Echoserver = require("./echoserver.js")
 const Echoclient = require("./echoclient.js")
@@ -12,6 +13,9 @@ const delay = require("../delay.js")
 var log = require("ucipass-logger")("mocha")
 log.transports.console.level = 'debug'
 log.transports.file.level = 'error'
+
+const userDB = config.get("userDB")
+const roomDB = config.get("roomDB")
 
 
 
@@ -70,75 +74,47 @@ describe('\n\n=================== APP TESTS ========================', () => {
 
 describe('\n\n=================== SOCKET.IO TESTS ========================', () => {
 
-    it('Socket.io Basic Client Test', async () => {
+    it.only('Socket.io Client Only Test', async () => {
+        log.transports.console.level = 'error'
         let app = require('express')();
         let testServer = new TestServer(app,3000)
         let server = await testServer.start()
-
+        let clientSocketId = null
+        let serverSocketId = null
         let io = require('socket.io')(server);
         io.on('connection', function(socket){
-          log.info('client connected');
+            serverSocketId = socket.id
         });
 
         let client = new SIOClient()
-        await client.start("http://localhost:3000")
+        clientSocket = await client.start("http://localhost:3000")
+        clientSocketId = clientSocket.id
         await client.stop()
-
         await testServer.stop()
-        delete testServer;
+        expect(clientSocketId).toEqual(serverSocketId)
     });
 
-    it('Socket.io Basic Server/Client Test', async () => {
+    it('Socket.io Server/Clients Test', async () => {
         let app = require('express')();
         let testServer = new TestServer(app,3000)
         let server = await testServer.start()
 
-
-        let sio = new SIO()
-        await sio.start(server)
-        let client = new SIOClient()
-        await client.start("http://localhost:3000")
-        await client.stop()
-        await sio.stop()
-
-        await testServer.stop()
-        delete testServer;
-    });
-
-    it('Socket.io Basic Server/Multi-Client Test', async () => {
-        let app = require('express')();
-        let testServer = new TestServer(app,3000)
-        let server = await testServer.start()
-
-        let sio = new SIO()
-        await sio.start(server)
+        let sio = new SIO(server)
         let client1 = new SIOClient()
         let client2 = new SIOClient()
         let client3 = new SIOClient()
-        let client4 = new SIOClient()
-        await client1.start("http://localhost:3000")
-        await client2.start("http://localhost:3000")
-        await client3.start("http://localhost:3000")
-        await client4.start("http://localhost:3000")
+        let clientSocket1 = await client1.start("http://localhost:3000")
+        let clientSocket2 = await client2.start("http://localhost:3000")
+        let clientSocket3 = await client3.start("http://localhost:3000")
+        let serverSockets = new Set(sio.getSocketIds())
+        expect( serverSockets.size ).toEqual(3);
+        expect( serverSockets.has(clientSocket1.id) ).toEqual(true);
+        expect( serverSockets.has(clientSocket2.id) ).toEqual(true);
+        expect( serverSockets.has(clientSocket3.id) ).toEqual(true);
         await client1.stop()
         await client2.stop()
         await client3.stop()
-        await client4.stop()
         await sio.stop()
-
-        await testServer.stop()
-        delete testServer;
-    });
-
-    it('Socket.io Server Error Test', async () => {
-        let app = require('express')();
-        let testServer = new TestServer(app,3000)
-        let server = await testServer.start()
-
-        let sio = new SIO()
-        await sio.start(server)
-        let client1 = new SIOClient()
-        await client1.start("http://localhost:3000")
         await testServer.stop()
     });
 
@@ -147,8 +123,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         let testServer = new TestServer(app,3000)
         let server = await testServer.start()
 
-        let sio = new SIO()
-        await sio.start(server)
+        let sio = new SIO(server)
         let client1 = new SIOClient()
         await client1.start("http://localhost:3000")
         let reply = await client1.emit("ping")
@@ -163,8 +138,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         let testServer = new TestServer(app,3000)
         let server = await testServer.start()
 
-        let sio = new SIO()
-        await sio.start(server)
+        let sio = new SIO(server)
         let client1 = new SIOClient()
         let client2 = new SIOClient()
         let client3 = new SIOClient()
@@ -194,8 +168,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         let testServer = new TestServer(app,3000)
         let server = await testServer.start()
 
-        let sio = new SIO()
-        await sio.start(server)
+        let sio = new SIO(server)
         let client1 = new SIOClient()
         let client2 = new SIOClient()
         let client3 = new SIOClient()
@@ -219,13 +192,12 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         expect(4).toEqual(4);
     });
 
-    it.only('Socket.io Authentication', async () => {
+    it('Socket.io Authentication', async () => {
         let app = require('express')();
         let testServer = new TestServer(app,3000)
         let server = await testServer.start()
 
-        let sio = new SIO()
-        await sio.start(server)
+        let sio = new SIO(server)
         let client1 = new SIOClient()
         let client2 = new SIOClient()
         let clientSock1 = await client1.start("http://localhost:3000")
@@ -253,24 +225,19 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         await testServer.stop()
     });
 
-    it.only('Socket.io Authentication', async () => {
+    it('Socket.io JSON send', async () => {
         let app = require('express')();
         let testServer = new TestServer(app,3000)
         let server = await testServer.start()
-        let file1 = new File("iperf.bin")
-        await file1.read()
+        let sio = new SIO(server)
 
-
-        let sio = new SIO()
-        await sio.start(server)
         let client1 = new SIOClient()
         let client2 = new SIOClient()
         let clientSock1 = await client1.start("http://localhost:3000")
         let clientSock2 = await client2.start("http://localhost:3000")
         sio.joinRoom("all",clientSock1.id)
         sio.joinRoom("all",clientSock2.id)
-        await client1.emit(file1.buffer)
-        await delay(5000)
+        await delay(1000)
 
         await client1.stop()
         await client2.stop()

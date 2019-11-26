@@ -4,15 +4,16 @@ log.transports.console.level = 'debug'
 log.transports.file.level = 'error'
 
 class SIO  {
-    constructor() {
-        this.io = null
-        this.sockets = new Set()
-        this.latency = 0
+    constructor(server) {
+        this.io = socketio(server)
+        this.io.on('connection', this.onConnection.bind(this))
+        this.sockets = new Map()
+        this.latency = 0  
     }
     
     start(server){
-        this.io = socketio(server)
-        this.io.on('connection', this.onConnection.bind(this))
+        // this.io = socketio(server)
+        
     }
 
     stop(){
@@ -26,28 +27,20 @@ class SIO  {
 
     }
 
-    async auth(data){
-        if (data.username == 'test' && data.password == 'test'){
-            return true
-        }else{
-            return false
-        }
-    }
-
     onConnection(socket){
         let socketId = socket.id
-        this.sockets.add(socket)
+        this.sockets.set(socketId,socket)
         socket.auth = true //temporary allowed
-        log.info('Socket.io user connected:',socket.id);
+        log.info('Socket.io user connected:',socketId);
 
         socket.on('disconnect', ()=>{
-            this.sockets.delete(socket)
+            this.sockets.delete(socketId)
             log.info('Socket.io user disconnected:',socketId);
         })
 
         socket.on('login', async (data,replyFn)=>{
             data.socketId = socketId;
-            socket.auth = await this.auth(data)
+            socket.auth = await this.login(data)
             if (socket.auth) {
                 log.info(`${socket.id} login success`)
                 replyFn('ack')
@@ -73,6 +66,19 @@ class SIO  {
             }
         });
 
+        socket.on('json', async (data,replyFn) =>{
+            if (! socket.auth){
+                log.error(`data rejected, ${socket.id} is not authenticated`)
+                replyFn('denied')
+                return;
+            }
+
+            log.debug("data recevied from",socket.id)
+            let json = (new JSONData()).setjson(JSON.parse(data))
+            let reply = await this.onJson.call(this,socket,json)
+            replyFn(reply)
+        });
+
         socket.on('pong', (latency) => {
             this.latency = latency
             log.debug("pong socket.id latency:",latency)
@@ -80,6 +86,18 @@ class SIO  {
 
     }
 
+    async onJson(socket,json){
+        console.log(json)
+    }
+
+    async login(data){
+        if (data.username == 'test' && data.password == 'test'){
+            return true
+        }else{
+            return false
+        }
+    }
+    
     getRooms(){
         return this.io.sockets.adapter.rooms  
     }
@@ -100,13 +118,11 @@ class SIO  {
     }
 
     getSocketIds(){
-        let socketIds = new Set()
-        this.sockets.forEach(socket => socketIds.add(socket.id))
-        return socketIds;
+        return this.sockets.keys();
     }
 
     getSocketById(socketId){
-        return [...this.sockets].find((socket) => socket.id == socketId)
+        return this.sockets.get(socketId)
     }
 
     joinRoom(room,socketId){

@@ -40,20 +40,21 @@ class SockeIoClient  {
 
     }
 
-    start(url,options){
+    start(iourl,options){
         return new Promise((resolve, reject) => {
             let opt = options ? options : { reconnection: false }
-            this.socket = io('http://localhost:3000', opt );
-
-            this.socket.on('data', this.onData.bind(this));
-
-            this.socket.on('json', this.onJson.bind(this));
+            let url = iourl ? iourl : 'http://localhost:3000'
+            this.socket = io( url , opt );
 
             this.socket.on('connect', ()=>{
                 log.info("Connected:",this.socket.id)
                 this.sockedId = this.socket.id
                 resolve(this.socket)
-            })            
+            })    
+
+            this.socket.on('data', this.onData.bind(this));
+
+            this.socket.on('json', this.onJson.bind(this));
 
             this.socket.on('disconnect', (reason) => {
                 if (reason === 'io server disconnect') {
@@ -152,7 +153,8 @@ class SockeIoClient  {
     emit(json){
         return new Promise((resolve, reject) => {
             log.debug(`${this.sockedId} sent data`)
-            this.socket.emit('data',json,(replyData)=>{                
+            this.socket.emit('data',json,(replyData)=>{
+                log.debug(`${this.sockedId} sent data reply received`)                
                 resolve(replyData) 
             })
         })
