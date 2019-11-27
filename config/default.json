@@ -9,9 +9,27 @@
             "username": "client2",
             "password": "client2",
             "rooms": ["room1"]
+        },
+        {
+            "username": "client3",
+            "password": "client3",
+            "rooms": ["room2"]
+        },
+        {
+            "username": "client4",
+            "password": "client4",
+            "rooms": ["room2"]
         }
     ],
     "roomDB" : [
+        {
+            "name": "room1",
+            "rcvName": "client1",
+            "rcvPort": "2222",
+            "fwdName": "client2",
+            "fwdHost": "localhost",
+            "fwdPort": "3333"
+        },
         {
             "name": "room1",
             "rcvName": "client1",

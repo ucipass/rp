@@ -5,7 +5,7 @@ const TestServer = require("./testserver.js")
 const Echoserver = require("./echoserver.js")
 const Echoclient = require("./echoclient.js")
 const File = require("ucipass-file")
-
+const JSONData = require('../jsondata.js')
 const Client = require("../client.js")
 const SIO = require("../sio-server.js")
 const SIOClient = require("../sio-client.js")
@@ -14,12 +14,13 @@ var log = require("ucipass-logger")("mocha")
 log.transports.console.level = 'debug'
 log.transports.file.level = 'error'
 
+const logg = require('why-is-node-running')
 const userDB = config.get("userDB")
 const roomDB = config.get("roomDB")
 
 
 
-describe('\n\n=================== APP TESTS ========================', () => {
+describe.skip('\n\n=================== APP TESTS ========================', () => {
     it('Echo Server Test', async () => {
 
         let SERVER_PORT = 3333;
@@ -74,8 +75,7 @@ describe('\n\n=================== APP TESTS ========================', () => {
 
 describe('\n\n=================== SOCKET.IO TESTS ========================', () => {
 
-    it.only('Socket.io Client Only Test', async () => {
-        log.transports.console.level = 'error'
+    it('Socket.io Client Only Connect Test', async () => {
         let app = require('express')();
         let testServer = new TestServer(app,3000)
         let server = await testServer.start()
@@ -94,7 +94,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         expect(clientSocketId).toEqual(serverSocketId)
     });
 
-    it('Socket.io Server/Clients Test', async () => {
+    it('Socket.io Server/Clients Connect Test', async () => {
         let app = require('express')();
         let testServer = new TestServer(app,3000)
         let server = await testServer.start()
@@ -118,7 +118,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         await testServer.stop()
     });
 
-    it('Socket.io echo Test', async () => {
+    it('Socket.io Client/Server Ping Test', async () => {
         let app = require('express')();
         let testServer = new TestServer(app,3000)
         let server = await testServer.start()
@@ -126,70 +126,12 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         let sio = new SIO(server)
         let client1 = new SIOClient()
         await client1.start("http://localhost:3000")
-        let reply = await client1.emit("ping")
+        let json1 = new JSONData("client1", "ping","ping")
+        json1.str = await client1.emit(json1.str)
         await client1.stop()
         await sio.stop()
         await testServer.stop()
-        expect(reply).toEqual("ack");
-    });
-
-    it('Socket.io Room Test', async () => {
-        let app = require('express')();
-        let testServer = new TestServer(app,3000)
-        let server = await testServer.start()
-
-        let sio = new SIO(server)
-        let client1 = new SIOClient()
-        let client2 = new SIOClient()
-        let client3 = new SIOClient()
-        let client4 = new SIOClient()
-        let socket1 = await client1.start("http://localhost:3000")
-        let socket2 = await client2.start("http://localhost:3000")
-        let socket3 = await client3.start("http://localhost:3000")
-        let socket4 = await client4.start("http://localhost:3000")
-        await sio.joinRoom("all",socket1.id)
-        await sio.joinRoom("all",socket2.id)
-        await sio.joinRoom("all",socket3.id)
-        await sio.joinRoom("all",socket4.id)
-
-        await client3.stop()
-        await sio.leaveRoom("all",socket2.id)
-        await client1.stop()
-        await client2.stop()
-        await client4.stop()
-        let members = await sio.getRoomMembers('all')
-        await sio.stop()
-        await testServer.stop()
-        expect(members.length).toEqual(3);
-    });
-
-    it('Socket.io Send to ALL Room Test', async () => {
-        let app = require('express')();
-        let testServer = new TestServer(app,3000)
-        let server = await testServer.start()
-
-        let sio = new SIO(server)
-        let client1 = new SIOClient()
-        let client2 = new SIOClient()
-        let client3 = new SIOClient()
-        let client4 = new SIOClient()
-        let socket1 = await client1.start("http://localhost:3000")
-        let socket2 = await client2.start("http://localhost:3000")
-        let socket3 = await client3.start("http://localhost:3000")
-        let socket4 = await client4.start("http://localhost:3000")
-        await sio.joinRoom("all1",socket1.id)
-        await sio.joinRoom("all2",socket2.id)
-        await sio.joinRoom("all1",socket3.id)
-        await sio.joinRoom("all2",socket4.id)
-        await client1.emit("test1")
-        await client2.emit("test2")
-        await client1.stop()
-        await client2.stop()
-        await client3.stop()
-        await client4.stop()
-        await sio.stop()
-        await testServer.stop()
-        expect(4).toEqual(4);
+        expect(json1.type).toEqual("pong");
     });
 
     it('Socket.io Authentication', async () => {
@@ -202,47 +144,104 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         let client2 = new SIOClient()
         let clientSock1 = await client1.start("http://localhost:3000")
         let clientSock2 = await client2.start("http://localhost:3000")
-        let clientSockId1 = clientSock1.id
-        let clientSockId2 = clientSock2.id
-        let serverSock1 = sio.getSocketById(clientSockId1)
-        let serverSock2 = sio.getSocketById(clientSockId2)
-        let serverSockId1 = serverSock1.id
-        let serverSockId2 = serverSock2.id
-        expect(serverSockId1).toEqual(clientSockId1);
-        expect(serverSockId2).toEqual(clientSockId2)
-        let clientauth1 = await client1.login({username:'test',password:'test'})
-        let clientauth2 = await client2.login({username:'test',password:'test2'})
+        let clientauth1 = await client1.login("client1","client1")
+        let clientauth2 = await client2.login("client2","client2")
         expect(clientauth1).toEqual('ack');
-        expect(clientauth2).not.toEqual('ack')
-        expect(serverSock1.auth).toEqual(true);
-        expect(serverSock2.auth).toEqual(false)
+        expect(clientauth2).toEqual('ack')
+        expect(sio.getSocketById(clientSock1.id).auth).toEqual(true);
+        expect(sio.getSocketById(clientSock1.id).auth).toEqual(true);
         await client1.logout()
-        expect(serverSock1.auth).toEqual(false)
+        expect(sio.getSocketById(clientSock1.id).auth).toEqual(false);
         
         await client1.stop()
         await client2.stop()
         await sio.stop()
         await testServer.stop()
     });
-
-    it('Socket.io JSON send', async () => {
+    
+    it('Socket.io Room Join/Leave Test', async () => {
         let app = require('express')();
         let testServer = new TestServer(app,3000)
         let server = await testServer.start()
+
         let sio = new SIO(server)
-
+        sio.log.transports.console.level = 'error'
+        sio.loadRoomDB(roomDB)
+        sio.loadUserDB(userDB)
         let client1 = new SIOClient()
+        client1.log.transports.console.level = 'error'
         let client2 = new SIOClient()
-        let clientSock1 = await client1.start("http://localhost:3000")
-        let clientSock2 = await client2.start("http://localhost:3000")
-        sio.joinRoom("all",clientSock1.id)
-        sio.joinRoom("all",clientSock2.id)
-        await delay(1000)
+        let client3 = new SIOClient()
+        let client4 = new SIOClient()
+        let socket1 = await client1.start("http://localhost:3000")
+        let socket2 = await client2.start("http://localhost:3000")
+        let socket3 = await client3.start("http://localhost:3000")
+        let socket4 = await client4.start("http://localhost:3000")
+        let clientauth1 = await client1.login("client1","client1")
+        let clientauth2 = await client2.login("client2","client2")
+        let clientauth3 = await client3.login("client3","client3")
+        let clientauth4 = await client4.login("client4","client4")
+        await sio.joinRoom("room1",socket1.id)
+        await sio.joinRoom("room1",socket2.id)
+        await sio.joinRoom("room2",socket3.id)
+        await sio.joinRoom("room2",socket4.id)
+        // let json = new JSONData("client1","onSendPrivateMsg",{room:"room1",msg:"test1"})
+        // let jsonReply = await client1.emit(json.str)
+        // expect(jsonReply.att.msg).toEqual("ack");
+        expect((await sio.getRoomMembers('room1')).length).toEqual(2);
+        expect((await sio.getRoomMembers('room2')).length).toEqual(2);
+        await sio.leaveRoom("room1",socket1.id)
+        expect((await sio.getRoomMembers('room1')).length).toEqual(1);
+        expect((await sio.getRoomMembers('room2')).length).toEqual(2);
+        await sio.leaveRoom("room1",socket2.id)
+        expect((await sio.getRoomMembers('room1')).length).toEqual(0);
+        expect((await sio.getRoomMembers('room2')).length).toEqual(2);
+        await sio.leaveRoom("room2",socket3.id)
+        await sio.leaveRoom("room2",socket4.id)
+        expect((await sio.getRoomMembers('room1')).length).toEqual(0);
+        expect((await sio.getRoomMembers('room2')).length).toEqual(0);
+        await sio.joinRoom("room1",socket1.id)
+        await sio.joinRoom("room1",socket2.id)
+        await sio.joinRoom("room2",socket3.id)
+        await sio.joinRoom("room2",socket4.id)
+        expect((await sio.getRoomMembers('room1')).length).toEqual(2);
+        expect((await sio.getRoomMembers('room2')).length).toEqual(2);
+        await client1.stop()
+        await client2.stop()
+        await client3.stop()
+        await client4.stop()
+        expect((await sio.getRoomMembers('room1')).length).toEqual(0);
+        expect((await sio.getRoomMembers('room2')).length).toEqual(0);
+        await sio.stop()
+        await testServer.stop()
+    });
 
+    it.only('Socket.io Private Room Test', async () => {
+        let app = require('express')();
+        let testServer = new TestServer(app,3000)
+        let server = await testServer.start()
+
+        let sio = new SIO(server)
+        sio.log.transports.console.level = 'debug'
+        sio.loadRoomDB(roomDB)
+        sio.loadUserDB(userDB)
+        let client1 = new SIOClient()
+        client1.log.transports.console.level = 'debug'
+        let client2 = new SIOClient()
+        let socket1 = await client1.start("http://localhost:3000")
+        let socket2 = await client2.start("http://localhost:3000")
+        let clientauth1 = await client1.login("client1","client1")
+        let clientauth2 = await client2.login("client2","client2")
+        await sio.joinRoom("room1",socket1.id)
+        await sio.joinRoom("room1",socket2.id)
+        let json = new JSONData("client1","onSendPrivateMsg",{room:"room1",msg:"test1"})
+        let jsonReply = await client1.emit(json.str)
+        expect(jsonReply.att.msg).toEqual("ack");
         await client1.stop()
         await client2.stop()
         await sio.stop()
         await testServer.stop()
     });
+
 
   });

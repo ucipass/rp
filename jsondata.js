@@ -11,7 +11,7 @@ class JSONData{
 	this.getjson = function(){return this.json;};
 	this.setdata = function(msg){this.json.data=msg;};
 	this.getdata = function(){return this.json.data;};
-	this.err  = function(){return this.json.error;};
+	// this.err  = function(){return this.json.error;};
 	this.attributes = function(){return this.json.data.attributes;};
 	this.cmd = function(){return this.json.data.attributes.cmd;};
 	this.isValid = function(){var x=this.json.data;return(Boolean(x) && Boolean(x.id) && Boolean(x.type) &&  Boolean(x.attributes));};
@@ -71,6 +71,40 @@ class JSONData{
 	}
 	set id(newtype){
 		this.json.data.id = newtype
+	}
+	get err(){
+		return this.json.error
+	}
+	set err(error){
+		this.json.error = error
+	}
+	get str(){
+        try {
+			let cache = [];
+            let value = JSON.stringify(this.json, function(key, value) {
+				if (typeof value === 'object' && value !== null) {
+					if (cache.indexOf(value) !== -1) {
+						// Duplicate reference found, discard key
+						return;
+					}
+					// Store value in our collection
+					cache.push(value);
+				}
+				return value;
+			});
+			cache = null; // Enable garbage collection
+			return value;
+        } catch (error) {
+            console.log("ERROR JSONData",error)
+        }	
+	}
+	set str(s){
+        try {
+            this.json = JSON.parse(s)
+        } catch (error) {
+            console.log("ERROR JSONData",error)
+        }
+        if (this.isInvalid()) console.log("INVALID JSON received")		
 	}
 }
 module.exports = JSONData ;

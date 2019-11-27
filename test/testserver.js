@@ -1,5 +1,5 @@
 var log = require("ucipass-logger")("testserver")
-log.transports.console.level = 'debug'
+log.transports.console.level = 'info'
 log.transports.file.level = 'error'
 
 class TestServer{
@@ -42,7 +42,7 @@ class TestServer{
         setTimeout(() => {
             this.server.unref()
             resolve(true)
-        }, 1000);
+        }, 300);
       })
       
     });

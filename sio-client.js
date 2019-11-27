@@ -1,6 +1,6 @@
 const io = require('socket.io-client');
 var log = require("ucipass-logger")("sio-client")
-log.transports.console.level = 'debug'
+log.transports.console.level = 'error'
 log.transports.file.level = 'error'
 const File = require("ucipass-file")
 const JSONData = require('./jsondata.js')
@@ -14,6 +14,7 @@ class SockeIoClient  {
         this.stopped = false
         this.sockedId = null
         this.auth = false
+        this.log = log
     }
 
     onData (data,replyFn){
@@ -26,16 +27,31 @@ class SockeIoClient  {
     }
 
     onJson (data,replyFn){
-        let json = (new JSONData()).setjson(JSON.parse(data))
-        if ( json.type() = 'ctrl' ) {
-            log.error(`${this.socket.id} received ctrl JSON message`)
-        } else{
-            log.error(`${this.socket.id} received unknown JSON Type`)
+        let json = new JSONData()
+        try {
+            json.setjson(JSON.parse(data))
+        } catch (error) {
+            log.warn(`${this.socket.id} received unknown JSON Type`)
+        }
+
+        let jsonReply = new JSONData()
+        jsonReply.str = json.str
+        if ( json.type == 'onSendPrivateMsg' ) {
+            log.warn(`${this.socket.id} received onPrivateRoomMsg JSON message`)
+        } 
+        else if ( json.type == 'onSendRoomMsg' ) {
+            log.warn(`${this.socket.id} received onSendRoomMsg JSON message`)
+        } 
+        else{
+            log.warn(`${this.socket.id} received unknown JSON Type`)
+            jsonReply.att = "Uknown JSON Type"
         }
         
         if (replyFn) {
+            jsonReply.id = this.username
+            jsonReply.att.msg = "ack"
             log.debug(`${this.sockedId} sent ack`)
-            replyFn('ack')
+            replyFn(jsonReply.str)
         }     
 
     }
@@ -49,7 +65,7 @@ class SockeIoClient  {
             this.socket.on('connect', ()=>{
                 log.info("Connected:",this.socket.id)
                 this.sockedId = this.socket.id
-                resolve(this.socket)
+                return resolve(this.socket)
             })    
 
             this.socket.on('data', this.onData.bind(this));
@@ -115,30 +131,44 @@ class SockeIoClient  {
     stop(){
         this.stopped = true
         return new Promise((resolve, reject) => {
-            this.socket.close(true)
-            log.info(`client ${this.sockedId} close complete`)
-            resolve(true)
+            log.debug(`client ${this.sockedId} close initiated`)
+            let timer = setTimeout(() => {
+                this.socket.disconnect()
+                log.info(`client ${this.sockedId} close complete with timeout`)
+                return resolve(true) 
+            }, 10000);            
+            this.socket.emit('close','close',()=>{
+                clearTimeout(timer)
+                this.socket.disconnect()
+                log.info(`client ${this.sockedId} close completed`)
+                return resolve(true)                
+            })
+
+                
+
         });
 
     }
 
-    login(data){
+    login(username,password){
         return new Promise((resolve, reject) => {
-            this.socket.emit('login',data,(replyData)=>{
+            this.socket.emit('login',{username:username, password:password},(replyData)=>{
                 if(replyData == 'ack'){
                     log.info(`${this.socket.id} login success`)
-                    resolve(replyData) 
+                    this.auth = true;
+                    return resolve(replyData) 
                 }else{
-                    log.error(`${this.socket.id} login failure`)
-                    resolve(replyData)
+                    log.warn(`${this.socket.id} login failure`)
+                    this.auth = false;
+                    return resolve(replyData)
                 }
             })            
         });
     }
 
-    logout(data){
+    logout(){
         return new Promise((resolve, reject) => {
-            this.socket.emit('logout',data,(replyData)=>{
+            this.socket.emit('logout','logout',(replyData)=>{
                 if(replyData == 'ack'){
                     log.info(`${this.socket.id} logout success`)
                     resolve(replyData) 
@@ -152,10 +182,12 @@ class SockeIoClient  {
 
     emit(json){
         return new Promise((resolve, reject) => {
-            log.debug(`${this.sockedId} sent data`)
-            this.socket.emit('data',json,(replyData)=>{
-                log.debug(`${this.sockedId} sent data reply received`)                
-                resolve(replyData) 
+            log.debug(`${this.sockedId} sent json`)
+            this.socket.emit('json',json,(replyData)=>{
+                log.debug(`${this.sockedId} sent json reply received`)
+                let jsondata = new JSONData()
+                jsondata.str = replyData
+                return resolve(jsondata) 
             })
         })
     }
