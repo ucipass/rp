@@ -20,7 +20,7 @@ const roomDB = config.get("roomDB")
 
 
 
-describe.skip('\n\n=================== APP TESTS ========================', () => {
+describe('\n\n=================== APP TESTS ========================', () => {
     it('Echo Server Test', async () => {
 
         let SERVER_PORT = 3333;
@@ -73,25 +73,30 @@ describe.skip('\n\n=================== APP TESTS ========================', () =
 
   });
 
-describe('\n\n=================== SOCKET.IO TESTS ========================', () => {
+describe.only('\n\n=================== SOCKET.IO TESTS ========================', () => {
 
     it('Socket.io Client Only Connect Test', async () => {
         let app = require('express')();
         let testServer = new TestServer(app,3000)
         let server = await testServer.start()
-        let clientSocketId = null
-        let serverSocketId = null
+        let serverSocketID = null
         let io = require('socket.io')(server);
         io.on('connection', function(socket){
-            serverSocketId = socket.id
+            serverSocket = socket
+            serverSocketID = socket.id
+            // socket.on('close', (data,replyFn)=>{
+            //     replyFn('ack')
+            //     socket.disconnect()
+            // })            
         });
 
-        let client = new SIOClient()
-        clientSocket = await client.start("http://localhost:3000")
-        clientSocketId = clientSocket.id
-        await client.stop()
+        let client = new SIOClient("http://localhost:3000")
+        clientSocket = await client.start()
+        let clientSocketId = clientSocket.id
+        expect(clientSocketId).toEqual(serverSocketID)
+        client.stopped = true
+        clientSocket.disconnect()
         await testServer.stop()
-        expect(clientSocketId).toEqual(serverSocketId)
     });
 
     it('Socket.io Server/Clients Connect Test', async () => {
@@ -127,7 +132,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         let client1 = new SIOClient()
         await client1.start("http://localhost:3000")
         let json1 = new JSONData("client1", "ping","ping")
-        json1.str = await client1.emit(json1.str)
+        json1 = await client1.emit(json1)
         await client1.stop()
         await sio.stop()
         await testServer.stop()
@@ -185,9 +190,6 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         await sio.joinRoom("room1",socket2.id)
         await sio.joinRoom("room2",socket3.id)
         await sio.joinRoom("room2",socket4.id)
-        // let json = new JSONData("client1","onSendPrivateMsg",{room:"room1",msg:"test1"})
-        // let jsonReply = await client1.emit(json.str)
-        // expect(jsonReply.att.msg).toEqual("ack");
         expect((await sio.getRoomMembers('room1')).length).toEqual(2);
         expect((await sio.getRoomMembers('room2')).length).toEqual(2);
         await sio.leaveRoom("room1",socket1.id)
@@ -216,32 +218,29 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         await testServer.stop()
     });
 
-    it.only('Socket.io Private Room Test', async () => {
+    it('Socket.io Private Room Test', async () => {
         let app = require('express')();
         let testServer = new TestServer(app,3000)
         let server = await testServer.start()
 
         let sio = new SIO(server)
-        sio.log.transports.console.level = 'debug'
+        sio.log.transports.console.level = 'error'
         sio.loadRoomDB(roomDB)
         sio.loadUserDB(userDB)
-        let client1 = new SIOClient()
-        client1.log.transports.console.level = 'debug'
-        let client2 = new SIOClient()
-        let socket1 = await client1.start("http://localhost:3000")
-        let socket2 = await client2.start("http://localhost:3000")
-        let clientauth1 = await client1.login("client1","client1")
-        let clientauth2 = await client2.login("client2","client2")
+        let client1 = new SIOClient("http://localhost:3000","client1","client1")
+        let client2 = new SIOClient("http://localhost:3000","client2","client2")
+        client1.log.transports.console.level = 'error'
+        let socket1 = await client1.start()
+        let socket2 = await client2.start()
         await sio.joinRoom("room1",socket1.id)
         await sio.joinRoom("room1",socket2.id)
         let json = new JSONData("client1","onSendPrivateMsg",{room:"room1",msg:"test1"})
-        let jsonReply = await client1.emit(json.str)
+        let jsonReply = await client1.emit(json)
         expect(jsonReply.att.msg).toEqual("ack");
         await client1.stop()
         await client2.stop()
         await sio.stop()
         await testServer.stop()
     });
-
 
   });

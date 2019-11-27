@@ -30,18 +30,18 @@ class SIO  {
         let socketId = socket.id
         this.sockets.set(socketId,socket)
         socket.auth = true //temporary allowed
-        log.info('Socket.io user connected:',socketId);
+        log.info(`${socketId} connected`);
 
         socket.on('disconnect', (data)=>{
+            log.info(`${socketId}(${socket.username}) disconnect event`);
             this.sockets.delete(socketId)
-            log.info(`${socketId} disconnect event`);
         })
 
         socket.on('close', (data,replyFn)=>{
             replyFn('ack')
             socket.disconnect()
             // this.sockets.delete(socketId)
-            log.info(`${socketId} client intiated close completed`);
+            log.info(`${socketId}(${socket.username}) client intiated close completed`);
         })
 
         socket.on('login', (data,replyFn)  => { this.onLogin.call(this,socket,data,replyFn ) })
@@ -50,10 +50,10 @@ class SIO  {
 
         socket.on('json', async (data,replyFn) =>{
             if (! socket.auth){
-                log.error(`invalid data, ${socket.id} is not authenticated`)
+                log.error(`${socket.id}(${socket.username}) is not authenticated, invalid data`)
                 return replyFn('authentication denied')
             }else{
-                log.debug("data recevied from",socket.id)
+                log.debug(`${socket.id}(${socket.username}) data received`)
             }
 
             let json = new JSONData()
@@ -63,7 +63,7 @@ class SIO  {
                 return replyFn(reply.str)
             } catch (error) {
                 let msg = error.toString()
-                log.error("not valid JSON",msg)
+                log.error(`${socket.id}(${socket.username}) NOT VALID JSON`)
                 return replyFn(msg)
                 
             }            
@@ -80,7 +80,7 @@ class SIO  {
         socket.auth = await this.authFn(data)
         if (socket.auth) {
             socket.username = data.username
-            log.info(`${socket.id} login ${socket.username} success`)
+            log.info(`${socket.id}(${socket.username}) login success`)
             replyFn('ack')
         }else{
             log.warn(`${socket.id} login ${socket.username} failure`)
@@ -108,7 +108,7 @@ class SIO  {
 
     async onPing(socket, json){
         json.type = "pong"
-        return json.toString()
+        return json
     }
 
     async onSendRoomMsg(socket, json){
@@ -121,12 +121,12 @@ class SIO  {
         let filtered = members.filter( (member)=> member != socket.id )
         if ( filtered.length == 1) {
             let otherSocket = this.getSocketById( filtered[0] )
-            log.debug(`forwarding ${socket.id} message to ${otherSocket.id}`)
+            log.debug(`forwarding message ${socket.id}(${socket.username}) -> ${otherSocket.id}(${otherSocket.username})`)
             let waitForReply = await new Promise((resolve, reject) => {
                 otherSocket.emit("json",json.str,(replyData)=>{
                     let replyJson = new JSONData()
                     replyJson.str = replyData
-                    log.info(`forwarding ${otherSocket.id} acknowledgement to ${socket.id}`)
+                    log.debug(`forwarding acknowledgement ${otherSocket.id}(${otherSocket.username}) -> ${socket.id}(${socket.username})`)
                     return resolve(replyJson)
                 })
             });
@@ -201,16 +201,16 @@ class SIO  {
             if ( user && user.rooms && user.rooms.includes(room) ){
                 socket.join(room,(err)=>{
                     if (err){
-                        log.error(`${socket.username} failed to join ${room} room !`, err)
-                        return resolve(`${socket.username} failed to join ${room} room !`)
+                        log.error(`${socket.id}(${socket.username}) failed to join ${room} room !`, err)
+                        return resolve(`${socket.id}(${socket.username}) failed to join ${room} room !`)
                     }else{
-                        log.info(`${socket.username} joined ${room} room !`)
+                        log.info(`${socket.id}(${socket.username}) joined ${room} room !`)
                         return resolve(socketId)                   
                     }
                 })  
             }else{
-                log.error(`${socket.username} is not allowed to join ${room} room !`)
-                return resolve(`${socket.username} is not allowed in ${room} room !`)
+                log.error(`${socket.id}(${socket.username}) is not allowed to join ${room} room !`)
+                return resolve(`${socket.id}(${socket.username}) is not allowed in ${room} room !`)
             }          
         });
     }
