@@ -11,6 +11,7 @@ class SIO  {
         this.sockets = new Map()
         this.rooms = new Map()
         this.users = new Map()
+        this.connections = new Map()
         this.latency = 0
         this.log = log;
     }
@@ -48,6 +49,10 @@ class SIO  {
 
         socket.on('logout', (data,replyFn) => { this.onLogout.call(this,socket,data,replyFn) })
 
+        socket.on('onTcpConnRequest', (data,replyFn) => { this.onTcpConnRequest.call(this,socket,data,replyFn) })
+
+        socket.on('onData', (data) => { this.onData.call(this,socket,data) })
+
         socket.on('json', async (data,replyFn) =>{
             if (! socket.auth){
                 log.error(`${socket.id}(${socket.username}) is not authenticated, invalid data`)
@@ -57,16 +62,37 @@ class SIO  {
             }
 
             let json = new JSONData()
+            let reply = null
             try {
-                json.setjson(JSON.parse(data))
-                let reply = await this.onJson.call(this,socket,json)
-                return replyFn(reply.str)
+                json.setjson(data)
+
             } catch (error) {
                 let msg = error.toString()
-                log.error(`${socket.id}(${socket.username}) NOT VALID JSON`)
+                log.error(`${socket.id}(${socket.username}) JSON received is invalid`)
                 return replyFn(msg)
                 
-            }            
+            }   
+            try {
+                let reply = await this.onJson.call(this,socket,json)
+                return replyFn(reply.json)                
+            } catch (error) {
+                let msg = error.toString()
+                log.error(`${socket.id}(${socket.username}) JSON reply is invalid`)
+                return replyFn(msg)                
+            }
+
+            
+
+        });
+
+        socket.on('data2', async (json) =>{
+            if (! socket.auth){
+                log.error(`${socket.id}(${socket.username}) is not authenticated, invalid data`)
+            }else{
+                log.debug(`${socket.id}(${socket.username}) data received: ${json.data.att.data}`)
+                this.onData.call(this,socket,json)
+            }
+          
         });
 
         socket.on('pong', (latency) => {
@@ -82,6 +108,7 @@ class SIO  {
             socket.username = data.username
             log.info(`${socket.id}(${socket.username}) login success`)
             replyFn('ack')
+            this.sendClientConfig.call(this,socket)
         }else{
             log.warn(`${socket.id} login ${socket.username} failure`)
             replyFn('reject')
@@ -96,6 +123,7 @@ class SIO  {
     async onJson(socket, json){
         
         if ( json.type == "ping") { return ( await this.onPing.call(this,socket,json) ) }
+        else if ( json.type == "onTcpConnRequest") { return await this.onTcpConnRequest.call(this,socket,json) }
         else if ( json.type == "onSendRoomMsg") { return await this.onSendRoomMsg.call(this,socket,json) }
         else if ( json.type == "onSendPrivateMsg") { return await this.onSendPrivateMsg.call(this,socket,json) }
         else{
@@ -106,10 +134,68 @@ class SIO  {
 
     }
 
+    async onData(socket, data){
+        try {
+            let room = this.rooms.get(data.room)
+            let connection = room.connections.get(data.connectionId)
+            socket.to(connection.room).emit('onData', data );
+        } catch (error) {
+            return log.error("invalid JSON data received from client")
+        }
+        
+    }
+
     async onPing(socket, json){
         json.type = "pong"
         return json
     }
+
+    async onTcpConnRequest(socket, data, replyFn){
+        if (!data.json){
+            return replyFn({json:{data:data,err:"invalid JSON received"}})
+        }
+        let json = (new JSONData()).setjson(data.json)
+
+
+        let members = await this.getRoomMembers(json.att.room)
+        let filtered = members.filter( (member)=> member != socket.id )
+        //check if other side exists
+        if (filtered.length != 1){
+            json.err = `${socket.id}(${socket.username}) no other member in room ${json.att.room}`
+            return replyFn(json)
+        }   
+
+        let otherSocket = this.getSocketById( filtered[0] )
+        let room = this.rooms.get(json.att.room)
+        let connection = {
+            connectionID : json.att.connectionID,
+            room : json.att.room,
+            localSrcPort: json.att.localSrcPort, 
+            localDstPort: json.att.localDstPort,
+            remoteSrcPort: null, 
+            remoteDstPort: room.fwdPort,
+            remoteHost: room.fwdHost,
+            rcvName: room.rcvName,
+            rcvPort: room.rcvPort,
+            fwdName: room.fwdName,
+            fwdHost: room.fwdHost,
+            fwdPort: room.fwdPort
+        }
+        json.att.connection = connection
+
+        // room.connections.set(json.att.connectionID, connection ) 
+
+        log.debug(`forwarding onTcpConnRequest ${socket.id}(${socket.username}) -> ${otherSocket.id}(${otherSocket.username})`)
+        otherSocket.emit("onTcpConnRequest",json,(replyData)=>{
+            let replyJson = (new JSONData()).setjson(replyData.json)
+            room.connections.set(json.att.connectionID, replyJson.att.connection ) 
+            log.debug(`forwarding onTcpConnRequest acknowledgement ${otherSocket.id}(${otherSocket.username}) -> ${socket.id}(${socket.username})`)
+            replyFn(replyJson)
+        })            
+
+
+    }
+
 
     async onSendRoomMsg(socket, json){
         socket.to("room1").emit("json",json.str)
@@ -123,9 +209,9 @@ class SIO  {
             let otherSocket = this.getSocketById( filtered[0] )
             log.debug(`forwarding message ${socket.id}(${socket.username}) -> ${otherSocket.id}(${otherSocket.username})`)
             let waitForReply = await new Promise((resolve, reject) => {
-                otherSocket.emit("json",json.str,(replyData)=>{
+                otherSocket.emit("json",json.json,(replyData)=>{
                     let replyJson = new JSONData()
-                    replyJson.str = replyData
+                    replyJson = replyJson.setjson(replyData)
                     log.debug(`forwarding acknowledgement ${otherSocket.id}(${otherSocket.username}) -> ${socket.id}(${socket.username})`)
                     return resolve(replyJson)
                 })
@@ -140,6 +226,23 @@ class SIO  {
         
     }
 
+    async sendClientConfig(socket){
+        let noRoomsFound = true
+        let json = new JSONData("server","onClientConfig",{})
+        this.rooms.forEach(room => {
+            if (room.rcvName == socket.username || room.fwdName == socket.username){
+                log.debug(`${socket.id}(${socket.username}) sending room configuration: ${room.name}`)
+                noRoomsFound = false
+                json.att.room = room
+                socket.emit("json",json.json)
+            }
+        });
+
+        if ( noRoomsFound ) {
+            log.info(`${socket.id}(${socket.username}) no room configuration found`)
+        }
+
+    }
 
     async authFn(data){
         if (
@@ -161,7 +264,9 @@ class SIO  {
 
     loadRoomDB(roomDB){
         roomDB.forEach(room => {
-            this.rooms.set(room.name,room)
+            let newRoom = JSON.parse(JSON.stringify(room))
+            newRoom.connections = new Map() // add object for future connections
+            this.rooms.set(newRoom.name,newRoom)
         });
     }
 
@@ -211,7 +316,7 @@ class SIO  {
             }else{
                 log.error(`${socket.id}(${socket.username}) is not allowed to join ${room} room !`)
                 return resolve(`${socket.id}(${socket.username}) is not allowed in ${room} room !`)
-            }          
+            }      
         });
     }
 
@@ -228,6 +333,7 @@ class SIO  {
             })            
         });
     }
+
 
 }
 

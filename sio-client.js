@@ -1,21 +1,25 @@
 const io = require('socket.io-client');
+const net = require('net');
 var log = require("ucipass-logger")("sio-client")
 log.transports.console.level = 'error'
 log.transports.file.level = 'error'
 const File = require("ucipass-file")
 const JSONData = require('./jsondata.js')
 
-class SockeIoClient  {
+class SocketIoClient  {
     constructor(url,username,password) {
-        this.url = "http://localhost:3000"
+        this.url = url ? url : "http://localhost:3000"
         this.username = username ? username : "anonymous"
         this.password = password ? password : "anonymous"
+        this.rooms = new Map()
         this.socket = null
         this.stopped = false
         this.sockedId = null
         this.auth = false
         this.log = log
     }
+
+    get id() { return `${this.socket.id}(${this.username})`}
 
     start(iourl,options){
         return new Promise((resolve, reject) => {
@@ -33,9 +37,11 @@ class SockeIoClient  {
                 return resolve(this.socket)
             })    
 
-            this.socket.on('data', this.onData.bind(this));
+            this.socket.on('onData', this.onData.bind(this));
 
             this.socket.on('json', this.onJson.bind(this));
+
+            this.socket.on('onTcpConnRequest', this.onTcpConnRequest.bind(this));
 
             this.socket.on('disconnect', (reason) => {
                   log.info("disconnect reason:",reason)
@@ -92,6 +98,28 @@ class SockeIoClient  {
     stop(){
         this.stopped = true
         return new Promise((resolve, reject) => {
+
+            // CLOSING TCP
+            this.rooms.forEach(room => {
+                log.debug(`${this.id} closing room ${room.name}`)
+                // Closing TCP Sockets
+                if (room.connections){
+                    room.connections.forEach(connection => {
+                        log.debug(`${this.id}: closing tcp socket ${room.name}`);
+                        connection.tcpsocket.destroy()
+                    });                    
+                }
+                // Closing TCP Server
+                if (room.tcpserver){
+                    room.tcpserver.close(()=>{
+                        log.debug(`${this.id}: stopped listening at ${room.rcvPort}`);
+                        room.tcpserver.unref()
+                        // resolve(true)
+                    })
+                }              
+            });
+
+            // CLOSING SOCKET.IO 
             log.debug(`${this.socket.id}(${this.username}) close initiated`)
             let timer = setTimeout(() => {
                 this.socket.disconnect()
@@ -146,59 +174,238 @@ class SockeIoClient  {
     emit(json){
         return new Promise((resolve, reject) => {
             log.debug(`${this.socket.id}(${this.username}) sent json`)
-            this.socket.emit('json',json.str,(replyData)=>{
+            this.socket.emit('json',json.json,(replyData)=>{
                 log.debug(`${this.socket.id}(${this.username}) received json acknowledment`)
                 let jsondata = new JSONData()
-                jsondata.str = replyData
+                jsondata = jsondata.setjson(replyData)
                 return resolve(jsondata) 
             })
         })
     }
 
-    getSocketId(){
-        return this.getSocketId
-    }
 
-    onData (data,replyFn){
-        log.debug(`${this.socket.id}(${this.username}) received data`)
-        if (replyFn) {
-            log.debug(`${this.socket.id}(${this.username}) sent ack`)
-            replyFn('ack')
-        }
-
-    }
-
-    onJson (data,replyFn){
+    async onJson (dataRcvd,replyFnRcvd){
         let json = new JSONData()
-        try {
-            json.setjson(JSON.parse(data))
-        } catch (error) {
-            log.debug(`${this.socket.id}(${this.username}) received unknown JSON Type`)
-        }
-
         let jsonReply = new JSONData()
-        jsonReply.str = json.str
-        if ( json.type == 'onSendPrivateMsg' ) {
+        let replyFn = replyFnRcvd ? replyFnRcvd : (a)=> a  // if no reply function recevied just run dummy fn
+        if ( dataRcvd && dataRcvd.data ) {
+            log.debug(`${this.socket.id}(${this.username}) received onJson`)     
+            json.setjson(dataRcvd)
+            jsonReply.id = this.username
+            jsonReply.type = json.type + "-reply"
+            jsonReply.att = { msg: "ack"}
+        }else{
+            jsonReply.err = `${this.id} received invalid JSON`
+            log.debug(jsonReply.err)
+            return replyData(jsonReply)
+        }
+        
+
+        if ( json.type == 'onClientConfig' ) {
+            return replyFn( await this.onClientConfig.call(this,json) )
+        } 
+        else if ( json.type == 'onTcpConnRequest' ) {
+            return replyFn( await this.onTcpConnRequest.call(this,json) )
+        } 
+        else if ( json.type == 'onSendPrivateMsg' ) {
             log.debug(`${this.socket.id}(${this.username}) received onPrivateRoomMsg JSON message`)
+            return replyFn(jsonReply.json)
         } 
         else if ( json.type == 'onSendRoomMsg' ) {
             log.debug(`${this.socket.id}(${this.username}) received onSendRoomMsg JSON message`)
+            return replyFn(jsonReply.json)
         } 
         else{
-            log.debug(`${this.socket.id}(${this.username}) received unknown JSON Type`)
-            jsonReply.att = "Uknown JSON Type"
+            jsonReply.err = `${this.id} received invalid JSON`
+            log.debug(jsonReply.err)
+            return replyData(jsonReply.json)
         }
-        
-        if (replyFn) {
-            jsonReply.id = this.username
-            jsonReply.att.msg = "ack"
-            log.debug(`${this.socket.id}(${this.username}) sent onJson ack`)
-            replyFn(jsonReply.str)
-        }     
 
     }
 
+    async onClientConfig (json){
+        let room = json.att.room
+        if ( room.rcvName == this.username){
+            log.info(`${this.id} received ${room.name} config: Listening on localhost:${room.rcvPort} to remote-end ${room.fwdHost}:${room.fwdPort}` )
+            room = await this.getTcpListener(room)
+            this.rooms.set(json.att.room.name,room)
+            json.att.msg = 'ack'
+            return(json)
+
+        }
+        if ( room.fwdName == this.username){
+            log.info(`${this.id} received ${room.name} config: Forwarding to ${room.fwdHost}:${room.fwdPort} from remote-end localhost:${room.rcvPort}` )
+            room.connections = new Map()
+            this.rooms.set(json.att.room.name,room)
+            json.att.msg = 'ack'
+            return(json)            
+        }
+        return true
+    }
+
+    // returns tcp socket listener with connections map (tcpsockets)
+    async getTcpListener(room){
+        return new Promise((resolve, reject) => {
+
+            room.connections = new Map()
+            room.tcpserver = net.createServer((tcpsocket) => {
+                this.sendTcpConnRequest(room,tcpsocket)
+
+            })
+
+            room.tcpserver.listen(room.rcvPort, ()=> { //'listening' listener
+                log.info(`${this.id}: Listening on TCP port ${room.rcvPort}`)
+                resolve(room)
+            })
+
+        });  
+    }
+
+    async getTcpForwarder(address,port){
+        let resolve, reject
+        let reply = new Promise((res, rej) => { resolve = res; reject = rej });
+
+        let socket = new net.Socket();
+        socket.connect(parseInt(port), address)
+        socket.on("connect", function(data){
+            log.info(`TCP client connect to ${address}:${port}`)
+            resolve(socket)
+        });
+
+        socket.on("close", function(data){
+            log.info(`Event:close for ${address}:${port}`)
+            reject(socket)
+        });
+
+        socket.on("close", function(data){
+            log.info(`Event:close for ${address}:${port}`)
+            reject(socket)
+        });
+
+        socket.on("drain", function(data){
+            log.info(`Event:drain for ${address}:${port}`)
+            reject(socket)
+        });
+
+        socket.on("end", function(data){
+            log.info(`Event:end for ${address}:${port}`)
+            reject(socket)
+        });
+
+        socket.on("error", function(data){
+            log.info(`Event:error for ${address}:${port}`)
+            reject(socket)
+        });
+
+        socket.on("lookup", function(data){
+            log.info(`Event:lookup for ${address}:${port}`)
+        });
+
+        socket.on("ready", function(data){
+            log.info(`Event:ready for ${address}:${port}`)
+            reject(socket)
+        });
+
+        socket.on("timeout", function(data){
+            log.info(`Event:timeout for ${address}:${port}`)
+            reject(socket)
+        });
+        
+        return reply
+    } 
+
+    async onTcpConnRequest(data,replyFn){
+        log.debug(`${this.socket.id}(${this.username}) received onTcpConnRequest`)
+        if (!data.json){
+            return replyFn({json:{data:data,err:"invalid JSON received"}})
+        }
+        let json = (new JSONData()).setjson(data.json)
+
+        this.getTcpForwarder.call(this,json.att.connection.fwdHost, json.att.connection.fwdPort)
+        .then((socket)=>{
+            //SUCCESS!! add connection to connections map
+            json.att.connection.remoteSrcPort = socket.localPort
+            json.att.connection.remoteDstPort = socket.remotePort
+            let connection = JSON.parse(JSON.stringify(json.att.connection))
+            connection.tcpsocket = socket;
+            this.rooms.get(json.att.room).connections.set(json.att.connection.connectionID,connection)
+            let jsonReply = new JSONData(this.username,"onTcpConnRequest",{msg:'ack',rnom: json.att.room ,connection:json.att.connection})
+
+            socket.on("data",(data)=>{
+                log.debug(`${this.id} TCP data received:`,data.toString())
+                let replyJson = { username: this.username, room:json.att.room, connectionId: connection.connectionID, data: data}
+                this.socket.emit( "onData", replyJson )
+            })
+
+            replyFn(jsonReply)            
+        })
+        .catch((err)=>{
+            let jsonReply = new JSONData(this.username,"onTcpConnRequest",{msg:'reject'})
+            jsonReply.err = "TCP connection failed to build"
+            replyFn(jsonReply)            
+        })
+
+
+
+    }
+
+    // When new local TCP connection request is coming in via listener
+    async sendTcpConnRequest(room,tcpsocket){
+        log.debug(`${this.socket.id}(${this.username}) sending onTcpConnRequest`)
+        log.debug(`${this.id} new tcp connection initiated`)
+
+        let connection = {}
+        connection.tcpsocket = tcpsocket
+        connection.localSrcPort = tcpsocket.remotePort.toString()
+        connection.localDstPort = tcpsocket.localPort.toString()
+        connection.id = this.socket.id + connection.remotePort + connection.localPort
+
+        let json = new JSONData(this.username,"onTcpConnRequest",{})
+        json.att.room = room.name
+        json.att.connectionID = connection.id
+        json.att.localSrcPort = connection.localSrcPort
+        json.att.localDstPort = connection.localDstPort
+
+
+        this.socket.emit("onTcpConnRequest",json,(reply)=>{
+            let replyJson = (new JSONData()).setjson(reply.json)
+            if (replyJson.err){
+                log.error(`${this.id} TCP CONNECTION REQUEST REJECT`)
+                tcpsocket.destroy()
+            }
+            else{
+                // Connection is added to LISTENER connections Map
+                replyJson.att.connection.tcpsocket = tcpsocket
+                room.connections.set(connection.id,replyJson.att.connection)               
+                tcpsocket.on('data', async (data)=>{
+                    log.debug(`${this.id} TCP data received:`,data.toString())
+                    let json = { username: this.username, room:room.name, connectionId: connection.id, data: data}
+                    this.socket.emit( "onData", json )
+                })
+        
+            }
+        })
+ 
+    }
+
+    onData (json){
+        log.debug(`${this.socket.id}(${this.username}) received data`)
+        try {
+            let connection = this.rooms.get(json.room).connections.get(json.connectionId)
+            if ( this.username == connection.fwdName){
+                connection.tcpsocket.write(json.data)
+            }
+            if ( this.username == connection.rcvName){
+                connection.tcpsocket.write(json.data)
+            }
+                  
+        } catch (error) {
+            log.error(`${this.id} invalid data received`)
+        }
+        return true
+
+    }
 
 }
 
-module.exports = SockeIoClient
+module.exports = SocketIoClient
