@@ -183,8 +183,6 @@ class SIO  {
         }
         json.att.connection = connection
 
-        // room.connections.set(json.att.connectionID, connection ) 
-
         log.debug(`forwarding onTcpConnRequest ${socket.id}(${socket.username}) -> ${otherSocket.id}(${otherSocket.username})`)
         otherSocket.emit("onTcpConnRequest",json,(replyData)=>{
             let replyJson = (new JSONData()).setjson(replyData.json)
@@ -193,9 +191,7 @@ class SIO  {
             replyFn(replyJson)
         })            
 
-
     }
-
 
     async onSendRoomMsg(socket, json){
         socket.to("room1").emit("json",json.str)

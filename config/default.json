@@ -25,10 +25,10 @@
         {
             "name": "room1",
             "rcvName": "client1",
-            "rcvPort": "2221",
+            "rcvPort": "4001",
             "fwdName": "client2",
             "fwdHost": "localhost",
-            "fwdPort": "22"
+            "fwdPort": "4002"
         },
         {
             "name": "room2",

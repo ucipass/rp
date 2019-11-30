@@ -1,7 +1,7 @@
 const io = require('socket.io-client');
 const net = require('net');
 var log = require("ucipass-logger")("sio-client")
-log.transports.console.level = 'error'
+log.transports.console.level = 'info'
 log.transports.file.level = 'error'
 const File = require("ucipass-file")
 const JSONData = require('./jsondata.js')
@@ -223,6 +223,7 @@ class SocketIoClient  {
 
     }
 
+    // client configuration is pushed by server upon successfuul auth
     async onClientConfig (json){
         let room = json.att.room
         if ( room.rcvName == this.username){
@@ -243,7 +244,7 @@ class SocketIoClient  {
         return true
     }
 
-    // returns tcp socket listener with connections map (tcpsockets)
+    // returns tcp listener(server) with room
     async getTcpListener(room){
         return new Promise((resolve, reject) => {
 
@@ -261,6 +262,7 @@ class SocketIoClient  {
         });  
     }
 
+    // returns tcp socket when outboubnd tcp connection is built
     async getTcpForwarder(address,port){
         let resolve, reject
         let reply = new Promise((res, rej) => { resolve = res; reject = rej });
@@ -314,6 +316,7 @@ class SocketIoClient  {
         return reply
     } 
 
+    // Event "onTcpConnRequest" socket.io server requests ws -> tcp connection
     async onTcpConnRequest(data,replyFn){
         log.debug(`${this.socket.id}(${this.username}) received onTcpConnRequest`)
         if (!data.json){
@@ -349,7 +352,7 @@ class SocketIoClient  {
 
     }
 
-    // When new local TCP connection request is coming in via listener
+    // Sent by client to socket.io server to build a tcp-ws-bridge-ws-tcp 
     async sendTcpConnRequest(room,tcpsocket){
         log.debug(`${this.socket.id}(${this.username}) sending onTcpConnRequest`)
         log.debug(`${this.id} new tcp connection initiated`)
@@ -388,6 +391,7 @@ class SocketIoClient  {
  
     }
 
+    // Event when either the receiving or sending client receives data
     onData (json){
         log.debug(`${this.socket.id}(${this.username}) received data`)
         try {

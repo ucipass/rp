@@ -73,7 +73,7 @@ describe('\n\n=================== APP TESTS ========================', () => {
 
   });
 
-describe('\n\n=================== SOCKET.IO TESTS ========================', () => {
+describe.only('\n\n=================== SOCKET.IO TESTS ========================', () => {
 
     it('Socket.io Client Only Connect Test', async () => {
         let app = require('express')();
@@ -269,7 +269,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         await testServer.stop()
     });
 
-    it.only('Socket.io EchoClient', async () => {
+    it('Socket.io EchoClient', async () => {
         debugLevelServer = 'info'
         debugLevelClient = 'info'
         let app = require('express')();
@@ -287,27 +287,20 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         let socket2 = await client2.start()
         await sio.joinRoom("room1",socket1.id)
         await sio.joinRoom("room1",socket2.id)
-        await sio.joinRoom("room2",socket1.id)
-        await sio.joinRoom("room2",socket2.id)
 
-        let SERVER_PORT = 3333;
-        let CLIENT_PORT = 2222;
-        // let echoserver = new Echoserver(SERVER_PORT)
-        // await echoserver.start()
-         
-
-        // let echoclient1 = await new Echoclient(CLIENT_PORT);
-        // let reply = await echoclient1.send("ABCD")
-        await new Promise((resolve, reject) => {
-            
-        });
+        let SERVER_PORT = 4002;
+        let CLIENT_PORT = 4001;
+        let echoserver = new Echoserver(SERVER_PORT)
+        await echoserver.start()
+        let echoclient1 = await new Echoclient(CLIENT_PORT);
+        let reply = await echoclient1.send("ABCD")
+        expect("ABCD").toEqual(reply);
+        await echoserver.stop()
         await client1.stop()
         await client2.stop()
         await sio.stop()
         await testServer.stop()
     });
-
-
 
 });
 
