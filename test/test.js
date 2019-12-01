@@ -213,8 +213,8 @@ describe.only('\n\n=================== SOCKET.IO TESTS ========================'
         let echoserver = new Echoserver(SERVER_PORT)
         await echoserver.start()
         let echoclient1 = await new Echoclient(CLIENT_PORT);
-        let reply = await echoclient1.send("ABCD")
-        expect("ABCD").toEqual(reply);
+        let reply1 = await echoclient1.send("ABCD")
+        expect("ABCD").toEqual(reply1);
 
         await echoserver.stop()
         await client1.stop()

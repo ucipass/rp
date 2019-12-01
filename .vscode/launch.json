@@ -42,6 +42,15 @@
             "args": [
                 "-c", "client1", "-u", "ws://127.0.0.1:3000/rp"
             ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "sio-client",
+            "program": "${workspaceFolder}/sio-client.js",
+            "args": [
+                "-w", "http://127.0.0.1:3001"
+            ]
         }
     ]
 }

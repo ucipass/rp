@@ -2,7 +2,7 @@ const socketio = require('socket.io')
 const config = require('config');
 const JSONData = require('./jsondata.js')
 var log = require("ucipass-logger")("sio-server")
-log.transports.console.level = 'debug'
+log.transports.console.level = 'info'
 log.transports.file.level = 'error'
 
 class SIO  {
@@ -368,3 +368,17 @@ class SIO  {
 }
 
 module.exports = SIO
+
+if (require.main === module) {
+    var argv = require('minimist')(process.argv.slice(2));
+    if ( argv.p){
+        const express = require('express')
+        const app = express()
+        const port = argv.p
+        app.get('/', (req, res) => res.send('Hello World!'))       
+        let server = app.listen(port, () => console.log(`Socket.io standalone mode listening on port ${port}!`))
+        let sio = new SIO(server)
+    }else{
+        console.log( "need -p for tcp port")
+    }
+}

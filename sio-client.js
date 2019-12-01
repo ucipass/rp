@@ -1,9 +1,8 @@
 const io = require('socket.io-client');
 const net = require('net');
 var log = require("ucipass-logger")("sio-client")
-log.transports.console.level = 'debug'
+log.transports.console.level = 'info'
 log.transports.file.level = 'error'
-const File = require("ucipass-file")
 const JSONData = require('./jsondata.js')
 
 class SocketIoClient  {
@@ -184,7 +183,6 @@ class SocketIoClient  {
             })
         })
     }
-
 
     async onJson (dataRcvd,replyFnRcvd){
         let json = new JSONData()
@@ -508,3 +506,13 @@ class SocketIoClient  {
 }
 
 module.exports = SocketIoClient
+
+if (require.main === module) {
+    var argv = require('minimist')(process.argv.slice(2));
+    if ( argv.w && argv.u && argv.p){
+        let client = new SocketIoClient(argv.w,argv.u,argv.p)
+        let clientSocket1 = client.start()
+    }else{
+        console.log( "parameters -w http://<host>:<port> -u username -p password")
+    }
+}
