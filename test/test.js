@@ -1,9 +1,7 @@
 const expect = require('expect');
 const fs = require('fs');
 const config = require('config');
-const TestServer = require("./testserver.js")
-const Echoserver = require("./echoserver.js")
-const Echoclient = require("./echoclient.js")
+const logg = require('why-is-node-running')
 const File = require("ucipass-file")
 const JSONData = require('../jsondata.js')
 const Client = require("../client.js")
@@ -11,12 +9,11 @@ const SIO = require("../sio-server.js")
 const SIOClient = require("../sio-client.js")
 const delay = require("../delay.js")
 var log = require("ucipass-logger")("mocha")
-log.transports.console.level = 'debug'
-log.transports.file.level = 'error'
+const TestServer = require("./testserver.js")
+const Echoserver = require("./echoserver.js")
+const Echoclient = require("./echoclient.js")
 
-const logg = require('why-is-node-running')
-const userDB = config.get("userDB")
-const roomDB = config.get("roomDB")
+
 
 
 
@@ -161,139 +158,64 @@ describe.only('\n\n=================== SOCKET.IO TESTS ========================'
     });
     
     it('Socket.io Room Join/Leave Test', async () => {
-        debugLevelServer = 'error'
-        debugLevelClient = 'error'
         let app = require('express')();
         let testServer = new TestServer(app,3000)
         let server = await testServer.start()
         let sio = new SIO(server)
-        sio.log.transports.console.level = debugLevelServer
-        sio.loadRoomDB(roomDB)
-        sio.loadUserDB(userDB)
+
         let client1 = new SIOClient("http://localhost:3000","client1","client1")
-        client1.log.transports.console.level = debugLevelClient
         let client2 = new SIOClient("http://localhost:3000","client2","client2")
-        let client3 = new SIOClient("http://localhost:3000","client3","client3")
-        let client4 = new SIOClient("http://localhost:3000","client4","client4")
         let socket1 = await client1.start()
         let socket2 = await client2.start()
-        let socket3 = await client3.start()
-        let socket4 = await client4.start()
-        await sio.joinRoom("room1",socket1.id)
-        await sio.joinRoom("room1",socket2.id)
-        await sio.joinRoom("room2",socket3.id)
-        await sio.joinRoom("room2",socket4.id)
         expect((await sio.getRoomMembers('room1')).length).toEqual(2);
-        expect((await sio.getRoomMembers('room2')).length).toEqual(2);
         await sio.leaveRoom("room1",socket1.id)
-        await sio.leaveRoom("room2",socket3.id)
         expect((await sio.getRoomMembers('room1')).length).toEqual(1);
-        expect((await sio.getRoomMembers('room2')).length).toEqual(1);
         await client1.stop()
         await client2.stop()
-        await client3.stop()
-        await client4.stop()
         expect((await sio.getRoomMembers('room1')).length).toEqual(0);
-        expect((await sio.getRoomMembers('room2')).length).toEqual(0);
         await sio.stop()
         await testServer.stop()
     });
 
     it('Socket.io Private Room Test', async () => {
-        debugLevelServer = 'error'
-        debugLevelClient = 'error'
         let app = require('express')();
         let testServer = new TestServer(app,3000)
         let server = await testServer.start()
 
         let sio = new SIO(server)
-        sio.log.transports.console.level = debugLevelServer
-        sio.loadRoomDB(roomDB)
-        sio.loadUserDB(userDB)
         let client1 = new SIOClient("http://localhost:3000","client1","client1")
         let client2 = new SIOClient("http://localhost:3000","client2","client2")
-        client1.log.transports.console.level = debugLevelClient
         let socket1 = await client1.start()
         let socket2 = await client2.start()
-        await sio.joinRoom("room1",socket1.id)
-        await sio.joinRoom("room1",socket2.id)
         let json = new JSONData("client1","onSendPrivateMsg",{room:"room1",msg:"test1"})
         let jsonReply = await client1.emit(json)
         expect(jsonReply.att.msg).toEqual("ack");
+
         await client1.stop()
         await client2.stop()
         await sio.stop()
         await testServer.stop()
     });
 
-    it('Socket.io Room Join/Leave Test', async () => {
-        debugLevelServer = 'error'
-        debugLevelClient = 'error'
-        let app = require('express')();
-        let testServer = new TestServer(app,3000)
-        let server = await testServer.start()
-        let sio = new SIO(server)
-        sio.log.transports.console.level = debugLevelServer
-        sio.loadRoomDB(roomDB)
-        sio.loadUserDB(userDB)
-        let client1 = new SIOClient("http://localhost:3000","client1","client1")
-        client1.log.transports.console.level = debugLevelClient
-        let client2 = new SIOClient("http://localhost:3000","client2","client2")
-        let client3 = new SIOClient("http://localhost:3000","client3","client3")
-        let client4 = new SIOClient("http://localhost:3000","client4","client4")
-        let socket1 = await client1.start()
-        let socket2 = await client2.start()
-        let socket3 = await client3.start()
-        let socket4 = await client4.start()
-        await sio.joinRoom("room1",socket1.id)
-        await sio.joinRoom("room1",socket2.id)
-        await sio.joinRoom("room2",socket3.id)
-        await sio.joinRoom("room2",socket4.id)
-        expect((await sio.getRoomMembers('room1')).length).toEqual(2);
-        expect((await sio.getRoomMembers('room2')).length).toEqual(2);
-        await sio.leaveRoom("room1",socket1.id)
-        await sio.leaveRoom("room2",socket3.id)
-        expect((await sio.getRoomMembers('room1')).length).toEqual(1);
-        expect((await sio.getRoomMembers('room2')).length).toEqual(1);
-        await client1.stop()
-        await client2.stop()
-        await client3.stop()
-        await client4.stop()
-        expect((await sio.getRoomMembers('room1')).length).toEqual(0);
-        expect((await sio.getRoomMembers('room2')).length).toEqual(0);
-        await sio.stop()
-        await testServer.stop()
-    });
-
-    it.only('Socket.io EchoClient', async () => {
-        debugLevelServer = 'error'
-        debugLevelClient = 'error'
+    it('Socket.io EchoClient', async () => {
         let app = require('express')();
         let testServer = new TestServer(app,3000)
         let server = await testServer.start()
         let sio = new SIO(server)
 
-        sio.loadRoomDB(roomDB)
-        sio.loadUserDB(userDB)
         let client1 = new SIOClient("http://localhost:3000","client1","client1")
         let client2 = new SIOClient("http://localhost:3000","client2","client2")
-        client1.log.transports.console.level = debugLevelClient
-        sio.log.transports.console.level = debugLevelServer
         let socket1 = await client1.start()
         let socket2 = await client2.start()
-        await sio.joinRoom("room1",socket1.id)
-        await sio.joinRoom("room1",socket2.id)
 
-        // let SERVER_PORT = 4002;
-        // let CLIENT_PORT = 4001;
-        // let echoserver = new Echoserver(SERVER_PORT)
-        // await echoserver.start()
-        // let echoclient1 = await new Echoclient(CLIENT_PORT);
-        // let reply = await echoclient1.send("ABCD")
-        // expect("ABCD").toEqual(reply);
-        await new Promise((resolve, reject) => {
-            
-        });
+        let SERVER_PORT = 4002;
+        let CLIENT_PORT = 4001;
+        let echoserver = new Echoserver(SERVER_PORT)
+        await echoserver.start()
+        let echoclient1 = await new Echoclient(CLIENT_PORT);
+        let reply = await echoclient1.send("ABCD")
+        expect("ABCD").toEqual(reply);
+
         await echoserver.stop()
         await client1.stop()
         await client2.stop()
@@ -302,41 +224,3 @@ describe.only('\n\n=================== SOCKET.IO TESTS ========================'
     });
 
 });
-
-describe.skip('========================DUPLEX==================================', ()=>{
-    it("test1",async ()=>{
-        let stream = require('stream')
-        class MyDuplex extends stream.Duplex {
-            constructor(options){
-                super(options)
-            }
-
-            _write(chunk,encoding,cb){
-                console.log("data written to stream",chunk.toString())
-                cb()
-            }
-
-            _read(size){
-                setTimeout(() => {
-                    let date = (new Date()).toString()
-                    this.push(data)
-                }, 1000);
-
-            }
-        }
-
-        let ws = new MyDuplex()
-
-        setInterval(() => {
-            ws.write((new Date().toString()))
-        }, 1000);
-
-        ws.on('data',(data)=>{
-            console.log("data read from stream",data.toString())
-        })
-
-
-
-
-    })
-})

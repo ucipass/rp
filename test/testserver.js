@@ -1,5 +1,5 @@
 var log = require("ucipass-logger")("testserver")
-log.transports.console.level = 'error'
+log.transports.console.level = 'debug'
 log.transports.file.level = 'error'
 
 class TestServer{
@@ -17,9 +17,7 @@ class TestServer{
     this.server.on('error', this.onError.bind(this));
     this.server.on('listening', ()=>{
       const addr = this.server.address();
-      const bind = typeof addr === 'string'
-          ? `pipe ${addr}`
-          : `port ${addr.port}`;
+      const bind = typeof addr === 'string' ? `pipe ${addr}`: `port ${addr.port}`;
       log.info('*********** STARTING service **************');
       log.info(`Web server listening at: ${bind}`);
       this.startedFn(this.server)
@@ -53,9 +51,7 @@ class TestServer{
       throw error;
     }
   
-    const bind = typeof port === 'string'
-      ? `Pipe ${port}`
-      : `Port ${port}`;
+    const bind = typeof port === 'string' ? `Pipe` : `Port ${this.port}`;
   
     // handle specific listen errors with friendly messages
     switch (error.code) {

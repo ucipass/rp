@@ -1,19 +1,22 @@
-socketio = require('socket.io')
+const socketio = require('socket.io')
+const config = require('config');
 const JSONData = require('./jsondata.js')
 var log = require("ucipass-logger")("sio-server")
-log.transports.console.level = 'error'
+log.transports.console.level = 'debug'
 log.transports.file.level = 'error'
 
 class SIO  {
     constructor(server) {
-        this.io = socketio(server)
-        this.io.on('connection', this.onConnection.bind(this))
         this.sockets = new Map()
         this.rooms = new Map()
         this.users = new Map()
         this.connections = new Map()
         this.latency = 0
         this.log = log;
+        this.io = socketio(server)
+        this.io.on('connection', this.onConnection.bind(this))
+        this.loadUserDB( config.get("userDB") )
+        this.loadRoomDB( config.get("roomDB") )
     }
     
     stop(){
@@ -110,7 +113,15 @@ class SIO  {
             socket.username = data.username
             log.info(`${socket.id}(${socket.username}) login success`)
             replyFn('ack')
-            this.sendClientConfig.call(this,socket)
+            this.sendClientConfig.call(this,socket)            
+            this.rooms.forEach((room)=>{
+                if( room.rcvName == socket.username  || room.fwdName == socket.username ){
+                    log.info(`${socket.id}(${socket.username}) joining ${room.name} room !`)  
+                    socket.join(room.name,(err)=>{
+                        if (err) log.error(`${socket.id}(${socket.username}) failed to join ${room.name} room !`, err)
+                    })                         
+                }
+            })
         }else{
             log.warn(`${socket.id} login ${socket.username} failure`)
             replyFn('reject')

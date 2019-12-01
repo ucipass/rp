@@ -1,7 +1,7 @@
 const io = require('socket.io-client');
 const net = require('net');
 var log = require("ucipass-logger")("sio-client")
-log.transports.console.level = 'info'
+log.transports.console.level = 'debug'
 log.transports.file.level = 'error'
 const File = require("ucipass-file")
 const JSONData = require('./jsondata.js')
