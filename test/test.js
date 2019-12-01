@@ -107,18 +107,14 @@ describe.only('\n\n=================== SOCKET.IO TESTS ========================'
         let sio = new SIO(server)
         let client1 = new SIOClient()
         let client2 = new SIOClient()
-        let client3 = new SIOClient()
         let clientSocket1 = await client1.start("http://localhost:3000")
         let clientSocket2 = await client2.start("http://localhost:3000")
-        let clientSocket3 = await client3.start("http://localhost:3000")
         let serverSockets = new Set(sio.getSocketIds())
-        expect( serverSockets.size ).toEqual(3);
+        expect( serverSockets.size ).toEqual(2);
         expect( serverSockets.has(clientSocket1.id) ).toEqual(true);
         expect( serverSockets.has(clientSocket2.id) ).toEqual(true);
-        expect( serverSockets.has(clientSocket3.id) ).toEqual(true);
         await client1.stop()
         await client2.stop()
-        await client3.stop()
         await sio.stop()
         await testServer.stop()
     });
@@ -157,7 +153,7 @@ describe.only('\n\n=================== SOCKET.IO TESTS ========================'
         expect(sio.getSocketById(clientSock1.id).auth).toEqual(true);
         await client1.logout()
         expect(sio.getSocketById(clientSock1.id).auth).toEqual(false);
-        
+        await client2.logout()
         await client1.stop()
         await client2.stop()
         await sio.stop()
@@ -269,9 +265,9 @@ describe.only('\n\n=================== SOCKET.IO TESTS ========================'
         await testServer.stop()
     });
 
-    it('Socket.io EchoClient', async () => {
-        debugLevelServer = 'info'
-        debugLevelClient = 'info'
+    it.only('Socket.io EchoClient', async () => {
+        debugLevelServer = 'error'
+        debugLevelClient = 'error'
         let app = require('express')();
         let testServer = new TestServer(app,3000)
         let server = await testServer.start()
@@ -288,13 +284,16 @@ describe.only('\n\n=================== SOCKET.IO TESTS ========================'
         await sio.joinRoom("room1",socket1.id)
         await sio.joinRoom("room1",socket2.id)
 
-        let SERVER_PORT = 4002;
-        let CLIENT_PORT = 4001;
-        let echoserver = new Echoserver(SERVER_PORT)
-        await echoserver.start()
-        let echoclient1 = await new Echoclient(CLIENT_PORT);
-        let reply = await echoclient1.send("ABCD")
-        expect("ABCD").toEqual(reply);
+        // let SERVER_PORT = 4002;
+        // let CLIENT_PORT = 4001;
+        // let echoserver = new Echoserver(SERVER_PORT)
+        // await echoserver.start()
+        // let echoclient1 = await new Echoclient(CLIENT_PORT);
+        // let reply = await echoclient1.send("ABCD")
+        // expect("ABCD").toEqual(reply);
+        await new Promise((resolve, reject) => {
+            
+        });
         await echoserver.stop()
         await client1.stop()
         await client2.stop()

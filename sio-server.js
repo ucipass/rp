@@ -51,7 +51,9 @@ class SIO  {
 
         socket.on('onTcpConnRequest', (data,replyFn) => { this.onTcpConnRequest.call(this,socket,data,replyFn) })
 
-        socket.on('onData', (data) => { this.onData.call(this,socket,data) })
+        socket.on('onTcpConnClose', (data,replyFn) => { this.onTcpConnClose.call(this,socket,data,replyFn) })
+
+        socket.on('onData', (data,replyFn) => { this.onData.call(this,socket,data,replyFn) })
 
         socket.on('json', async (data,replyFn) =>{
             if (! socket.auth){
@@ -134,11 +136,20 @@ class SIO  {
 
     }
 
-    async onData(socket, data){
+    async onData(socket, data, replyFn){
         try {
             let room = this.rooms.get(data.room)
             let connection = room.connections.get(data.connectionId)
-            socket.to(connection.room).emit('onData', data );
+            let otherSocket = null
+            if (socket.id == connection.rcvSocketId){
+                otherSocket = this.getSocketById(connection.fwdSocketId)
+            }else{
+                otherSocket = this.getSocketById(connection.rcvSocketId)
+            }
+            if(replyFn) replyFn(data)
+            otherSocket.emit('onData', data,)
+            
+            // socket.to(connection.room).emit('onData', data );
         } catch (error) {
             return log.error("invalid JSON data received from client")
         }
@@ -169,6 +180,8 @@ class SIO  {
         let room = this.rooms.get(json.att.room)
         let connection = {
             connectionID : json.att.connectionID,
+            rcvSocketId : socket.id,
+            fwdSocketId: otherSocket.id,
             room : json.att.room,
             localSrcPort: json.att.localSrcPort, 
             localDstPort: json.att.localDstPort,
@@ -191,6 +204,16 @@ class SIO  {
             replyFn(replyJson)
         })            
 
+    }
+
+    async onTcpConnClose(socket, data,replyFn){
+        let json = (new JSONData().setjson(data.json))
+        let room = this.rooms.get(json.att.room)
+        room.connections.delete(json.att.connectionId)
+        socket.to(json.att.room).emit("onTcpConnClose",json)
+        json.id = "server"
+        json.att.msg = 'ack'
+        replyFn(json)
     }
 
     async onSendRoomMsg(socket, json){
