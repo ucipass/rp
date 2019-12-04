@@ -375,8 +375,8 @@ if (require.main === module) {
         const express = require('express')
         const app = express()
         const port = argv.p
-        app.get('/', "0.0.0.0", (req, res) => res.send('Hello World!'))       
-        let server = app.listen(port, () => console.log(`Socket.io standalone mode listening on port ${port}!`))
+        app.get('/', (req, res) => res.send('Hello World!'))       
+        let server = app.listen(port, "0.0.0.0", () => console.log(`Socket.io standalone mode listening on port ${port}!`))
         let sio = new SIO(server)
     }else{
         console.log( "need -p for tcp port")
