@@ -45,7 +45,18 @@ class SocketIoClient  {
             this.socket.on('onTcpConnClose', this.onTcpConnClose.bind(this));
             
             this.socket.on('disconnect', (reason) => {
-                  log.info(`${this.socket.id}(${this.username}) disconnect reason:`,reason)
+                log.info(`${this.socketId}(${this.username}) disconnect reason:`,reason)
+                this.rooms.forEach((room)=>{
+                    let connections = room.connections
+                    connections.forEach((connection)=>{
+                        if (connection && connection.tcpsocket) {
+                            connection.tcpsocket.destroy()
+                            connections.delete(json.att.connectionID)            
+                        }                            
+                    })
+                
+                })
+
               });
 
             this.socket.on('reconnect', (attemptNumber) => {
