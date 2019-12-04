@@ -13,12 +13,12 @@ class SocketIoClient  {
         this.rooms = new Map()
         this.socket = null
         this.stopped = false
-        this.sockedId = null
+        this.socketId = "123"
         this.auth = false
         this.log = log
     }
 
-    get id() { return `${this.socket.id}(${this.username})`}
+    get id() { return `${this.socketId}(${this.username})`}
 
     start(iourl,options){
         return new Promise((resolve, reject) => {
@@ -28,7 +28,8 @@ class SocketIoClient  {
 
             this.socket.on('connect', async ()=>{
                 log.info(`${this.socket.id} connected`)
-                this.sockedId = this.socket.id
+                log.info(`${this.socket.id} connected`)
+                this.socketId = this.socket.id
                 if (this.username != "anonymous")
                     {
                         await this.login.call(this, this.username, this.password)
@@ -47,11 +48,19 @@ class SocketIoClient  {
             this.socket.on('disconnect', (reason) => {
                 log.info(`${this.socketId}(${this.username}) disconnect reason:`,reason)
                 this.rooms.forEach((room)=>{
+                    // Disconnect TCP Listener, if present
+                    if( room.tcpserver){
+                        room.tcpserver.close(()=>{
+                            log.debug(`${this.id}: stopped listening at ${room.rcvPort}`);
+                            room.tcpserver.unref()
+                        })                        
+                    }
+                    // Disconnect TCP Forwarder, if present
                     let connections = room.connections
                     connections.forEach((connection)=>{
                         if (connection && connection.tcpsocket) {
                             connection.tcpsocket.destroy()
-                            connections.delete(json.att.connectionID)            
+                            connections.delete(connection.connectionID)            
                         }                            
                     })
                 
@@ -91,7 +100,7 @@ class SocketIoClient  {
 
             this.socket.on('error', (error)=>{
                 if (this.stopped){
-                    log.debug(`client ${this.sockedId} already stopped error:`,error.message)
+                    log.debug(`client ${this.socketId} already stopped error:`,error.message)
                     reject(true)     
                 }else{
                     log.error("error:",error.message)
@@ -278,14 +287,16 @@ class SocketIoClient  {
         let reply = new Promise((res, rej) => { resolve = res; reject = rej });
 
         let socket = new net.Socket();
+        let connectionStr = ""
         socket.connect(parseInt(port), address)
         socket.on("connect", (data)=>{
-            log.info(`${this.id} Outgoing TCP: localhost:${socket.localPort.toString()} to ${address}:${port}`)
+            connectionStr = `localhost:${socket.localPort.toString()} -> ${address}:${port}`
+            log.info(`${this.id} Outgoing TCP: ${connectionStr}`)
             resolve(socket)
         });
 
         socket.on("close", (data)=>{
-            log.info(`${this.id} TCP Event:close for ${address}:${port}`)
+            log.info(`${this.id} TCP Forwarder Event:close for ${connectionStr}`)
             this.rcvTcpConnClose.call(this,room,connection.connectionID)
             // socket.destroy()
         });
@@ -320,7 +331,7 @@ class SocketIoClient  {
 
         let connection = {}
         connection.tcpsocket = tcpsocket
-        connection.localSrcIP = tcpsocket.remoteAddress
+        connection.localSrcIP = tcpsocket.remoteAddress.replace(/^.*:/, '')
         connection.localSrcPort = tcpsocket.remotePort.toString()
         connection.localDstPort = tcpsocket.localPort.toString()
         connection.id = this.socket.id + connection.localSrcPort + connection.localDstPort
@@ -367,7 +378,7 @@ class SocketIoClient  {
                 // })
        
                 tcpsocket.on("close", (data)=>{
-                    log.info(`${this.id} TCP RCVD Event:close for ${connection.localDstPort}:${connection.localSrcPort}`)
+                    log.info(`${this.id} TCP Listener Event:close for ${connection.localSrcIP}:${connection.localSrcPort} -> ${connection.localDstPort}`)
                     let o = this
                     this.rcvTcpConnClose.call(this,room.name,connection.id)
                     
