@@ -23,6 +23,7 @@
   "devDependencies": {
     "expect": "^24.9.0",
     "mocha": "^6.2.2",
+    "superagent": "^5.1.2",
     "ucipass-file": "^1.0.15",
     "why-is-node-running": "^2.1.0"
   }
