@@ -1,7 +1,7 @@
 const io = require('socket.io-client');
 const net = require('net');
 var log = require("ucipass-logger")("sio-client")
-log.transports.console.level = 'info'
+log.transports.console.level = 'debug'
 log.transports.file.level = 'error'
 const JSONData = require('./jsondata.js')
 
@@ -123,7 +123,7 @@ class SocketIoClient  {
             })            
 
             this.socket.on('pong', (latency) => {
-                log.debug(`pong ${this.socket.id} latency:`,latency)
+                log.silly(`pong ${this.socket.id} latency:`,latency)
             });
         });
 
@@ -231,14 +231,14 @@ class SocketIoClient  {
         let json = (new JSONData().setjson(data.json))
         let room = json.att.room
         if ( room.rcvName == this.username){
-            log.debug(`${this.id} received ${room.name} config: Listening on localhost:${room.rcvPort} to remote-end ${room.fwdHost}:${room.fwdPort}` )
+            log.info(`${this.id} received ${room.name} config: Listening on localhost:${room.rcvPort} to remote-end ${room.fwdHost}:${room.fwdPort}` )
             room = await this.getTcpListener(room)
             this.rooms.set(json.att.room.name,room)
             json.att.msg = 'ack'
             return(json)
         }
         if ( room.fwdName == this.username){
-            log.debug(`${this.id} received ${room.name} config: Forwarding to ${room.fwdHost}:${room.fwdPort} from remote-end localhost:${room.rcvPort}` )
+            log.info(`${this.id} received ${room.name} config: Forwarding to ${room.fwdHost}:${room.fwdPort} from remote-end localhost:${room.rcvPort}` )
             room.connections = new Map()
             this.rooms.set(json.att.room.name,room)
             json.att.msg = 'ack'
@@ -250,6 +250,14 @@ class SocketIoClient  {
     async onCloseRoom (data){
         let json = (new JSONData().setjson(data.json))
         let room = this.rooms.get(json.att.room.name)
+        // Disconnect TCP Connections, if present
+        let connections = room.connections
+        connections.forEach((connection)=>{
+            if (connection && connection.tcpsocket) {
+                connection.tcpsocket.destroy()
+                connections.delete(connection.connectionID)            
+            }                            
+        })
         // Disconnect TCP Listener, if present
         if( room.tcpserver){
             log.debug(`${this.id}: Stopping listening on TCP port ${room.rcvPort}`);
@@ -262,14 +270,6 @@ class SocketIoClient  {
             });
                      
         }
-        // Disconnect TCP Forwarder, if present
-        let connections = room.connections
-        connections.forEach((connection)=>{
-            if (connection && connection.tcpsocket) {
-                connection.tcpsocket.destroy()
-                connections.delete(connection.connectionID)            
-            }                            
-        })
         this.rooms.delete(room.name)
         return true
     }
@@ -475,8 +475,10 @@ class SocketIoClient  {
     // Fired by a TCP close event forwarded to server for notification
     async rcvTcpConnClose(roomName,connectionId){
         let room = this.rooms.get(roomName)
-        room.connections.delete(connectionId)
-
+        if( room && room.connections){
+            room.connections.delete(connectionId)
+        }
+        
         let json = new JSONData(this.username,"onTcpConnRequest",{})
         json.att.room = roomName
         json.att.connectionID = connectionId
@@ -503,7 +505,7 @@ class SocketIoClient  {
 
     // Event when either the receiving or sending client receives data
     onData (json){
-        log.debug(`${this.id} received data`)
+        log.silly(`${this.id} received data`)
         try {
             let connections = this.rooms.get(json.room).connections
             let connection = connections.get(json.connectionId)

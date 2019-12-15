@@ -2,7 +2,7 @@ const socketio = require('socket.io')
 const config = require('config');
 const JSONData = require('./jsondata.js')
 var log = require("ucipass-logger")("sio-server")
-log.transports.console.level = 'info'
+log.transports.console.level = 'debug'
 log.transports.file.level = 'error'
 
 class SIO  {
@@ -15,10 +15,10 @@ class SIO  {
         this.log = log;
         this.io = socketio(server)
         this.io.on('connection', this.onConnection.bind(this))
-        this.loadRoomDB( config.get("roomDB") )
+        // this.loadRoomDB( config.get("roomDB") )
         this.events = require('./events.js')
-        this.events.on("onOpenRoom", this.onOpenRoom.bind(this))
-        this.events.on("onCloseRoom", this.onCloseRoom.bind(this))
+        this.events.emit("onSocketIoStarted",this)
+        this.events.on("onRoomRefresh", this.onRoomRefresh.bind(this))
     }
 
     onConnection(socket){
@@ -56,8 +56,7 @@ class SIO  {
     
     async stop(){
         let reply = new Promise((resolve, reject) => {
-            this.events.removeListener('onOpenRoom',()=>{});
-            this.events.removeListener('onCloseRoom',()=>{});
+            this.events.removeListener('onRoomRefresh',()=>{});
             this.io.close(()=>{
                 log.info("server close complete",()=>{
                     resolve(true)
@@ -66,24 +65,14 @@ class SIO  {
         });
         return reply
     }
-
+    // Calls onNewClient if login successful
     async onLogin (socket,data,replyFn){
         socket.auth = await this.authFn(data)
         if (socket.auth) {
             socket.username = data.username
             log.info(`${socket.id}(${socket.username}) login success`)
             replyFn('ack')
-            this.sendClientConfig.call(this,socket)            
-            this.rooms.forEach((room)=>{
-                if( room.rcvName == socket.username  || room.fwdName == socket.username ){
-                    log.info(`${socket.id}(${socket.username}) joining ${room.name} room !`)  
-                    socket.join(room.name,(err)=>{
-                        if (err) log.error(`${socket.id}(${socket.username}) failed to join ${room.name} room !`, err)
-                    })
-                    let json = new JSONData("server","onOpenRoom",{room:room})
-                    socket.emit("onOpenRoom",json)                       
-                }
-            })
+            this.onNewClient(socket)
         }else{
             log.warn(`${socket.id} login ${socket.username} failure`)
             replyFn('reject')
@@ -95,13 +84,65 @@ class SIO  {
         replyFn('ack')
     }
 
+    async onNewClient(socket){    
+        this.rooms.forEach((room)=>{
+            if( room.rcvName == socket.username  || room.fwdName == socket.username ){
+                log.info(`${socket.id}(${socket.username}) joining ${room.name} room !`)  
+                socket.join(room.name,(err)=>{
+                    if (err) log.error(`${socket.id}(${socket.username}) failed to join ${room.name} room !`, err)
+                })
+                let json = new JSONData("server","onOpenRoom",{room:room})
+                socket.emit("onOpenRoom",json)                       
+            }
+        })
+    }
+
+
+
+
+
+
+
+
+
+
+    async onRoomRefresh(data){
+        let json = (new JSONData()).setjson(data.json)
+        let newrooms = new Set(json.att.rooms)
+        //delete rooms that are not in the new set
+        this.rooms.forEach(room => {
+            if ( ! newrooms.has(room)){
+                let json = (new JSONData()).setjson(data.json)
+                json.att.room = room
+                this.onCloseRoom(json)
+            }            
+        });
+        //create rooms that are not in the old set
+        newrooms.forEach(newroom => {
+            if ( ! this.rooms.get(newroom.name)){
+                let json = (new JSONData()).setjson(data.json)
+                json.att.room = newroom
+                this.onOpenRoom(json)                
+            }
+        })
+
+
+    }
+
     async onOpenRoom(data){
         let json = (new JSONData()).setjson(data.json)
         let room = json.att.room
         room.connections = new Map()
         this.rooms.set(room.name,room)
         this.sockets.forEach(socket => {
-            if (socket.username == room.rcvName || socket.username == room.rcvName){
+            if (socket.username == room.rcvName || socket.username == room.fwdName){
+                socket.join(room.name,(err)=>{
+                    if (err){
+                        log.error(`${socket.id}(${socket.username}) failed to join ${room.name} room !`, err)
+                    }else{
+                        log.info(`${socket.id}(${socket.username}) joined ${room.name} room !`)              
+                    }
+                })  
                 socket.emit("onOpenRoom",json)
             }
         });
@@ -113,7 +154,14 @@ class SIO  {
         let socketIds = await this.getRoomMembers(room.name)
         socketIds.forEach(socketId => {
             let socket = this.sockets.get(socketId)
-            socket.emit("onCloseRoom",json)            
+            socket.emit("onCloseRoom",json)
+            socket.leave(room.name,(err)=>{
+                if (err){
+                    log.error(`${socket.id}(${socket.username}) failed to leave ${room.name} room !`, err)
+                }else{
+                    log.info(`${socket.id}(${socket.username}) left ${room.name} room !`)              
+                }
+            })                          
         });
         this.rooms.delete(room.name)
     }
@@ -186,7 +234,9 @@ class SIO  {
     async onTcpConnClose(socket, data,replyFn){
         let json = (new JSONData().setjson(data.json))
         let room = this.rooms.get(json.att.room)
-        room.connections.delete(json.att.connectionId)
+        if(room && room.connections){
+            room.connections.delete(json.att.connectionId)
+        }
         socket.to(json.att.room).emit("onTcpConnClose",json)
         json.id = "server"
         json.att.msg = 'ack'
@@ -212,24 +262,6 @@ class SIO  {
             return replyFn(json)
         }
         
-    }
-
-    async sendClientConfig(socket){
-        let noRoomsFound = true
-        let json = new JSONData("server","onStartRoom",{})
-        this.rooms.forEach(room => {
-            if (room.rcvName == socket.username || room.fwdName == socket.username){
-                log.debug(`${socket.id}(${socket.username}) sending room configuration: ${room.name}`)
-                noRoomsFound = false
-                json.att.room = room
-                socket.emit("onStartRoom",json)
-            }
-        });
-
-        if ( noRoomsFound ) {
-            log.info(`${socket.id}(${socket.username}) no room configuration found`)
-        }
-
     }
 
     async authFn(data){

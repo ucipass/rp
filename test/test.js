@@ -18,7 +18,7 @@ const Echoclient = require("./echoclient.js")
 
 
 
-describe('\n\n=================== APP TESTS ========================', () => {
+describe.skip('\n\n=================== APP TESTS ========================', () => {
     it('Echo Server Test', async () => {
 
         let SERVER_PORT = 3333;
@@ -203,14 +203,14 @@ describe('\n\n=================== APP & SOCKET.IO TESTS ========================
         await this.testServer.stop()
     })
 
-    it("Test1", async ()=>{
+    it.only("Test1", async ()=>{
         let room1 = {
             "name": "room1",
             "rcvName": "client1",
             "rcvPort": "4001",
             "fwdName": "client2",
             "fwdHost": "localhost",
-            "fwdPort": "4002"
+            "fwdPort": "22"
         }
         let room2 = {
             "name": "room2",
@@ -218,7 +218,15 @@ describe('\n\n=================== APP & SOCKET.IO TESTS ========================
             "rcvPort": "4003",
             "fwdName": "client2",
             "fwdHost": "localhost",
-            "fwdPort": "4004"
+            "fwdPort": "23"
+        }
+        let room3 = {
+            "name": "ee",
+            "rcvName": "client1",
+            "rcvPort": "2001",
+            "fwdName": "client2",
+            "fwdHost": "localhost",
+            "fwdPort": "22"
         }
         let sio = new SIO(this.server)
         // deleting all existing rooms
@@ -227,11 +235,18 @@ describe('\n\n=================== APP & SOCKET.IO TESTS ========================
         }
 
         const superagent = require('superagent');
-        await superagent.post('http://localhost:3000/openroom').send(room1)
+        await superagent.post('http://localhost:3000/create').send(room1)
+        await superagent.post('http://localhost:3000/create').send(room2)
         let client1 = new SIOClient(null,"client1","client1")
+        let client2 = new SIOClient(null,"client2","client2")
         await client1.start()
-        await superagent.post('http://localhost:3000/closeroom').send(room1)
-        await superagent.post('http://localhost:3000/openroom').send(room2)
+        await client2.start()
+        await superagent.post('http://localhost:3000/delete').send(room1)
+        await superagent.post('http://localhost:3000/delete').send(room2)
+        await superagent.post('http://localhost:3000/create').send(room3)
+        await new Promise((resolve, reject) => {
+            
+        });
         await client1.stop()
         await sio.stop()
 
