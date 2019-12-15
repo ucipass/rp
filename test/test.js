@@ -140,6 +140,24 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
     
     it('Socket.io Room Join/Leave Test', async () => {
         let sio = new SIO(server)
+        let room1 = {
+            "name": "room1",
+            "rcvName": "client1",
+            "rcvPort": "4001",
+            "fwdName": "client2",
+            "fwdHost": "localhost",
+            "fwdPort": "22"
+        }
+        let room2 = {
+            "name": "room2",
+            "rcvName": "client1",
+            "rcvPort": "4003",
+            "fwdName": "client2",
+            "fwdHost": "localhost",
+            "fwdPort": "23"
+        }
+        sio.rooms.set(room1.name,room1)
+        sio.rooms.set(room2.name,room2)
         let client1 = new SIOClient("http://localhost:3000","client1","client1")
         let client2 = new SIOClient("http://localhost:3000","client2","client2")
         let socket1 = await client1.start()
@@ -155,6 +173,15 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
 
     it('Socket.io Private Room Test', async () => {
         let sio = new SIO(server)
+        let room1 = {
+            "name": "room1",
+            "rcvName": "client1",
+            "rcvPort": "4001",
+            "fwdName": "client2",
+            "fwdHost": "localhost",
+            "fwdPort": "22"
+        }
+        sio.rooms.set(room1.name,room1)
         let client1 = new SIOClient("http://localhost:3000","client1","client1")
         let client2 = new SIOClient("http://localhost:3000","client2","client2")
         let socket1 = await client1.start()
@@ -169,13 +196,24 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
 
     it('Socket.io EchoClient', async () => {
         let sio = new SIO(server)
+        let SERVER_PORT = 4002;
+        let CLIENT_PORT = 4001;
+        let room1 = {
+            "name": "room1",
+            "rcvName": "client1",
+            "rcvPort": CLIENT_PORT.toString(),
+            "fwdName": "client2",
+            "fwdHost": "localhost",
+            "fwdPort": SERVER_PORT.toString(),
+            connections: new Map()
+        }
+        sio.rooms.set(room1.name,room1)
         let client1 = new SIOClient("http://localhost:3000","client1","client1")
         let client2 = new SIOClient("http://localhost:3000","client2","client2")
         let socket1 = await client1.start()
         let socket2 = await client2.start()
 
-        let SERVER_PORT = 4002;
-        let CLIENT_PORT = 4001;
+
         let echoserver = new Echoserver(SERVER_PORT)
         await echoserver.start()
         let echoclient1 = await new Echoclient(CLIENT_PORT);
@@ -203,7 +241,7 @@ describe('\n\n=================== APP & SOCKET.IO TESTS ========================
         await this.testServer.stop()
     })
 
-    it.only("Test1", async ()=>{
+    it.skip("Test1", async ()=>{
         let room1 = {
             "name": "room1",
             "rcvName": "client1",
