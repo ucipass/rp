@@ -1,0 +1,108 @@
+<template>
+  <b-container fluid v-if='MainDeletePage'>
+    <h1>Delete</h1>
+    <b-row class="justify-content-md-center">
+      <b-col xl='3' lg='3' md='3' >
+        Select a record
+      </b-col>
+      <b-col xl='3' lg='3' md='3' >
+        <b-form-select v-model="optionPicked" :options="options"></b-form-select>
+      </b-col>
+    </b-row> 
+    <b-row class="justify-content-md-center" v-for='key in data[optionPicked] ? Object.keys(data[optionPicked]): []' :key='key'>
+      <b-col xl='3' lg='3' md='3' >
+        {{key}}
+      </b-col>
+      <b-col xl='3' lg='3' md='3' >
+        <b-input v-model='data[optionPicked][key]' @change='testfn()'></b-input>
+      </b-col>
+    </b-row>
+    <b-row class="justify-content-md-center">
+      <b-col xl='3' lg='3' md='3' >
+        Status:{{status}}
+      </b-col>
+      <b-col xl='3' lg='3' md='3' >
+        <b-button variant='outline-primary' @click="submit()">submit</b-button>
+      </b-col>          
+    </b-row>
+  </b-container>
+</template>
+
+<script>
+import axios from 'axios';
+
+export default {
+  name: 'MainDeletePage',
+  components: {
+  //  ModalLogin
+  },
+  props: {
+    title: {
+      default: "MainDeletePage",
+      type: String
+    },
+    id: {
+      default: "MainDeletePage",
+      type: String
+    }
+  },
+  data: ()=> { 
+    return{
+      MainDeletePage: false,
+      status: "",
+      optionPicked: 0, 
+      options : [{ value: 0, text: "No response from database" }],
+      data: [{}]
+    }
+  },
+  methods:{
+    testfn: async function(){
+      console.log("TEST")
+    },
+    submit: async function(){
+      let response = await axios
+      .post('http://localhost:3000/delete',this.data[this.optionPicked])
+      .catch(error => console.log("ERROR",error))
+      this.$root.$emit('MainDeletePage')
+      this.status = response.data
+      this.refresh()
+    },
+    refresh: async function(){
+      // GET DB Data
+      this.status = ""
+      let response = await axios
+      .post('http://localhost:3000/read',{})
+      .catch(error => console.log("Error reading data from server",error))   
+      this.optionPicked = 0
+      this.schema = response.data
+      this.data = JSON.parse(JSON.stringify(this.schema))
+
+      if(this.data.length){
+        this.options =  this.data.map( (item,index)=> {return { value: index, text: item.name }} )
+      }else{
+        this.options = [{ value: 0, text: "No data present" }]
+      }
+    }    
+  },
+  computed:{
+    getjson(){
+      return{ prefix:this.prefix,region:this.region}
+    }
+  },
+  mounted: async function () {
+    this.$root.$on('showMainDeletePage', () => {
+        this.MainDeletePage = true
+        console.log("Event: showMainDeletePage")
+        this.refresh()
+    })    
+    this.$root.$on('hideMainDeletePage', () => {
+        this.MainDeletePage = false
+        console.log("Event: hideMainDeletePage")
+    })    
+  }
+}
+</script>
+
+<!-- Add "scoped" attribute to limit CSS to this component only -->
+<style scoped>
+</style>
