@@ -1,10 +1,11 @@
-const app = require("./app.js")
+const app = require("./sio-app.js")
+const config = require('config');
 const SIO = require("./sio-server.js")
 var log = require("ucipass-logger")("server")
 log.transports.console.level = 'debug'
 log.transports.file.level = 'error'
 
-const port = 3000
+const port = process.env.port ? process.env.port : config.server.port
 var lastSocketKey = 0;
 var socketMap = {};
 let startedFn = null

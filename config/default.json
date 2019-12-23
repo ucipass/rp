@@ -38,5 +38,9 @@
             "fwdHost": "localhost",
             "fwdPort": "22"
         }
-    ]
+    ],
+    "server":{
+        "port": 3001,
+        "prefix": "rp"
+    }
 }

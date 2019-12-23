@@ -22,8 +22,9 @@
 
 <script>
 import axios from 'axios';
-import {URL} from './constants.js';
-console.log(URL)
+// import {URL, PREFIX_SCHEMA, PREFIX_CREATE, PREFIX_READ, PREFIX_UPDATE, PREFIX_DELETE} from './constants.js';
+import {URL_CREATE, URL_SCHEMA } from './constants.js';
+console.log(URL_CREATE, URL_SCHEMA)
 
 export default {
   name: 'MainCreatePage',
@@ -57,11 +58,10 @@ export default {
     },
     submit: async function(){
       let response = await axios
-      .post('http://localhost:3000/create',this.data)
+      .post(URL_CREATE,this.data)
       .catch(error => { console.log("ERROR",error); return null })
       this.status = response.data
       this.data = JSON.parse(JSON.stringify(this.schema))
-
     }
   },
   computed:{
@@ -72,7 +72,7 @@ export default {
   mounted: async function () {
     // GET DB SCHEMA
     let response = await axios
-    .post('http://localhost:3000/schema',{})
+    .post(URL_SCHEMA,{})
     .catch(error => console.log("Error reading schema from server",error))   
 
     this.schema = response.data

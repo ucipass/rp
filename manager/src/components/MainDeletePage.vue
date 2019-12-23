@@ -30,6 +30,8 @@
 
 <script>
 import axios from 'axios';
+import {URL_DELETE, URL_SCHEMA, URL_READ } from './constants.js';
+console.log(URL_DELETE, URL_SCHEMA)
 
 export default {
   name: 'MainDeletePage',
@@ -61,7 +63,7 @@ export default {
     },
     submit: async function(){
       let response = await axios
-      .post('http://localhost:3000/delete',this.data[this.optionPicked])
+      .post(URL_DELETE,this.data[this.optionPicked])
       .catch(error => console.log("ERROR",error))
       this.$root.$emit('MainDeletePage')
       this.status = response.data
@@ -71,7 +73,7 @@ export default {
       // GET DB Data
       this.status = ""
       let response = await axios
-      .post('http://localhost:3000/read',{})
+      .post(URL_READ,{})
       .catch(error => console.log("Error reading data from server",error))   
       this.optionPicked = 0
       this.schema = response.data

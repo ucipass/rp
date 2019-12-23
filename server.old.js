@@ -1,4 +1,4 @@
-const app = require("./sio-app.js")
+const app = require("./app.js")
 const SIO = require("./sio-server.js")
 var log = require("ucipass-logger")("server")
 log.transports.console.level = 'debug'

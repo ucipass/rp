@@ -5,6 +5,7 @@
     <MainReadPage/>
     <MainUpdatePage/>
     <MainDeletePage/>
+    <ModalCreateRoom/>
 
   </div>
 </template>
@@ -15,11 +16,12 @@ import MainCreatePage from './components/MainCreatePage.vue'
 import MainReadPage from './components/MainReadPage.vue'
 import MainUpdatePage from './components/MainUpdatePage.vue'
 import MainDeletePage from './components/MainDeletePage.vue'
+import ModalCreateRoom from './components/ModalCreateRoom.vue'
 
 export default {
   name: 'app',
   components: {
-    NavBarMain,MainCreatePage,MainReadPage,MainUpdatePage,MainDeletePage
+    NavBarMain,MainCreatePage,MainReadPage,MainUpdatePage,MainDeletePage,ModalCreateRoom
   },
   mounted: function(){
   }

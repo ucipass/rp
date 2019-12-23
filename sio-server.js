@@ -18,7 +18,6 @@ class SIO  {
         // this.loadRoomDB( config.get("roomDB") )
         this.events = require('./events.js')
         this.events.emit("onSocketIoStarted",this)
-        this.events.on("onRoomRefresh", this.onRoomRefresh.bind(this))
     }
 
     onConnection(socket){
@@ -95,38 +94,6 @@ class SIO  {
                 socket.emit("onOpenRoom",json)                       
             }
         })
-    }
-
-
-
-
-
-
-
-
-
-
-    async onRoomRefresh(data){
-        let json = (new JSONData()).setjson(data.json)
-        let newrooms = new Set(json.att.rooms)
-        //delete rooms that are not in the new set
-        this.rooms.forEach(room => {
-            if ( ! newrooms.has(room)){
-                let json = (new JSONData()).setjson(data.json)
-                json.att.room = room
-                this.onCloseRoom(json)
-            }            
-        });
-        //create rooms that are not in the old set
-        newrooms.forEach(newroom => {
-            if ( ! this.rooms.get(newroom.name)){
-                let json = (new JSONData()).setjson(data.json)
-                json.att.room = newroom
-                this.onOpenRoom(json)                
-            }
-        })
-
-
     }
 
     async onOpenRoom(data){

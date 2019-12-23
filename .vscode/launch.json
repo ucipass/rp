@@ -19,20 +19,18 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "test local",
-            "args": [
-                ""
-            ],
-            "program": "${workspaceFolder}/test-local.js"
-        },
-        {
-            "type": "node",
-            "request": "launch",
             "name": "server",
             "args": [
                 ""
             ],
-            "program": "${workspaceFolder}/server.js"
+            "env": {
+                "NODE_ENV": "development",
+                "port":"1337"
+            },            
+            "program": "${workspaceFolder}/server.js",
+            "cwd": "${workspaceRoot}",
+            "runtimeExecutable": null,
+            "outputCapture": "std"
         },
         {
             "type": "node",

@@ -30,6 +30,8 @@
 
 <script>
 import axios from 'axios';
+import {URL_UPDATE,URL_READ, URL_SCHEMA } from './constants.js';
+console.log(URL_UPDATE, URL_SCHEMA)
 
 export default {
   name: 'MainUpdatePage',
@@ -61,7 +63,7 @@ export default {
     },
     submit: async function(){
       let response = await axios
-      .post('http://localhost:3000/update',this.data[this.optionPicked])
+      .post(URL,this.data[this.optionPicked])
       .catch(error => console.log("ERROR",error))
       this.$root.$emit('showMainUpdatePage')
       this.status = response.data
@@ -70,7 +72,7 @@ export default {
       // GET DB Data
       this.status = ""
       let response = await axios
-      .post('http://localhost:3000/read',{})
+      .post(URL_READ,{})
       .catch(error => console.log("Error reading data from server",error))   
 
       this.schema = response.data
