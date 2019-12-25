@@ -13,7 +13,6 @@ const server = app.listen(port);
 server.started = new Promise((resolve, reject) => { startedFn = resolve });
 const sio = new SIO(server)
 
-
 const onError = (error) => {
     if (error.syscall !== 'listen') {
       throw error;

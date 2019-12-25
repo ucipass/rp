@@ -1,16 +1,15 @@
-const express = require('express');
 const config = require('config');
-const URL = require('url');
 const path = require('path')
+const PREFIX        = path.posix.join("/", config.server.prefix )
 const PREFIX_SCHEMA = path.posix.join("/", config.server.prefix, "schema")
 const PREFIX_CREATE = path.posix.join("/", config.server.prefix, "create")
-const PREFIX_READ = path.posix.join("/", config.server.prefix, "read")
+const PREFIX_READ   = path.posix.join("/", config.server.prefix, "read")
 const PREFIX_UPDATE = path.posix.join("/", config.server.prefix, "update")
 const PREFIX_DELETE = path.posix.join("/", config.server.prefix, "delete")
+const express = require('express');
 const app = express();
 let sio = null;
 let cors = require('cors') //PLEASE REMOVE FOR PRODUCTION
-let prefix = config.server.path ? config.server.path : "/"
 const createError = require('http-errors');
 const events = require("./events.js")
 events.on("onSocketIoStarted", (sioInstance)=>{
@@ -31,7 +30,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cors());
 
-app.use("/rp",express.static('manager/dist'))
+app.use( PREFIX ,express.static('manager/dist'))
 
 app.get('/', (req, res) => {
     res.send('Socket Manager')
@@ -42,6 +41,7 @@ app.get('/favicon.ico', (req, res) => res.status(204));
 app.post(PREFIX_SCHEMA, (req, res) => {
   res.json(schema)
 })
+
 app.post(PREFIX_CREATE, async (req, res) => {
   let room = req.body
   let json = new JSONData("server","onOpenRoom",{room:room})
@@ -65,6 +65,7 @@ app.post(PREFIX_UPDATE, async (req, res) => {
   await sio.onOpenRoom(jsonopen)
   res.json("success");
 })
+
 app.post(PREFIX_DELETE, async (req, res) => {
   let room = req.body
   let json = new JSONData("server","onCloseRoom",{room:room})
@@ -72,7 +73,6 @@ app.post(PREFIX_DELETE, async (req, res) => {
   sio.rooms.delete(room.name)
   res.json("success");
 })
-
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {

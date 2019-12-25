@@ -1,4 +1,4 @@
-const JSONData = require('./jsondata.js')
+const JSONData = require('../jsondata.js')
 const net = require('net')
 const websocket = require('websocket-stream')
 

@@ -1,5 +1,5 @@
-const app = require("./app.js")
-const SIO = require("./sio-server.js")
+const app = require("./app.js/index.js")
+const SIO = require("../sio-server.js")
 var log = require("ucipass-logger")("server")
 log.transports.console.level = 'debug'
 log.transports.file.level = 'error'

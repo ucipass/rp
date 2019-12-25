@@ -16,7 +16,7 @@ class RP  {
         expressWebSocket(this.app, null, { perMessageDeflate: false, });
         
         const websocketStream = require('websocket-stream/stream');
-        const JSONData = require('./jsondata.js')
+        const JSONData = require('../jsondata.js')
  
 		this.app.ws('/rp/ctrl', (ws, req) =>{
 			let wsctrl = websocketStream(ws, {    binary: true,  });
