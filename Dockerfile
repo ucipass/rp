@@ -9,4 +9,4 @@ RUN cd /source/rp && npm i --only=production
 COPY . .
 
 EXPOSE 3000
-CMD ["sh", "-c", "node server2.js"]
+CMD ["sh", "-c", "node server.js"]
