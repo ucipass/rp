@@ -1,4 +1,5 @@
 const socketio = require('socket.io')
+const path = require('path')
 const config = require('config');
 const JSONData = require('./jsondata.js')
 var log = require("ucipass-logger")("sio-server")
@@ -7,13 +8,17 @@ log.transports.file.level = 'error'
 
 class SIO  {
     constructor(server) {
+        this.prefix = process.env.VUE_APP_PREFIX ? process.env.VUE_APP_PREFIX : "/" 
+        this.sio_path = path.posix.join("/", this.prefix, "socket.io")
+        this.sio_opts = { path: this.sio_path }
         this.sockets = new Map()
         this.rooms = new Map()
         this.users = new Map()
         this.connections = new Map()
         this.latency = 0
         this.log = log;
-        this.io = socketio(server)
+        this.io = socketio( server, this.sio_opts)
+        log.info("Listening path:", this.sio_path.toString() )
         this.io.on('connection', this.onConnection.bind(this))
         // this.loadRoomDB( config.get("roomDB") )
         this.events = require('./events.js')

@@ -1,16 +1,27 @@
-const expect = require('expect');
-const fs = require('fs');
-const config = require('config');
-const logg = require('why-is-node-running')
-const File = require("ucipass-file")
-const JSONData = require('../jsondata.js')
+//############ PRODUCTION #######################
 const SIO = require("../sio-server.js")
 const SIOClient = require("../sio-client.js")
-const delay = require("./delay.js")
-var log = require("ucipass-logger")("mocha")
+const JSONData = require('../jsondata.js')
+
+//############  TESTING   ####################
 const TestServer = require("./testserver.js")
 const Echoserver = require("./echoserver.js")
 const Echoclient = require("./echoclient.js")
+const delay = require("./delay.js")
+
+const expect = require('expect');
+const path = require('path')
+// const fs = require('fs');
+// const config = require('config');
+// const logg = require('why-is-node-running')
+// const File = require("ucipass-file")
+const log = require("ucipass-logger")("mocha")
+
+//########### Constants ######################
+const port   = process.env.VUE_APP_SERVER_PORT
+const prefix = process.env.VUE_APP_PREFIX
+const url = new URL("http://localhost:"+ port +"/"+ prefix + "/")
+const sio_path = path.posix.join(url.pathname,"socket.io")
 
 describe('\n\n=================== SOCKET.IO TESTS ========================', () => {
     
@@ -18,7 +29,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
 
     beforeEach("Before", async()=>{
         let app = require('express')();
-        this.testServer = new TestServer(app,3000)
+        this.testServer = new TestServer(app,port)
         server = await this.testServer.start()
     })
 
@@ -28,7 +39,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
 
     it('Socket.io Client Only Connect Test', async () => {
         let serverSocketID = null
-        let io = require('socket.io')(server);
+        let io = require('socket.io')(server,{path:sio_path});
         io.on('connection', function(socket){
             serverSocket = socket
             serverSocketID = socket.id
@@ -38,7 +49,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
             // })            
         });
 
-        let client = new SIOClient("http://localhost:3000")
+        let client = new SIOClient()
         clientSocket = await client.start()
         let clientSocketId = clientSocket.id
         expect(clientSocketId).toEqual(serverSocketID)
@@ -50,8 +61,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         let sio = new SIO(server)
         let client1 = new SIOClient()
         let client2 = new SIOClient()
-        let clientSocket1 = await client1.start("http://localhost:3000")
-        let clientSocket2 = await client2.start("http://localhost:3000")
+        let clientSocket1 = await client1.start()
+        let clientSocket2 = await client2.start()
         expect( sio.sockets.size ).toEqual(2);
         await client1.stop()
         await client2.stop()
@@ -63,8 +74,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         let sio = new SIO(server)
         let client1 = new SIOClient()
         let client2 = new SIOClient()
-        let clientSock1 = await client1.start("http://localhost:3000")
-        let clientSock2 = await client2.start("http://localhost:3000")
+        let clientSock1 = await client1.start()
+        let clientSock2 = await client2.start()
         let clientauth1 = await client1.login("client1","client1")
         let clientauth2 = await client2.login("client2","client2")
         expect(clientauth1).toEqual('ack');
@@ -99,8 +110,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         }
         sio.rooms.set(room1.name,room1)
         sio.rooms.set(room2.name,room2)
-        let client1 = new SIOClient("http://localhost:3000","client1","client1")
-        let client2 = new SIOClient("http://localhost:3000","client2","client2")
+        let client1 = new SIOClient("client1","client1")
+        let client2 = new SIOClient("client2","client2")
         let socket1 = await client1.start()
         let socket2 = await client2.start()
         expect((await sio.getRoomMembers('room1')).length).toEqual(2);
@@ -123,8 +134,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
             "fwdPort": "22"
         }
         sio.rooms.set(room1.name,room1)
-        let client1 = new SIOClient("http://localhost:3000","client1","client1")
-        let client2 = new SIOClient("http://localhost:3000","client2","client2")
+        let client1 = new SIOClient("client1","client1")
+        let client2 = new SIOClient("client2","client2")
         let socket1 = await client1.start()
         let socket2 = await client2.start()
         let json = new JSONData("client1","onSendPrivateMsg",{room:"room1",msg:"test1"})
@@ -149,8 +160,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
             connections: new Map()
         }
         sio.rooms.set(room1.name,room1)
-        let client1 = new SIOClient("http://localhost:3000","client1","client1")
-        let client2 = new SIOClient("http://localhost:3000","client2","client2")
+        let client1 = new SIOClient("client1","client1")
+        let client2 = new SIOClient("client2","client2")
         let socket1 = await client1.start()
         let socket2 = await client2.start()
 
@@ -169,11 +180,11 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
 
 });
 
-describe('\n\n=================== APP & SOCKET.IO TESTS ========================', () => {
+describe('\n\n=================== SOCKET.IO & APP TESTS ========================', () => {
     
     beforeEach("Before", async ()=>{
         let app = require("../sio-app.js")
-        this.testServer = new TestServer(app,3000)
+        this.testServer = new TestServer(app,port)
         this.server = await this.testServer.start()
 
     })
@@ -202,10 +213,10 @@ describe('\n\n=================== APP & SOCKET.IO TESTS ========================
         let room3 = {
             "name": "room3",
             "rcvName": "client1",
-            "rcvPort": "2001",
+            "rcvPort": "5001",
             "fwdName": "client2",
             "fwdHost": "localhost",
-            "fwdPort": "22"
+            "fwdPort": "5002"
         }
         let sio = new SIO(this.server)
         // deleting all existing rooms
@@ -214,18 +225,17 @@ describe('\n\n=================== APP & SOCKET.IO TESTS ========================
         }
 
         const superagent = require('superagent');
-        await superagent.post('http://localhost:3000/rp/create').send(room1)
-        await superagent.post('http://localhost:3000/rp/create').send(room2)
-        let client1 = new SIOClient(null,"client1","client1")
-        let client2 = new SIOClient(null,"client2","client2")
+        await superagent.post( url.href + 'create').send(room1)
+        await superagent.post( url.href + 'create' ).send(room2)
+        let client1 = new SIOClient("client1","client1")
+        let client2 = new SIOClient("client2","client2")
         await client1.start()
         await client2.start()
-        await superagent.post('http://localhost:3000/rp/delete').send(room1)
-        await superagent.post('http://localhost:3000/rp/delete').send(room2)
-        await superagent.post('http://localhost:3000/rp/create').send(room3)
+        await superagent.post( url.href + 'delete').send(room1)
+        await superagent.post( url.href + 'delete').send(room2)
+        await superagent.post( url.href + 'create').send(room3)
         await client1.stop()
         await sio.stop()
-
     })
 
 })

@@ -1,11 +1,14 @@
+var log = require("ucipass-logger")("sio-app")
+log.transports.console.level = 'debug'
+log.transports.file.level = 'error'
 const config = require('config');
 const path = require('path')
-const PREFIX        = path.posix.join("/", config.server.prefix )
-const PREFIX_SCHEMA = path.posix.join("/", config.server.prefix, "schema")
-const PREFIX_CREATE = path.posix.join("/", config.server.prefix, "create")
-const PREFIX_READ   = path.posix.join("/", config.server.prefix, "read")
-const PREFIX_UPDATE = path.posix.join("/", config.server.prefix, "update")
-const PREFIX_DELETE = path.posix.join("/", config.server.prefix, "delete")
+const PREFIX        = process.env.VUE_APP_PREFIX ? process.env.VUE_APP_PREFIX : "/"
+const PREFIX_SCHEMA = path.posix.join("/",PREFIX, "schema")
+const PREFIX_CREATE = path.posix.join("/",PREFIX, "create")
+const PREFIX_READ   = path.posix.join("/",PREFIX, "read")
+const PREFIX_UPDATE = path.posix.join("/",PREFIX, "update")
+const PREFIX_DELETE = path.posix.join("/",PREFIX, "delete")
 const express = require('express');
 const app = express();
 let sio = null;
@@ -31,6 +34,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cors());
 
 app.use( PREFIX ,express.static('manager/dist'))
+log.info("Listening path:", PREFIX)
 
 app.get('/', (req, res) => {
     res.send('Socket Manager')
@@ -76,6 +80,7 @@ app.post(PREFIX_DELETE, async (req, res) => {
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
+  console.log(req.url)
   next(createError(404));
 });
 

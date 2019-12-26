@@ -28,6 +28,7 @@
 // import TableRow from './TableRow.vue'
 import axios from 'axios';
 import {URL_UPDATE, URL_READ, URL_DELETE, URL_SCHEMA } from './constants.js';
+console.log(URL_READ)
 
 
 export default {

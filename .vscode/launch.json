@@ -13,7 +13,10 @@
             "args": ["test/**/*.js", "--no-timeouts"],
             "cwd": "${workspaceRoot}",
             "runtimeExecutable": null,
-            "env": { "NODE_ENV": "testing"},
+            "env": { "NODE_ENV": "testing",
+                     "VUE_APP_PREFIX": "rpp",
+                     "VUE_APP_SERVER_PORT": "3010"
+                    },
             "outputCapture": "std"
         },
         {
@@ -25,7 +28,8 @@
             ],
             "env": {
                 "NODE_ENV": "development",
-                "port":"1337"
+                "VUE_APP_PREFIX": "rpp",
+                "VUE_APP_SERVER_PORT": "3010"
             },            
             "program": "${workspaceFolder}/server.js",
             "cwd": "${workspaceRoot}",
@@ -36,19 +40,19 @@
             "type": "node",
             "request": "launch",
             "name": "client",
-            "program": "${workspaceFolder}/client.js",
             "args": [
-                "-c", "client1", "-u", "ws://127.0.0.1:3000/rp"
-            ]
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "sio-client",
+                "-w","http://localhost:3001/rp","-u","client1", "-p", "client1"
+            ],
+            "env": {
+                "NODE_ENV": "development",
+                "port":"3000", 
+                "SERVER_URL": "http://localhost:3000/rp/", 
+                "CLIENT_URL": "http://localhost:3000/rp/"
+            },            
             "program": "${workspaceFolder}/sio-client.js",
-            "args": [
-                "-w", "http://127.0.0.1:3001"
-            ]
+            "cwd": "${workspaceRoot}",
+            "runtimeExecutable": null,
+            "outputCapture": "std"
         }
     ]
 }

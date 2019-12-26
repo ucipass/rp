@@ -41,6 +41,8 @@
     ],
     "server":{
         "port": 3000,
-        "prefix": "rp"
+        "prefix": "rp",
+        "SERVER_URL": "http://localhost:3010/rp",
+        "CLIENT_URL": "http://localhost:3010/rp"
     }
 }

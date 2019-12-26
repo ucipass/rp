@@ -1,4 +1,7 @@
-let net = require('net');
+const net = require('net');
+const log = require("ucipass-logger")("echoclient")
+log.transports.console.level = 'error'
+log.transports.file.level = 'error'
 
 class echoClient {
     
@@ -13,7 +16,7 @@ class echoClient {
         let receivedData = null
         let p = new Promise((res, rej) => { resolve = res; reject = rej});
         _client.connect( PORT, '127.0.0.1', function() {
-            console.log('EchoClient: connected to port', PORT);
+            log.info('EchoClient: connected to port', PORT);
             _client.write(sendData)
         });
 
@@ -23,15 +26,15 @@ class echoClient {
         });
         
         _client.on('close', ()=> {
-            console.log('EchoClient: connection closed');
+            log.info('EchoClient: connection closed');
             let recvData = this.receivedData
             if ( this.receivedData == sendData){
                 let message = 'EchoClient: received data matching: '+recvData
-                console.log(message);
+                log.info(message);
                 resolve(recvData.toString())
             }else{
                 let message = 'EchoClient: received data' + recvData+ ' NOT matching: '+ sendData
-                console.log(message);
+                log.info(message);
                 reject(recvData.toString())
             }
         });

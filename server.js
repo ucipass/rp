@@ -4,8 +4,7 @@ const SIO = require("./sio-server.js")
 var log = require("ucipass-logger")("server")
 log.transports.console.level = 'debug'
 log.transports.file.level = 'error'
-
-const port = process.env.port ? process.env.port : config.server.port
+const port = process.env.VUE_APP_SERVER_PORT ? process.env.VUE_APP_SERVER_PORT : 3000
 var lastSocketKey = 0;
 var socketMap = {};
 let startedFn = null
@@ -42,8 +41,7 @@ const onListening = () => {
   const bind = typeof addr === 'string'
       ? `pipe ${addr}`
       : `port ${addr.port}`;
-  log.info('*********** STARTING service **************');
-  log.info(`Web server listening at: ${bind}`);
+  log.info(`Listening on: ${bind}`);
   startedFn(true)
 };
 

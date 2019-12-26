@@ -1,5 +1,6 @@
 const io = require('socket.io-client');
 const net = require('net');
+const path = require('path')
 var log = require("ucipass-logger")("sio-client")
 log.transports.console.level = 'debug'
 log.transports.file.level = 'error'
@@ -14,8 +15,11 @@ const JSONData = require('./jsondata.js')
 ****************/
 
 class SocketIoClient  {
-    constructor(url,username,password) {
-        this.url = url ? url : "http://localhost:3000"
+    constructor(username,password,url) {
+        this.url = new URL( url ? url : "http://localhost:"+process.env.VUE_APP_SERVER_PORT+"/"+process.env.VUE_APP_PREFIX )
+        this.sio_url = this.url.origin
+        this.sio_path = path.posix.join(this.url.pathname,"socket.io")
+        this.sio_opts = { reconnection: false, path: this.sio_path }
         this.username = username ? username : "anonymous"
         this.password = password ? password : "anonymous"
         this.rooms = new Map()
@@ -29,13 +33,12 @@ class SocketIoClient  {
     get id() { return `${this.socketId}(${this.username})`}
 
     start(iourl,options){
-        return new Promise((resolve, reject) => {
-            let opt = options ? options : { reconnection: false }
-            let url = iourl ? iourl : this.url
-            this.socket = io( url , opt );
+        return new Promise((resolve, reject) => { try {
+            log.debug(`Connecting to: ${this.sio_url} path: ${this.sio_opts.path}`)
+            this.socket = io( this.sio_url , this.sio_opts );
 
             this.socket.on('connect', async ()=>{
-                log.info(`${this.socket.id} connected`)
+                log.info(`${this.socket.id} connected to: ${this.sio_url} path: ${this.sio_opts.path}`)
                 this.socketId = this.socket.id
                 if (this.username != "anonymous")
                     {
@@ -125,6 +128,9 @@ class SocketIoClient  {
             this.socket.on('pong', (latency) => {
                 log.silly(`pong ${this.socket.id} latency:`,latency)
             });
+        } catch (error) {
+            console.log(error)
+        }
         });
 
     }
@@ -534,8 +540,13 @@ module.exports = SocketIoClient
 if (require.main === module) {
     var argv = require('minimist')(process.argv.slice(2));
     if ( argv.w && argv.u && argv.p){
-        let client = new SocketIoClient(argv.w,argv.u,argv.p)
-        let clientSocket1 = client.start()
+        let client = new SocketIoClient(argv.u,argv.p,argv.w)
+        try {
+            let clientSocket1 = client.start()
+        } catch (error) {
+            console.log(error)
+        }
+        
     }else{
         console.log( "parameters -w http://<host>:<port> -u username -p password")
     }
