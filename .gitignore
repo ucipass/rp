@@ -1,6 +1,5 @@
 # Manager Dist
-manager\dist
-manager\dist\*
+dist
 
 # Logs
 logs
