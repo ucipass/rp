@@ -1,5 +1,6 @@
 # Manager Dist
 manager\dist
+manager\dist\*
 
 # Logs
 logs
