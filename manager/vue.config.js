@@ -2,5 +2,6 @@ module.exports = {
   configureWebpack: { 
     devtool: 'source-map' 
   },
-  publicPath: process.env.VUE_APP_PREFIX
+  // publicPath: process.env.VUE_APP_PREFIX
+  publicPath: ""
 }
