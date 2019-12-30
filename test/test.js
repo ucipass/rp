@@ -49,7 +49,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
             // })            
         });
 
-        let client = new SIOClient()
+        let client = new SIOClient(null,null,url.href)
         clientSocket = await client.start()
         let clientSocketId = clientSocket.id
         expect(clientSocketId).toEqual(serverSocketID)
@@ -59,8 +59,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
 
     it('Socket.io Server/Clients Connect Test', async () => {
         let sio = new SIO(server)
-        let client1 = new SIOClient()
-        let client2 = new SIOClient()
+        let client1 = new SIOClient(null,null,url.href)
+        let client2 = new SIOClient(null,null,url.href)
         let clientSocket1 = await client1.start()
         let clientSocket2 = await client2.start()
         expect( sio.sockets.size ).toEqual(2);
@@ -72,19 +72,12 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
 
     it('Socket.io Authentication', async () => {
         let sio = new SIO(server)
-        let client1 = new SIOClient()
-        let client2 = new SIOClient()
+        let client1 = new SIOClient("client1","client1",url.href)
+        let client2 = new SIOClient("client2","client2",url.href)
         let clientSock1 = await client1.start()
         let clientSock2 = await client2.start()
-        let clientauth1 = await client1.login("client1","client1")
-        let clientauth2 = await client2.login("client2","client2")
-        expect(clientauth1).toEqual('ack');
-        expect(clientauth2).toEqual('ack')
         expect(sio.getSocketById(clientSock1.id).auth).toEqual(true);
-        expect(sio.getSocketById(clientSock1.id).auth).toEqual(true);
-        await client1.logout()
-        expect(sio.getSocketById(clientSock1.id).auth).toEqual(false);
-        await client2.logout()
+        expect(sio.getSocketById(clientSock2.id).auth).toEqual(true);
         await client1.stop()
         await client2.stop()
         await sio.stop()
@@ -110,8 +103,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         }
         sio.rooms.set(room1.name,room1)
         sio.rooms.set(room2.name,room2)
-        let client1 = new SIOClient("client1","client1")
-        let client2 = new SIOClient("client2","client2")
+        let client1 = new SIOClient("client1","client1",url.href)
+        let client2 = new SIOClient("client2","client2",url.href)
         let socket1 = await client1.start()
         let socket2 = await client2.start()
         expect((await sio.getRoomMembers('room1')).length).toEqual(2);
@@ -134,8 +127,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
             "fwdPort": "22"
         }
         sio.rooms.set(room1.name,room1)
-        let client1 = new SIOClient("client1","client1")
-        let client2 = new SIOClient("client2","client2")
+        let client1 = new SIOClient("client1","client1",url.href)
+        let client2 = new SIOClient("client2","client2",url.href)
         let socket1 = await client1.start()
         let socket2 = await client2.start()
         let json = new JSONData("client1","onSendPrivateMsg",{room:"room1",msg:"test1"})
@@ -160,8 +153,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
             connections: new Map()
         }
         sio.rooms.set(room1.name,room1)
-        let client1 = new SIOClient("client1","client1")
-        let client2 = new SIOClient("client2","client2")
+        let client1 = new SIOClient("client1","client1",url.href)
+        let client2 = new SIOClient("client2","client2",url.href)
         let socket1 = await client1.start()
         let socket2 = await client2.start()
 
@@ -171,8 +164,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         let echoclient1 = await new Echoclient(CLIENT_PORT);
         let reply1 = await echoclient1.send("ABCD")
         expect("ABCD").toEqual(reply1);
-
         await echoserver.stop()
+
         await client1.stop()
         await client2.stop()
         await sio.stop()
@@ -197,18 +190,18 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         let room1 = {
             "name": "room1",
             "rcvName": "client1",
-            "rcvPort": "4001",
+            "rcvPort": "3001",
             "fwdName": "client2",
             "fwdHost": "localhost",
-            "fwdPort": "22"
+            "fwdPort": "3002"
         }
         let room2 = {
             "name": "room2",
             "rcvName": "client1",
-            "rcvPort": "4003",
+            "rcvPort": "4001",
             "fwdName": "client2",
             "fwdHost": "localhost",
-            "fwdPort": "23"
+            "fwdPort": "4002"
         }
         let room3 = {
             "name": "room3",
@@ -227,14 +220,24 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         const superagent = require('superagent');
         await superagent.post( url.href + 'create').send(room1)
         await superagent.post( url.href + 'create' ).send(room2)
-        let client1 = new SIOClient("client1","client1")
-        let client2 = new SIOClient("client2","client2")
+        let client1 = new SIOClient("client1","client1",url.href)
+        let client2 = new SIOClient("client2","client2",url.href)
         await client1.start()
         await client2.start()
         await superagent.post( url.href + 'delete').send(room1)
         await superagent.post( url.href + 'delete').send(room2)
         await superagent.post( url.href + 'create').send(room3)
+        room3.rcvPort = "6001"
+        await superagent.post( url.href + 'update').send(room3)
+
+        let echoserver = new Echoserver(room3.fwdPort)
+        await echoserver.start()
+        let echoclient1 = await new Echoclient(room3.rcvPort);
+        let reply1 = await echoclient1.send("ABCD").catch( error => error)
+        expect(reply1).toEqual("ABCD");
+        await echoserver.stop()
         await client1.stop()
+        await client2.stop()
         await sio.stop()
     })
 

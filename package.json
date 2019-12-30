@@ -2,10 +2,12 @@
   "name": "test2",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "test": "node ./node_modules/mocha/bin/mocha",
-    "build": "node ./node_modules/pkg/lib-es5/bin.js client.js --out-path ./dist && node ./node_modules/pkg/lib-es5/bin.js server.js --out-path ./dist"
+    "start": "cross-env VUE_APP_PREFIX=rpp VUE_APP_SERVER_PORT=3010 node server.js",
+    "test": "cross-env VUE_APP_PREFIX=rp VUE_APP_SERVER_PORT=3010 node ./node_modules/mocha/bin/mocha",
+    "build": "node ./node_modules/pkg/lib-es5/bin.js client.js --out-path ./dist && node ./node_modules/pkg/lib-es5/bin.js server.js --out-path ./dist",
+    "greet": "cross-env-shell GREETING=Hi NAME=Joe \"echo $GREETING && echo $NAME\""
   },
   "author": "",
   "license": "ISC",
@@ -16,12 +18,14 @@
     "express-ws": "^4.0.0",
     "minimist": "^1.2.0",
     "pkg": "^4.3.8",
+    "simple-socks": "^1.0.3",
     "socket.io": "^2.3.0",
     "socket.io-client": "^2.3.0",
     "ucipass-logger": "^1.0.3",
     "websocket-stream": "^5.5.0"
   },
   "devDependencies": {
+    "cross-env": "^6.0.3",
     "expect": "^24.9.0",
     "mocha": "^6.2.2",
     "superagent": "^5.1.2",

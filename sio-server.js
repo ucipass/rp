@@ -124,18 +124,22 @@ class SIO  {
         let json = (new JSONData()).setjson(data.json)
         let room = this.rooms.get(json.att.room.name)
         let socketIds = await this.getRoomMembers(room.name)
-        socketIds.forEach(socketId => {
-            let socket = this.sockets.get(socketId)
-            socket.emit("onCloseRoom",json)
-            socket.leave(room.name,(err)=>{
-                if (err){
-                    log.error(`${socket.id}(${socket.username}) failed to leave ${room.name} room !`, err)
-                }else{
-                    log.info(`${socket.id}(${socket.username}) left ${room.name} room !`)              
-                }
-            })                          
+        return new Promise((resolve, reject) => {
+            socketIds.forEach(socketId => {
+                let socket = this.sockets.get(socketId)
+                socket.emit("onCloseRoom",json)
+                socket.leave(room.name,(err)=>{
+                    if (err){
+                        log.error(`${socket.id}(${socket.username}) failed to leave ${room.name} room !`, err)
+                        reject(`${socket.id}(${socket.username}) failed to leave ${room.name} room !`)
+                    }else{
+                        log.info(`${socket.id}(${socket.username}) left ${room.name} room !`)    
+                        resolve(`${socket.id}(${socket.username}) left ${room.name} room !`)          
+                    }
+                })                          
+            });
+            this.rooms.delete(room.name)            
         });
-        this.rooms.delete(room.name)
     }
 
     async onData(socket, data, replyFn){

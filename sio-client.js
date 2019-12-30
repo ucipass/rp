@@ -5,6 +5,26 @@ var log = require("ucipass-logger")("sio-client")
 log.transports.console.level = 'debug'
 log.transports.file.level = 'error'
 const JSONData = require('./jsondata.js')
+const socks5 = require('simple-socks')
+const proxyPort = 1081
+const proxy  = socks5.createServer().listen(proxyPort);    
+
+proxy.on('error',(error)=>{
+    switch (error.code) {
+        case 'EACCES':
+            console.error(`${proxyPort} requires elevated privileges`);
+            process.exit(1);
+            break;
+        case 'EADDRINUSE':
+            log.error(`${proxyPort} is already in use`);
+            // process.exit(1);
+            break;
+        default:
+            throw error;
+    }    
+})
+
+
 
 /**** FLOW *****
 1. Client connects to server: start()
@@ -16,14 +36,23 @@ const JSONData = require('./jsondata.js')
 
 class SocketIoClient  {
     constructor(username,password,url) {
-        this.url = new URL( url ? url : "http://localhost:"+process.env.VUE_APP_SERVER_PORT+"/"+process.env.VUE_APP_PREFIX )
+        try {
+            this.url = new URL( url )
+        } catch (error) {
+            log.error("INVALID URL:", url)
+            process.exit()
+        }   
         this.sio_url = this.url.origin
         this.sio_path = path.posix.join(this.url.pathname,"socket.io")
-        this.sio_opts = { reconnection: false, path: this.sio_path }
+        this.sio_opts = { 
+            reconnection: true, 
+            path: this.sio_path 
+        }
         this.username = username ? username : "anonymous"
         this.password = password ? password : "anonymous"
         this.rooms = new Map()
         this.socket = null
+        this.reconnectNumber = 0
         this.stopped = false
         this.socketId = "123"
         this.auth = false
@@ -38,6 +67,7 @@ class SocketIoClient  {
             this.socket = io( this.sio_url , this.sio_opts );
 
             this.socket.on('connect', async ()=>{
+                this.reconnectNumber = 0
                 log.info(`${this.socket.id} connected to: ${this.sio_url} path: ${this.sio_opts.path}`)
                 this.socketId = this.socket.id
                 if (this.username != "anonymous")
@@ -62,6 +92,7 @@ class SocketIoClient  {
             this.socket.on('onSendPrivateMsg', this.onSendPrivateMsg.bind(this));
 
             this.socket.on('disconnect', (reason) => {
+                this.reconnectNumber = 0
                 log.info(`${this.socketId}(${this.username}) disconnect reason:`,reason)
                 this.rooms.forEach((room)=>{
                     // Disconnect TCP Listener, if present
@@ -93,7 +124,8 @@ class SocketIoClient  {
             });
 
             this.socket.on('reconnecting', (attemptNumber) => {
-                log.debug("reconnecting no:",attemptNumber)
+                log.debug(`Reconnection attempt to ${this.url.href}. Attempt#:`,attemptNumber)
+                this.reconnectNumber = attemptNumber
               });
 
             this.socket.on('reconnect_error', (error) => {
@@ -105,8 +137,8 @@ class SocketIoClient  {
             });
             
             this.socket.on('connect_error', (error)=>{
-                log.error("connect_error:",error.message)
-                reject(true)
+                log.error(`Connection to ${this.url.href} failed!`)
+                // reject(true)
             })
             
             this.socket.on('connect_timeout', (error)=>{
@@ -138,6 +170,9 @@ class SocketIoClient  {
     stop(){
         this.stopped = true
         return new Promise((resolve, reject) => {
+
+            // CLOSING PROXY
+            proxy.close()
 
             // CLOSING TCP
             this.rooms.forEach(room => {
@@ -539,8 +574,8 @@ module.exports = SocketIoClient
 
 if (require.main === module) {
     var argv = require('minimist')(process.argv.slice(2));
-    if ( argv.w && argv.u && argv.p){
-        let client = new SocketIoClient(argv.u,argv.p,argv.w)
+    if ( argv._[0] && argv.u && argv.p){
+        let client = new SocketIoClient(argv.u,argv.p,argv._[0])
         try {
             let clientSocket1 = client.start()
         } catch (error) {
@@ -548,6 +583,6 @@ if (require.main === module) {
         }
         
     }else{
-        console.log( "parameters -w http://<host>:<port> -u username -p password")
+        console.log( "parameters  [-u username] [-p password] http(s)://<host>:<port>/<prefix>")
     }
 }

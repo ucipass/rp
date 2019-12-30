@@ -35,7 +35,7 @@ class echoClient {
             }else{
                 let message = 'EchoClient: received data' + recvData+ ' NOT matching: '+ sendData
                 log.info(message);
-                reject(recvData.toString())
+                reject(recvData ? recvData.toString() : "NODATA")
             }
         });
         
