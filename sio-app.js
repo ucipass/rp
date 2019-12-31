@@ -80,7 +80,7 @@ app.post(PREFIX_DELETE, async (req, res) => {
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
-  console.log(req.url)
+  log.error("INVALID URL:",req.url)
   next(createError(404));
 });
 
