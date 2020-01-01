@@ -1,5 +1,5 @@
 var log = require("ucipass-logger")("server")
-log.transports.console.level = 'debug'
+log.transports.console.level = 'info'
 log.transports.file.level = 'error'
 
 module.exports = function (msDelay){

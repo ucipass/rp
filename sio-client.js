@@ -2,7 +2,7 @@ const io = require('socket.io-client');
 const net = require('net');
 const path = require('path')
 var log = require("ucipass-logger")("sio-client")
-log.transports.console.level = 'debug'
+log.transports.console.level = 'info'
 log.transports.file.level = 'error'
 const JSONData = require('./jsondata.js')
 const socks5 = require('simple-socks')
@@ -52,7 +52,7 @@ class SocketIoClient  {
         this.password = password ? password : "anonymous"
         this.rooms = new Map()
         this.socket = null
-        this.reconnectNumber = 0
+        this.reconnectAttempt = 0
         this.stopped = false
         this.socketId = "123"
         this.auth = false
@@ -61,13 +61,13 @@ class SocketIoClient  {
 
     get id() { return `${this.socketId}(${this.username})`}
 
-    start(iourl,options){
+    start(){
         return new Promise((resolve, reject) => { try {
             log.debug(`Connecting to: ${this.sio_url} path: ${this.sio_opts.path}`)
             this.socket = io( this.sio_url , this.sio_opts );
 
             this.socket.on('connect', async ()=>{
-                this.reconnectNumber = 0
+                this.reconnectAttempt = 0
                 log.info(`${this.socket.id} connected to: ${this.sio_url} path: ${this.sio_opts.path}`)
                 this.socketId = this.socket.id
                 if (this.username != "anonymous")
@@ -77,22 +77,8 @@ class SocketIoClient  {
                 return resolve(this.socket)
             })    
 
-            this.socket.on('onData', this.onData.bind(this));
-
-            // this.socket.on('json', this.onJson.bind(this));
-
-            this.socket.on('onTcpConnRequest', this.onTcpConnRequest.bind(this));
-            
-            this.socket.on('onOpenRoom', this.onOpenRoom.bind(this));
-            
-            this.socket.on('onCloseRoom', this.onCloseRoom.bind(this));
-            
-            this.socket.on('onTcpConnClose', this.onTcpConnClose.bind(this));
-            
-            this.socket.on('onSendPrivateMsg', this.onSendPrivateMsg.bind(this));
-
             this.socket.on('disconnect', (reason) => {
-                this.reconnectNumber = 0
+                this.reconnectAttempt = 0
                 log.info(`${this.socketId}(${this.username}) disconnect reason:`,reason)
                 this.rooms.forEach((room)=>{
                     // Disconnect TCP Listener, if present
@@ -110,48 +96,61 @@ class SocketIoClient  {
                             connections.delete(connection.connectionID)            
                         }                            
                     })
-                
+                    this.rooms.delete(room.name)
                 })
 
-              });
+            });
+
+            this.socket.on('onData', this.onData.bind(this));
+
+            this.socket.on('onTcpConnRequest', this.onTcpConnRequest.bind(this));
+            
+            this.socket.on('onOpenRoom', this.onOpenRoom.bind(this));
+            
+            this.socket.on('onCloseRoom', this.onCloseRoom.bind(this));
+            
+            this.socket.on('onTcpConnClose', this.onTcpConnClose.bind(this));
+            
+            this.socket.on('onSendPrivateMsg', this.onSendPrivateMsg.bind(this));
 
             this.socket.on('reconnect', (attemptNumber) => {
-                log.debug("successful reconnect no:",attemptNumber)
+                this.socketId = this.socket.id
+                log.debug(`${this.id}:successful reconnect no:`,attemptNumber)
             });
 
             this.socket.on('reconnect_attempt', (attemptNumber) => {
-                log.debug("reconnect_attempt no:",attemptNumber)
+                log.debug(`${this.id}:reconnect_attempt no:`,attemptNumber)
             });
 
             this.socket.on('reconnecting', (attemptNumber) => {
-                log.debug(`Reconnection attempt to ${this.url.href}. Attempt#:`,attemptNumber)
-                this.reconnectNumber = attemptNumber
+                log.debug(`${this.id}:Reconnection attempt to ${this.url.href}. Attempt#:`,attemptNumber)
+                this.reconnectAttempt = attemptNumber
               });
 
             this.socket.on('reconnect_error', (error) => {
-                log.debug("reconnect_error:",error.message)
+                log.debug(`${this.id}:reconnect_error:`,error.message)
             });
             
             this.socket.on('reconnect_failed', () => {
-                log.debug("reconnect_failed:")
+                log.debug(`${this.id}:reconnect_failed:`)
             });
             
             this.socket.on('connect_error', (error)=>{
-                log.error(`Connection to ${this.url.href} failed!`)
+                log.error(`${this.id}:Connection to ${this.url.href} failed! Attempt:${this.reconnectAttempt}`)
                 // reject(true)
             })
             
             this.socket.on('connect_timeout', (error)=>{
-                log.error("connect_timeout:",error.message)
+                log.error(`${this.id}:connect_timeout:`,error.message)
                 reject(true)
             })            
 
             this.socket.on('error', (error)=>{
                 if (this.stopped){
-                    log.debug(`client ${this.socketId} already stopped error:`,error.message)
+                    log.debug(`${this.id}: ${this.socketId} already stopped error:`,error.message)
                     reject(true)     
                 }else{
-                    log.error("error:",error.message)
+                    log.error(`${this.id}error:`,error.message)
                     reject(true)                    
                 }
 
@@ -167,6 +166,8 @@ class SocketIoClient  {
 
     }
 
+
+    
     stop(){
         this.stopped = true
         return new Promise((resolve, reject) => {
@@ -268,7 +269,7 @@ class SocketIoClient  {
     }
 
     // client configuration is pushed by server upon successfuul auth
-    async onOpenRoom (data){
+    async onOpenRoom (data,replyFn){
         let json = (new JSONData().setjson(data.json))
         let room = json.att.room
         if ( room.rcvName == this.username){
@@ -276,16 +277,18 @@ class SocketIoClient  {
             room = await this.getTcpListener(room)
             this.rooms.set(json.att.room.name,room)
             json.att.msg = 'ack'
-            return(json)
+            replyFn()
+            return;
         }
         if ( room.fwdName == this.username){
             log.info(`${this.id} received ${room.name} config: Forwarding to ${room.fwdHost}:${room.fwdPort} from remote-end localhost:${room.rcvPort}` )
             room.connections = new Map()
             this.rooms.set(json.att.room.name,room)
             json.att.msg = 'ack'
-            return(json)            
+            replyFn()
+            return;            
         }
-        return true
+        replyFn()
     }
 
     async onCloseRoom (data){

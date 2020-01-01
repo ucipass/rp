@@ -1,5 +1,5 @@
 var log = require("ucipass-logger")("sio-app")
-log.transports.console.level = 'debug'
+log.transports.console.level = 'info'
 log.transports.file.level = 'error'
 const config = require('config');
 const path = require('path')

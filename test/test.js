@@ -243,3 +243,104 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
     })
 
 })
+
+describe('\n\n=================== NETWORK FAILURE TEST ========================', () => {
+    
+    beforeEach("Before", async ()=>{
+
+    })
+
+    afterEach("After",  async ()=>{
+
+    })
+
+    it("SERVER FAILURE TEST", async ()=>{
+        let room1 = {
+            "name": "room1",
+            "rcvName": "client1",
+            "rcvPort": "3001",
+            "fwdName": "client2",
+            "fwdHost": "localhost",
+            "fwdPort": "3002"
+        }
+        let app = require("../sio-app.js")
+        let testserver1 = new TestServer(app,port)
+        let server = await testserver1.start()
+        let sio = new SIO(server)
+        let client1 = new SIOClient("client1","client1",url.href)
+        let client2 = new SIOClient("client2","client2",url.href)
+        await client1.start()
+        await client2.start()
+        const superagent = require('superagent');
+        await superagent.post( url.href + 'create').send(room1)
+        let echoserver = new Echoserver(room1.fwdPort)
+        await echoserver.start()
+        let echoclient1 = await new Echoclient(room1.rcvPort);
+        let reply1 = await echoclient1.send("ABCD").catch( error => error)
+        expect(reply1).toEqual("ABCD");
+        await sio.stop()
+        await testserver1.stop()
+        while ( client1.rooms.size || client1.rooms.size) { 
+            await delay(200) 
+        }
+        let testserver2 = new TestServer(app,port)
+        let server2 = await testserver2.start()
+        sio = new SIO(server2)
+        await superagent.post( url.href + 'create').send(room1)
+        while ( !client1.rooms.size || !client2.rooms.size) { 
+            await delay(200) 
+        }
+
+        let echoclient2 = await new Echoclient(room1.rcvPort);
+        let reply2 = await echoclient2.send("1234").catch( error => console.log("ECHOCLIENT CONNECTION ERROR:",error))
+        expect(reply2).toEqual("1234");
+
+        await echoserver.stop()
+        await client1.stop()
+        await client2.stop()
+        await sio.stop()        
+    })
+
+    it("CLIENT FAILURE TEST", async ()=>{
+        let room1 = {
+            "name": "room1",
+            "rcvName": "client1",
+            "rcvPort": "3001",
+            "fwdName": "client2",
+            "fwdHost": "localhost",
+            "fwdPort": "3002"
+        }
+        let app = require("../sio-app.js")
+        let testserver1 = new TestServer(app,port)
+        let server = await testserver1.start()
+        let sio = new SIO(server)
+        let client1 = new SIOClient("client1","client1",url.href)
+        let client2 = new SIOClient("client2","client2",url.href)
+        await client1.start()
+        await client2.start()
+        const superagent = require('superagent');
+        await superagent.post( url.href + 'create').send(room1)
+        let echoserver = new Echoserver(room1.fwdPort)
+        await echoserver.start()
+        let echoclient1 = await new Echoclient(room1.rcvPort);
+        let reply1 = await echoclient1.send("ABCD").catch( error => console.log("ECHOCLIENT CONNECTION ERROR:",error))
+        expect(reply1).toEqual("ABCD");
+        await client1.stop()
+
+        client1 = new SIOClient("client1","client1",url.href)
+        await client1.start()
+        while ( !client1.rooms.size || !client2.rooms.size) { 
+            await delay(200) 
+        }
+
+        let echoclient2 = await new Echoclient(room1.rcvPort);
+        let reply2 = await echoclient2.send("1234").catch( error => console.log("ECHOCLIENT CONNECTION ERROR:",error))
+        expect(reply2).toEqual("1234");
+
+        await echoserver.stop()
+        await client1.stop()
+        await client2.stop()
+        await sio.stop()        
+    })
+
+})

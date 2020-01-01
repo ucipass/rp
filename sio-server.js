@@ -3,7 +3,7 @@ const path = require('path')
 const config = require('config');
 const JSONData = require('./jsondata.js')
 var log = require("ucipass-logger")("sio-server")
-log.transports.console.level = 'debug'
+log.transports.console.level = 'error'
 log.transports.file.level = 'error'
 
 class SIO  {
@@ -96,7 +96,7 @@ class SIO  {
                     if (err) log.error(`${socket.id}(${socket.username}) failed to join ${room.name} room !`, err)
                 })
                 let json = new JSONData("server","onOpenRoom",{room:room})
-                socket.emit("onOpenRoom",json)                       
+                socket.emit("onOpenRoom",json,()=>{})                       
             }
         })
     }
@@ -106,17 +106,22 @@ class SIO  {
         let room = json.att.room
         room.connections = new Map()
         this.rooms.set(room.name,room)
-        this.sockets.forEach(socket => {
-            if (socket.username == room.rcvName || socket.username == room.fwdName){
-                socket.join(room.name,(err)=>{
-                    if (err){
-                        log.error(`${socket.id}(${socket.username}) failed to join ${room.name} room !`, err)
-                    }else{
-                        log.info(`${socket.id}(${socket.username}) joined ${room.name} room !`)              
-                    }
-                })  
-                socket.emit("onOpenRoom",json)
-            }
+
+        this.sockets.forEach(async socket => {
+            await new Promise((resolve, reject) => {
+                if (socket.username == room.rcvName || socket.username == room.fwdName){
+                    socket.join(room.name,(err)=>{
+                        if (err){
+                            log.error(`${socket.id}(${socket.username}) failed to join ${room.name} room !`, err)
+                        }else{
+                            log.info(`${socket.id}(${socket.username}) joined ${room.name} room !`)              
+                        }
+                    })  
+                    socket.emit("onOpenRoom",json,()=>{
+                        resolve(true)
+                    })
+                }                
+            });
         });
     }
 
