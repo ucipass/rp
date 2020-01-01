@@ -57,17 +57,22 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         clientSocket.disconnect()
     });
 
-    it('Socket.io Server/Clients Connect Test', async () => {
+    it.only('Socket.io Server/Clients (re)Connect Test', async () => {
         let sio = new SIO(server)
         let client1 = new SIOClient(null,null,url.href)
         let client2 = new SIOClient(null,null,url.href)
         let clientSocket1 = await client1.start()
         let clientSocket2 = await client2.start()
         expect( sio.sockets.size ).toEqual(2);
-        await client1.stop()
-        await client2.stop()
-        expect( sio.sockets.size ).toEqual(0);
         await sio.stop()
+        let sio2 = new SIO(server)
+        await new Promise((resolve, reject) => {
+            
+        });
+       // await client1.stop()
+        // await client2.stop()
+        // expect( sio.sockets.size ).toEqual(0);
+        // await sio.stop()
     });
 
     it('Socket.io Authentication', async () => {
@@ -186,7 +191,7 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         await this.testServer.stop()
     })
 
-    it("Complete Test", async ()=>{
+    it("Complete REST API Create/Delete/Update Test", async ()=>{
         let room1 = {
             "name": "room1",
             "rcvName": "client1",
@@ -216,7 +221,8 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         for (const room of sio.rooms.values()) {
             sio.rooms.delete(room.name)
         }
-
+        let echoserver = new Echoserver(room3.fwdPort)
+        await echoserver.start()
         const superagent = require('superagent');
         await superagent.post( url.href + 'create').send(room1)
         await superagent.post( url.href + 'create' ).send(room2)
@@ -227,14 +233,14 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         await superagent.post( url.href + 'delete').send(room1)
         await superagent.post( url.href + 'delete').send(room2)
         await superagent.post( url.href + 'create').send(room3)
-        room3.rcvPort = "6001"
-        await superagent.post( url.href + 'update').send(room3)
-
-        let echoserver = new Echoserver(room3.fwdPort)
-        await echoserver.start()
         let echoclient1 = await new Echoclient(room3.rcvPort);
         let reply1 = await echoclient1.send("ABCD").catch( error => error)
         expect(reply1).toEqual("ABCD");
+        room3.rcvPort = "6001"
+        await superagent.post( url.href + 'update').send(room3)
+        let echoclient2 = await new Echoclient(room3.rcvPort);
+        let reply2 = await echoclient2.send("1234").catch( error => error)
+        expect(reply2).toEqual("1234");
         await echoserver.stop()
         await client1.stop()
         await client2.stop()
