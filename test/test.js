@@ -57,22 +57,17 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         clientSocket.disconnect()
     });
 
-    it.only('Socket.io Server/Clients (re)Connect Test', async () => {
+    it('Socket.io Server/Clients (re)Connect Test', async () => {
         let sio = new SIO(server)
         let client1 = new SIOClient(null,null,url.href)
         let client2 = new SIOClient(null,null,url.href)
         let clientSocket1 = await client1.start()
         let clientSocket2 = await client2.start()
         expect( sio.sockets.size ).toEqual(2);
+        await client1.stop()
+        await client2.stop()
+        expect( sio.sockets.size ).toEqual(0);
         await sio.stop()
-        let sio2 = new SIO(server)
-        await new Promise((resolve, reject) => {
-            
-        });
-       // await client1.stop()
-        // await client2.stop()
-        // expect( sio.sockets.size ).toEqual(0);
-        // await sio.stop()
     });
 
     it('Socket.io Authentication', async () => {
