@@ -57,17 +57,20 @@ app.post(PREFIX_READ, (req, res) => {
   let roomArray = Array.from(sio.rooms.values())
   res.json(roomArray)
 })
-app.post(PREFIX_UPDATE, async (req, res) => {
+app.post(PREFIX_UPDATE, (req, res) => {
   let room = req.body
 
   let jsonclose = new JSONData("server","onCloseRoom",{room:room})
-  await sio.onCloseRoom(jsonclose)
-  sio.rooms.delete(room.name)
-  
-  let jsonopen = new JSONData("server","onOpenRoom",{room:room})
-  sio.rooms.set(room.name,room)
-  await sio.onOpenRoom(jsonopen)
-  res.json("success");
+  sio.onCloseRoom(jsonclose)
+  .then(()=>{
+    let jsonopen = new JSONData("server","onOpenRoom",{room:room})
+    sio.rooms.set(room.name,room)
+    return sio.onOpenRoom(jsonopen)
+  })
+  .then(()=>{
+    return res.json("success");       
+  })  
+
 })
 
 app.post(PREFIX_DELETE, async (req, res) => {

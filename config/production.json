@@ -1,0 +1,48 @@
+{
+    "userDB" : [
+        {
+            "username": "client1",
+            "password": "client1",
+            "rooms": ["room1","room2"]
+        },
+        {
+            "username": "client2",
+            "password": "client2",
+            "rooms": ["room1","room2"]
+        },
+        {
+            "username": "client3",
+            "password": "client3",
+            "rooms": ["room2"]
+        },
+        {
+            "username": "client4",
+            "password": "client4",
+            "rooms": ["room2"]
+        }
+    ],
+    "roomDB" : [
+        {
+            "name": "room1",
+            "rcvName": "client1",
+            "rcvPort": "4001",
+            "fwdName": "client2",
+            "fwdHost": "localhost",
+            "fwdPort": "4002"
+        },
+        {
+            "name": "room2",
+            "rcvName": "client1",
+            "rcvPort": "2222",
+            "fwdName": "client2",
+            "fwdHost": "localhost",
+            "fwdPort": "22"
+        }
+    ],
+    "server":{
+        "port": 3000,
+        "prefix": "rp",
+        "SERVER_URL": "http://localhost:3010/rp",
+        "CLIENT_URL": "http://localhost:3010/rp"
+    }
+}

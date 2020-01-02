@@ -291,7 +291,7 @@ class SocketIoClient  {
         replyFn()
     }
 
-    async onCloseRoom (data){
+    async onCloseRoom (data,ReplyFn){
         let json = (new JSONData().setjson(data.json))
         let room = this.rooms.get(json.att.room.name)
         // Disconnect TCP Connections, if present
@@ -305,7 +305,7 @@ class SocketIoClient  {
         // Disconnect TCP Listener, if present
         if( room.tcpserver){
             log.debug(`${this.id}: Stopping listening on TCP port ${room.rcvPort}`);
-            await new Promise((resolve, reject) => {
+            let closesrv = await new Promise((resolve, reject) => {
                 room.tcpserver.close(()=>{
                     log.info(`${this.id}: Stopped listening on TCP port ${room.rcvPort}`);
                     room.tcpserver.unref()
@@ -315,7 +315,7 @@ class SocketIoClient  {
                      
         }
         this.rooms.delete(room.name)
-        return true
+        return ReplyFn()
     }
 
     // Called by onClientConfig returns tcp listener(server) with room
@@ -405,7 +405,7 @@ class SocketIoClient  {
         this.socket.emit("onTcpConnRequest",json,(reply)=>{
             let replyJson = (new JSONData()).setjson(reply.json)
             if (replyJson.err){
-                log.error(`${this.id} TCP CONNECTION REQUEST REJECT`)
+                log.error(`${this.id} TCP CONNECTION REQUEST REJECT:`, replyJson.err)
                 tcpsocket.destroy()
             }
             else{
@@ -536,12 +536,16 @@ class SocketIoClient  {
     async onTcpConnClose(data,replyFn){
         let json = (new JSONData().setjson(data.json))
         log.debug(`${this.id} Received TCP Close form ${json.id}`)
-        let connections = this.rooms.get(json.att.room).connections
-        let connection = connections.get(json.att.connectionID)
-        if (connection && connection.tcpsocket) {
-            connection.tcpsocket.destroy()
-            connections.delete(json.att.connectionID)            
+        let room = this.rooms.get(json.att.room)
+        if ( room && room.connections && room.connections.size){
+            let connections = room.connections
+            let connection = connections.get(json.att.connectionID)
+            if (connection && connection.tcpsocket) {
+                connection.tcpsocket.destroy()
+                connections.delete(json.att.connectionID)            
+            }            
         }
+
 
 
         // replyFn(json) // this is not needed

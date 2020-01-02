@@ -233,6 +233,7 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         expect(reply1).toEqual("ABCD");
         room3.rcvPort = "6001"
         await superagent.post( url.href + 'update').send(room3)
+        await delay(1000)
         let echoclient2 = await new Echoclient(room3.rcvPort);
         let reply2 = await echoclient2.send("1234").catch( error => error)
         expect(reply2).toEqual("1234");
