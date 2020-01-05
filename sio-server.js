@@ -4,7 +4,7 @@ const config = require('config');
 const JSONData = require('./jsondata.js')
 var log = require("ucipass-logger")("sio-server")
 log.transports.console.level = 'error'
-log.transports.file.level = 'error'
+// log.transports.file.level = 'error'
 
 class SIO  {
     constructor(server) {

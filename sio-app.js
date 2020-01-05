@@ -1,6 +1,6 @@
 var log = require("ucipass-logger")("sio-app")
 log.transports.console.level = 'info'
-log.transports.file.level = 'error'
+// log.transports.file.level = 'error'
 const config = require('config');
 const path = require('path')
 const PREFIX        = process.env.VUE_APP_PREFIX ? path.posix.join("/",process.env.VUE_APP_PREFIX) : "/"
@@ -10,6 +10,7 @@ const PREFIX_READ   = path.posix.join("/",PREFIX, "read")
 const PREFIX_UPDATE = path.posix.join("/",PREFIX, "update")
 const PREFIX_DELETE = path.posix.join("/",PREFIX, "delete")
 const express = require('express');
+const serveIndex = require('serve-index');
 const app = express();
 let sio = null;
 let cors = require('cors') //PLEASE REMOVE FOR PRODUCTION
@@ -34,6 +35,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cors());
 
 app.use( PREFIX ,express.static('manager/dist'))
+app.use( "/clients" ,express.static('clients'), serveIndex('clients', {'icons': true}))
 log.info("Listening path:", PREFIX)
 
 app.get('/', (req, res) => {

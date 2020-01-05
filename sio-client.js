@@ -3,7 +3,6 @@ const net = require('net');
 const path = require('path')
 var log = require("ucipass-logger")("sio-client")
 log.transports.console.level = 'info'
-log.transports.file.level = 'error'
 const JSONData = require('./jsondata.js')
 const socks5 = require('simple-socks')
 const proxyPort = 1081
@@ -591,5 +590,6 @@ if (require.main === module) {
         
     }else{
         console.log( "parameters  [-u username] [-p password] http(s)://<host>:<port>/<prefix>")
+        process.exit()
     }
 }

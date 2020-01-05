@@ -1,6 +1,6 @@
 var log = require("ucipass-logger")("testserver")
 log.transports.console.level = 'error'
-log.transports.file.level = 'error'
+// log.transports.file.level = 'error'
 
 class TestServer{
   constructor(app,port){
