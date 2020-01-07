@@ -6,11 +6,17 @@
   "scripts": {
     "start": "cross-env VUE_APP_PREFIX=rp VUE_APP_SERVER_PORT=3010 node server.js",
     "test": "cross-env VUE_APP_PREFIX=rp VUE_APP_SERVER_PORT=3010 node ./node_modules/mocha/bin/mocha",
-    "build": "node ./node_modules/pkg/lib-es5/bin.js client.js --out-path ./dist && node ./node_modules/pkg/lib-es5/bin.js server.js --out-path ./dist",
+    "build": "node ./node_modules/pkg/lib-es5/bin.js sio-client.js --out-path ./clients",
+    "pkg": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 pkg sio-client.js --out-path ./clients",
     "greet": "cross-env-shell GREETING=Hi NAME=Joe \"echo $GREETING && echo $NAME\""
   },
   "author": "",
   "license": "ISC",
+  "pkg": {
+    "targets": [
+      "node10"
+    ]
+  },
   "dependencies": {
     "config": "^3.2.4",
     "cors": "^2.8.5",

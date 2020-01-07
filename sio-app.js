@@ -1,7 +1,7 @@
 var log = require("ucipass-logger")("sio-app")
 log.transports.console.level = 'info'
 // log.transports.file.level = 'error'
-const config = require('config');
+// const config = require('config');
 const path = require('path')
 const PREFIX        = process.env.VUE_APP_PREFIX ? path.posix.join("/",process.env.VUE_APP_PREFIX) : "/"
 const PREFIX_SCHEMA = path.posix.join("/",PREFIX, "schema")
