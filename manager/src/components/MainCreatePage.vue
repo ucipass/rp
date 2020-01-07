@@ -70,6 +70,14 @@ export default {
     }
   },
   mounted: async function () {
+    this.$root.$on('showMainCreatePage', () => {
+        this.MainCreatePage = true
+        console.log("Event: showMainCreatePage")
+    })    
+    this.$root.$on('hideMainCreatePage', () => {
+        this.MainCreatePage = false
+        console.log("Event: hideMainCreatePage")
+    })      
     // GET DB SCHEMA
     let response = await axios
     .post(URL_SCHEMA,{})
@@ -78,14 +86,7 @@ export default {
     this.schema = response.data
     this.data = JSON.parse(JSON.stringify(this.schema))
     
-    this.$root.$on('showMainCreatePage', () => {
-        this.MainCreatePage = true
-        console.log("Event: showMainCreatePage")
-    })    
-    this.$root.$on('hideMainCreatePage', () => {
-        this.MainCreatePage = false
-        console.log("Event: hideMainCreatePage")
-    })    
+  
   }
 }
 </script>
