@@ -9,6 +9,8 @@ jobs:
     - uses: actions/setup-node@v1
       with:
         node-version: 10.x 
+    - name: Docker Mongo
+      run: docker run -d -p27017:27017 --restart unless-stopped -v /mongodb:/data/db -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin --name mongodb  mongo 
     - run: npm install 
     - run: npm test
     - run: rm -rf dist
