@@ -21,6 +21,7 @@
     "config": "^3.2.4",
     "connect-mongo": "^3.2.0",
     "cors": "^2.8.5",
+    "cross-env": "^6.0.3",
     "express": "^4.17.1",
     "express-session": "^1.17.0",
     "express-ws": "^4.0.0",
@@ -36,7 +37,6 @@
     "winston": "^3.2.1"
   },
   "devDependencies": {
-    "cross-env": "^6.0.3",
     "expect": "^24.9.0",
     "mocha": "^6.2.2",
     "socks": "^2.3.3",
