@@ -1,6 +1,30 @@
 version: '3'
 services:
-  web:
-    build: .
-    ports:
-      - "3000:3000"
+  rp:
+    container_name: "rp" 
+    image: ucipass/rp
+    environment:
+      - NODE_ENV=production
+      - VUE_APP_PREFIX=rppp
+      - VUE_APP_SERVER_PORT=3010
+      - DATABASE_URL=mongodb://localhost:27017
+      - DATABASE_USERNAME=admin
+      - DATABASE_PASSWORD=admin
+      - SECRET_KEY=MySuperSecretKey
+    ports: 
+      - 3010:3010 
+    links: 
+      - mongodb 
+    depends_on: 
+      - mongodb 
+  mongodb: 
+    container_name: "mongodb" 
+    image: mongo:latest 
+    volumes: 
+      - /tmp/db:/data/db 
+    ports: 
+      - 27017:27017 
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin 
+      - MONGO_INITDB_ROOT_PASSWORD=admin

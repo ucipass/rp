@@ -5,24 +5,6 @@ var log = require("ucipass-logger")("sio-client")
 log.transports.console.level = 'info'
 const JSONData = require('./jsondata.js')
 const socks5 = require('simple-socks')
-const proxyPort = 1081
-const proxy  = socks5.createServer().listen(proxyPort);    
-
-proxy.on('error',(error)=>{
-    switch (error.code) {
-        case 'EACCES':
-            console.error(`${proxyPort} requires elevated privileges`);
-            process.exit(1);
-            break;
-        case 'EADDRINUSE':
-            log.error(`${proxyPort} is already in use`);
-            // process.exit(1);
-            break;
-        default:
-            throw error;
-    }    
-})
-
 
 
 /**** FLOW *****
@@ -56,6 +38,7 @@ class SocketIoClient  {
         this.socketId = "123"
         this.auth = false
         this.log = log
+        this.proxy = null
     }
 
     get id() { return `${this.socketId}(${this.username})`}
@@ -165,14 +148,12 @@ class SocketIoClient  {
 
     }
 
-
-    
     stop(){
         this.stopped = true
         return new Promise((resolve, reject) => {
 
-            // CLOSING PROXY
-            proxy.close()
+            // Closing Proxy
+            this.stopProxy()
 
             // CLOSING TCP
             this.rooms.forEach(room => {
@@ -212,6 +193,44 @@ class SocketIoClient  {
 
         });
 
+    }
+
+    startProxy(proxyPort){
+        return new Promise((resolve, reject) => {
+            this.proxy  = socks5.createServer().listen(proxyPort);    
+            this.proxy.on('error',(error)=>{
+                switch (error.code) {
+                    case 'EACCES':
+                        console.error(`${proxyPort} requires elevated privileges`);
+                        process.exit(1);
+                    case 'EADDRINUSE':
+                        log.error(`${proxyPort} is already in use`);
+                        this.proxy.close()
+                        return(reject(`${proxyPort} is already in use`))
+                    default:
+                        return(reject(error))
+                }    
+            })            
+            this.proxy.on('listening',()=>{
+                return(resolve())
+            })            
+        });
+
+
+    }
+
+    stopProxy(){
+        return new Promise((resolve, reject) => {
+            if ( this.proxy ){
+                this.proxy.on('close',()=>{
+                    return(resolve())
+                }) 
+                this.proxy.close()       
+            }else{
+                resolve()
+            }
+    
+        });
     }
 
     login(user,pass){
@@ -281,6 +300,9 @@ class SocketIoClient  {
         }
         if ( room.fwdName == this.username){
             log.info(`${this.id} received ${room.name} config: Forwarding to ${room.fwdHost}:${room.fwdPort} from remote-end localhost:${room.rcvPort}` )
+            if( room.fwdHost == "localproxy" ){
+                await this.startProxy(room.fwdPort)
+            }
             room.connections = new Map()
             this.rooms.set(json.att.room.name,room)
             json.att.msg = 'ack'
@@ -293,6 +315,11 @@ class SocketIoClient  {
     async onCloseRoom (data,ReplyFn){
         let json = (new JSONData().setjson(data.json))
         let room = this.rooms.get(json.att.room.name)
+        
+        if (this.proxy){
+            this.stopProxy()
+        }
+
         // Disconnect TCP Connections, if present
         let connections = room.connections
         connections.forEach((connection)=>{
@@ -342,7 +369,7 @@ class SocketIoClient  {
 
         let socket = new net.Socket();
         let connectionStr = ""
-        socket.connect(parseInt(port), address)
+        socket.connect(parseInt(port), address == "localproxy" ? "localhost" : address)
         socket.on("connect", (data)=>{
             connectionStr = `localhost:${socket.localPort.toString()} -> ${address}:${port}`
             log.info(`${this.id} Outgoing TCP: ${connectionStr}`)

@@ -4,8 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "cross-env VUE_APP_PREFIX=rp VUE_APP_SERVER_PORT=3010 node server.js",
-    "test": "cross-env VUE_APP_PREFIX=rp VUE_APP_SERVER_PORT=3010 node ./node_modules/mocha/bin/mocha",
+    "start": "cross-env VUE_APP_PREFIX=rp VUE_APP_SERVER_PORT=3010 DATABASE_URL=mongodb://localhost:27017 DATABASE_USERNAME=admin DATABASE_PASSWORD=admin SECRET_KEY=MySuperSecretKey node server.js",
+    "test": "cross-env VUE_APP_PREFIX=rp VUE_APP_SERVER_PORT=3010 DATABASE_URL=mongodb://localhost:27017 DATABASE_USERNAME=admin DATABASE_PASSWORD=admin SECRET_KEY=MySuperSecretKey node ./node_modules/mocha/bin/mocha",
     "build": "node ./node_modules/pkg/lib-es5/bin.js sio-client.js --out-path ./clients",
     "pkg": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 pkg sio-client.js --out-path ./clients",
     "greet": "cross-env-shell GREETING=Hi NAME=Joe \"echo $GREETING && echo $NAME\""
@@ -19,10 +19,13 @@
   },
   "dependencies": {
     "config": "^3.2.4",
+    "connect-mongo": "^3.2.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
+    "express-session": "^1.17.0",
     "express-ws": "^4.0.0",
     "minimist": "^1.2.0",
+    "mongodb": "^3.5.1",
     "pkg": "^4.4.2",
     "serve-index": "^1.9.1",
     "simple-socks": "^1.0.3",
@@ -36,6 +39,7 @@
     "cross-env": "^6.0.3",
     "expect": "^24.9.0",
     "mocha": "^6.2.2",
+    "socks": "^2.3.3",
     "superagent": "^5.1.3",
     "ucipass-file": "^1.0.15",
     "why-is-node-running": "^2.1.0"

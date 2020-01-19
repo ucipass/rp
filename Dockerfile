@@ -1,4 +1,3 @@
-
 FROM node:10.16.0-alpine
 
 RUN export VUE_APP_PREFIX=rp
@@ -9,7 +8,15 @@ COPY package.json .
 
 RUN npm install  --only=production
 
-COPY . .
+COPY manager .
+
+COPY events.js .
+COPY jsondata.js .
+COPY mongoclient.js .
+COPY server.js .
+COPY sio-app.js .
+COPY sio-client.js .
+COPY sio-server.js .
 
 WORKDIR /source/rp/manager
 

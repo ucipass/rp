@@ -13,15 +13,16 @@ const expect = require('expect');
 const path = require('path')
 // const fs = require('fs');
 // const config = require('config');
-// const logg = require('why-is-node-running')
+const logg = require('why-is-node-running')
 // const File = require("ucipass-file")
-const log = require("ucipass-logger")("mocha")
+// const log = require("ucipass-logger")("mocha")
 
 //########### Constants ######################
 const port   = process.env.VUE_APP_SERVER_PORT
 const prefix = process.env.VUE_APP_PREFIX
 const url = new URL("http://localhost:"+ port +"/"+ prefix + "/")
 const sio_path = path.posix.join(url.pathname,"socket.io")
+const app = require("../sio-app.js")
 
 describe('\n\n=================== SOCKET.IO TESTS ========================', () => {
     
@@ -176,17 +177,20 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
 describe('\n\n=================== SOCKET.IO & APP TESTS ========================', () => {
     
     beforeEach("Before", async ()=>{
-        let app = require("../sio-app.js")
-        this.testServer = new TestServer(app,port)
-        this.server = await this.testServer.start()
+
 
     })
 
-    afterEach("After",  async ()=>{
-        await this.testServer.stop()
+    afterEach("AfterEach",  async ()=>{
+        
     })
 
-    it("Complete REST API Create/Delete/Update Test", async ()=>{
+    after("Afterall", async ()=>{
+        let mongoclient = await require("../mongoclient.js")
+        mongoclient.close()
+    })
+
+    it("COMPLETE REST API Create/Delete/Update Test", async ()=>{
         let room1 = {
             "name": "room1",
             "rcvName": "client1",
@@ -211,6 +215,8 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
             "fwdHost": "localhost",
             "fwdPort": "5002"
         }
+        this.testServer = new TestServer(app,port)
+        this.server = await this.testServer.start()
         let sio = new SIO(this.server)
         // deleting all existing rooms
         for (const room of sio.rooms.values()) {
@@ -241,18 +247,60 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         await client1.stop()
         await client2.stop()
         await sio.stop()
+        await this.testServer.stop()
     })
 
-})
+    it("SOCKS5 PROXY TEST", async ()=>{
+        let room1 = {
+            "name": "room1",
+            "rcvName": "client1",
+            "rcvPort": "1080",
+            "fwdName": "client2",
+            "fwdHost": "localproxy",
+            "fwdPort": "1081"
+        }
+        this.testServer = new TestServer(app,port)
+        this.server = await this.testServer.start()
+        let sio = new SIO(this.server)
+        // deleting all existing rooms
+        for (const room of sio.rooms.values()) {
+            sio.rooms.delete(room.name)
+        }
+        const superagent = require('superagent');
+        await superagent.post( url.href + 'create').send(room1)
+        let client1 = new SIOClient("client1","client1",url.href)
+        let client2 = new SIOClient("client2","client2",url.href)
+        await client1.start()
+        await client2.start()
 
-describe('\n\n=================== NETWORK FAILURE TEST ========================', () => {
-    
-    beforeEach("Before", async ()=>{
 
-    })
+        const SocksClient = require('socks').SocksClient;
+        const options = {
+            proxy: {
+              host: 'localhost', // ipv4 or ipv6 or hostname
+              port: parseInt(room1.rcvPort),
+              type: 5 // Proxy version (4 or 5)
+            },         
+            command: 'connect', // SOCKS command (createConnection factory function only supports the connect command)
+            destination: {
+              host: 'localhost', // github.com (hostname lookups are supported with SOCKS v4a and 5)
+              port: parseInt(port)
+            }
+          };
+          try {
+            const info1 = await SocksClient.createConnection(options); 
+            const info2 = await SocksClient.createConnection(options);  
+            expect(info1.socket.readable).toEqual(true);       
+            expect(info2.socket.readable).toEqual(true);       
+          } catch (error) {
+            console.log("ERROR!!!!!!:", error)
+          }
 
-    afterEach("After",  async ()=>{
 
+        await client1.stop()
+        await client2.stop()
+        await sio.stop()
+        await this.testServer.stop()
     })
 
     it("SERVER FAILURE TEST", async ()=>{
@@ -345,3 +393,21 @@ describe('\n\n=================== NETWORK FAILURE TEST ========================'
     })
 
 })
+
+describe('\n\n=================== MONGODB TESTS ========================', () => {
+    
+    beforeEach("Before", async ()=>{
+
+    })
+
+    afterEach("After",  async ()=>{
+
+    })
+
+    it("MONGODB BASIC CONNECTIVITY", async ()=>{
+        const client = await require('../mongoclient.js')
+        client.close()
+    })
+
+})
+
