@@ -8,7 +8,7 @@ COPY package.json .
 
 RUN npm install  --only=production
 
-COPY manager .
+COPY manager ./manager
 
 COPY events.js .
 COPY jsondata.js .
