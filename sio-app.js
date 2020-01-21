@@ -16,6 +16,7 @@ const PREFIX_CREATE = path.posix.join("/",PREFIX, "create")
 const PREFIX_READ   = path.posix.join("/",PREFIX, "read")
 const PREFIX_UPDATE = path.posix.join("/",PREFIX, "update")
 const PREFIX_DELETE = path.posix.join("/",PREFIX, "delete")
+const PREFIX_SIOCLIENTS_READ   = path.posix.join("/",PREFIX, "sioclients", "read")
 
 // LOGGING
 var log = require("ucipass-logger")("sio-app")
@@ -86,10 +87,12 @@ app.post(PREFIX_CREATE, async (req, res) => {
   await sio.onOpenRoom(json)
   res.json("success");
 })
+
 app.post(PREFIX_READ, (req, res) => {
   let roomArray = Array.from(sio.rooms.values())
   res.json(roomArray)
 })
+
 app.post(PREFIX_UPDATE, (req, res) => {
   let room = req.body
 
@@ -112,6 +115,12 @@ app.post(PREFIX_DELETE, async (req, res) => {
   await sio.onCloseRoom(json)
   sio.rooms.delete(room.name)
   res.json("success");
+})
+
+app.post(PREFIX_SIOCLIENTS_READ, (req, res) => {
+  let siorooms = sio.getRooms()
+  let roomArray = Array.from(sio.rooms.values())
+  res.json(roomArray)
 })
 
 // catch 404 and forward to error handler

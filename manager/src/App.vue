@@ -1,10 +1,8 @@
 <template>
   <div id="app">
     <NavBarMain/>
-    <MainCreatePage/>
-    <MainReadPage/>
-    <MainUpdatePage/>
-    <MainDeletePage/>
+    <MainRendezvousPoints/>
+    <MainConnectedClients/>
     <ModalCreateRoom/>
 
   </div>
@@ -12,16 +10,14 @@
 
 <script>
 import NavBarMain from './components/NavBarMain.vue'
-import MainCreatePage from './components/MainCreatePage.vue'
-import MainReadPage from './components/MainReadPage.vue'
-import MainUpdatePage from './components/MainUpdatePage.vue'
-import MainDeletePage from './components/MainDeletePage.vue'
+import MainRendezvousPoints from './components/MainRendezvousPoints.vue'
+import MainConnectedClients from './components/MainConnectedClients.vue'
 import ModalCreateRoom from './components/ModalCreateRoom.vue'
 
 export default {
   name: 'app',
   components: {
-    NavBarMain,MainCreatePage,MainReadPage,MainUpdatePage,MainDeletePage,ModalCreateRoom
+    NavBarMain, MainRendezvousPoints, MainConnectedClients, ModalCreateRoom
   },
   mounted: function(){
   }

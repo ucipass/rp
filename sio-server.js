@@ -267,7 +267,6 @@ class SIO  {
         return this.io.sockets.adapter.rooms  
     }
 
-
     loadRoomDB(roomDB){
         roomDB.forEach(room => {
             let newRoom = JSON.parse(JSON.stringify(room))

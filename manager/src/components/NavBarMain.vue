@@ -8,10 +8,8 @@
       <b-collapse size='lg' id="nav-collapse" is-nav>
         <b-navbar-nav>
           <b-dropdown left variant="outline-primary" v-if="loggedIn" text='Menu'>
-            <b-dropdown-item @click="showMainReadPage()">Read</b-dropdown-item>
-            <b-dropdown-item @click="showMainCreatePage()">Create</b-dropdown-item>
-            <b-dropdown-item @click="showMainUpdatePage()">Update</b-dropdown-item>
-            <b-dropdown-item @click="showMainDeletePage()">Delete</b-dropdown-item>
+            <b-dropdown-item @click="showMainRendezvousPoints()">Rendezvous Points</b-dropdown-item>
+            <b-dropdown-item @click="showMainConnectedClients()">Connected Clients</b-dropdown-item>
           </b-dropdown>
         </b-navbar-nav>
         <b-navbar-nav class="ml-auto">
@@ -51,49 +49,20 @@ export default {
     }
   },
   methods:{
-    showMainReadPage(){
-      this.$root.$emit('showMainReadPage')
-      this.hideMainCreatePage()
-      this.hideMainUpdatePage()
-      this.hideMainDeletePage()
-      console.log("Emit: showMainReadPage")
+    showMainRendezvousPoints(){
+      this.hideMainAll()
+      this.$root.$emit('showMainRendezvousPoints')
+      console.log("Emit: showMainRendezvousPoints")
     },
-    hideMainReadPage(){
-      this.$root.$emit('hideMainReadPage')
-      console.log("Emit: hideMainReadPage")
+    showMainConnectedClients(){
+      this.hideMainAll()
+      this.$root.$emit('showMainConnectedClients')
+      console.log("Emit: showMainConnectedClients")
     },
-    showMainCreatePage(){
-      this.$root.$emit('showMainCreatePage')
-      this.hideMainReadPage()
-      this.hideMainUpdatePage()
-      this.hideMainDeletePage()
-      console.log("Emit: showMainCreatePage")
-    },
-    hideMainCreatePage(){
-      this.$root.$emit('hideMainCreatePage')
-      console.log("Emit: hideMainCreatePage")
-    },
-    showMainUpdatePage(){
-      this.$root.$emit('showMainUpdatePage')
-      this.hideMainCreatePage()
-      this.hideMainReadPage()
-      this.hideMainDeletePage()
-      console.log("Emit: showMainUpdatePage")
-    },
-    hideMainUpdatePage(){
-      this.$root.$emit('hideMainUpdatePage')
-      console.log("Emit: hideMainUpdatePage")
-    },
-    showMainDeletePage(){
-      this.$root.$emit('showMainDeletePage')
-      this.hideMainCreatePage()
-      this.hideMainUpdatePage()
-      this.hideMainReadPage()
-      console.log("Emit: showMainDeletePage")
-    },
-    hideMainDeletePage(){
-      this.$root.$emit('hideMainDeletePage')
-      console.log("Emit: hideMainDeletePage")
+    hideMainAll(){
+      this.$root.$emit('hideMainRendezvousPoints')
+      this.$root.$emit('hideMainConnectedClients')
+      console.log("Emit: hideMainAll")
     },
     showLoginWindow(){
       this.$root.$emit('showLoginWindow')

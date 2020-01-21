@@ -36,8 +36,8 @@
             ],
             "env": {
                 "NODE_ENV": "development",
-                "VUE_APP_PREFIX": "rpp",
-                "VUE_APP_SERVER_PORT": "3010",
+                "VUE_APP_PREFIX": "",
+                "VUE_APP_SERVER_PORT": "3000",
                 "DATABASE_URL": "mongodb://localhost:27017",
                 "DATABASE_USERNAME": "admin",
                 "DATABASE_PASSWORD": "admin",

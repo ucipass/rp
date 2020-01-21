@@ -1,27 +1,27 @@
 <template>
-     <b-container fluid v-if='showMainReadPage'>
-        <h1>Rendezvous Points</h1>
-        <!-- <b-table striped hover :items="db"></b-table> -->
-        <b-row>
-          <b-col class="font-weight-bold">Room Name</b-col>
-          <b-col class="font-weight-bold">Receiver Name</b-col>
-          <b-col class="font-weight-bold">Receiver Port</b-col>
-          <b-col class="font-weight-bold">Forwarder Name</b-col>
-          <b-col class="font-weight-bold">Forwarder Host</b-col>
-          <b-col class="font-weight-bold">Forwarder Port</b-col>
-          <b-col md="auto" style="visibility:hidden"><b-button >Update</b-button><b-button>Delete</b-button></b-col>
-        </b-row>
-        <b-row class="justify-content-md-center" v-for="room in receivedData" v-bind:key="room.name">
-          <b-col><b-input v-model='room.name'></b-input></b-col>
-          <b-col><b-input v-model='room.rcvName'></b-input></b-col>
-          <b-col><b-input v-model='room.rcvPort'></b-input></b-col>
-          <b-col><b-input v-model='room.fwdName'></b-input></b-col>
-          <b-col><b-input v-model='room.fwdHost'></b-input></b-col>
-          <b-col><b-input v-model='room.fwdPort'></b-input></b-col>
-          <b-col md="auto"><b-button @click="updateRoom(room)">Update</b-button><b-button @click="deleteRoom(room)">Delete</b-button></b-col>
-        </b-row>
-        <b-row><div class="p-3"><b-button @click="showModalCreateRoom()">Create</b-button></div></b-row>
-     </b-container>
+  <b-container fluid v-if='showMainRendezvousPoints'>
+    <h1>Rendezvous Points</h1>
+    <!-- <b-table striped hover :items="db"></b-table> -->
+    <b-row>
+      <b-col class="font-weight-bold">Room Name</b-col>
+      <b-col class="font-weight-bold">Receiver Name</b-col>
+      <b-col class="font-weight-bold">Receiver Port</b-col>
+      <b-col class="font-weight-bold">Forwarder Name</b-col>
+      <b-col class="font-weight-bold">Forwarder Host</b-col>
+      <b-col class="font-weight-bold">Forwarder Port</b-col>
+      <b-col md="auto" style="visibility:hidden"><b-button >Update</b-button><b-button>Delete</b-button></b-col>
+    </b-row>
+    <b-row class="justify-content-md-center" v-for="room in receivedData" v-bind:key="room.name">
+      <b-col><b-input v-model='room.name'></b-input></b-col>
+      <b-col><b-input v-model='room.rcvName'></b-input></b-col>
+      <b-col><b-input v-model='room.rcvPort'></b-input></b-col>
+      <b-col><b-input v-model='room.fwdName'></b-input></b-col>
+      <b-col><b-input v-model='room.fwdHost'></b-input></b-col>
+      <b-col><b-input v-model='room.fwdPort'></b-input></b-col>
+      <b-col md="auto"><b-button @click="updateRoom(room)">Update</b-button><b-button @click="deleteRoom(room)">Delete</b-button></b-col>
+    </b-row>
+    <b-row><div class="p-3"><b-button @click="showModalCreateRoom()">Create</b-button></div></b-row>
+  </b-container>
 </template>
 
 <script>
@@ -32,23 +32,23 @@ console.log(URL_READ)
 
 
 export default {
-  name: 'MainReadPage',
+  name: 'MainRendezvousPoints',
   components: {
     // TableRow
   },
   props: {
     title: {
-      default: "MainReadPage",
+      default: "MainRendezvousPoints",
       type: String
     },
     id: {
-      default: "MainReadPage",
+      default: "MainRendezvousPoints",
       type: String
     }
   },
   data: ()=> { 
     return{
-      showMainReadPage: true,
+      showMainRendezvousPoints: true,
       field1: "field1",
       field2: "field2",
       test:[
@@ -67,7 +67,7 @@ methods:{
       this.$root.$emit('showModalCreateRoom')
       console.log('showModalCreateRoom')
     },
-    async refreshMainReadPage(){
+    async refreshMainRendezvousPoints(){
       axios
       .post(URL_READ,{})
       .then(response => {
@@ -75,7 +75,7 @@ methods:{
         this.receivedData = response.data
       })
       .catch(error => console.log("ERROR",error))      
-      console.log("Event: showMainReadPage")      
+      console.log("Event: showMainRendezvousPoints")      
     },
     async updateRoom(room){
       console.log("Update",room)
@@ -85,7 +85,7 @@ methods:{
         
       this.status = response.data
       if(this.status == "success"){
-        this.status = await this.refreshMainReadPage()
+        this.status = await this.refreshMainRendezvousPoints()
         console.log(this.status)
       }
     },
@@ -96,7 +96,7 @@ methods:{
       .catch(error => console.log("DELETE ERROR",error))
       this.status = response.data
 
-      await this.refreshMainReadPage()
+      await this.refreshMainRendezvousPoints()
 
     }
   },
@@ -123,16 +123,16 @@ methods:{
     })
     .catch(error => console.log("Error reading schema from server",error))   
 
-    await this.refreshMainReadPage()
+    await this.refreshMainRendezvousPoints()
 
-    this.$root.$on('showMainReadPage', () => {
-      this.showMainReadPage = true;
-      this.refreshMainReadPage();
-      console.log("Event: showMainReadPage");
+    this.$root.$on('showMainRendezvousPoints', () => {
+      this.showMainRendezvousPoints = true;
+      this.refreshMainRendezvousPoints();
+      console.log("Event: showMainRendezvousPoints");
     })    
-    this.$root.$on('hideMainReadPage', () => {
-        this.showMainReadPage = false
-        console.log("Event: hideMainReadPage")
+    this.$root.$on('hideMainRendezvousPoints', () => {
+        this.showMainRendezvousPoints = false
+        console.log("Event: hideMainRendezvousPoints")
     })    
 
   }
