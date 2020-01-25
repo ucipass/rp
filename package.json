@@ -27,6 +27,7 @@
     "express-ws": "^4.0.0",
     "minimist": "^1.2.0",
     "mongodb": "^3.5.1",
+    "mongoose": "^5.8.9",
     "pkg": "^4.4.2",
     "serve-index": "^1.9.1",
     "simple-socks": "^1.0.3",

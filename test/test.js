@@ -1,7 +1,9 @@
+"use strict";
 //############ PRODUCTION #######################
 const SIO = require("../sio-server.js")
 const SIOClient = require("../sio-client.js")
 const JSONData = require('../jsondata.js')
+const mongoose = require('mongoose')
 
 //############  TESTING   ####################
 const TestServer = require("./testserver.js")
@@ -13,7 +15,7 @@ const expect = require('expect');
 const path = require('path')
 // const fs = require('fs');
 // const config = require('config');
-const logg = require('why-is-node-running')
+// const logg = require('why-is-node-running')
 // const File = require("ucipass-file")
 // const log = require("ucipass-logger")("mocha")
 
@@ -22,15 +24,16 @@ const port   = process.env.VUE_APP_SERVER_PORT
 const prefix = process.env.VUE_APP_PREFIX
 const url = new URL("http://localhost:"+ port +"/"+ prefix + "/")
 const sio_path = path.posix.join(url.pathname,"socket.io")
-const app = require("../sio-app.js")
+let app = null //set later cause I don't want to kill the mongoose connection
+
 
 describe('\n\n=================== SOCKET.IO TESTS ========================', () => {
     
     let server = null;
 
     beforeEach("Before", async()=>{
-        let app = require('express')();
-        this.testServer = new TestServer(app,port)
+        let appalt = require('express')();
+        this.testServer = new TestServer(appalt,port)
         server = await this.testServer.start()
     })
 
@@ -42,7 +45,6 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         let serverSocketID = null
         let io = require('socket.io')(server,{path:sio_path});
         io.on('connection', function(socket){
-            serverSocket = socket
             serverSocketID = socket.id
             // socket.on('close', (data,replyFn)=>{
             //     replyFn('ack')
@@ -51,7 +53,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         });
 
         let client = new SIOClient(null,null,url.href)
-        clientSocket = await client.start()
+        let clientSocket = await client.start()
         let clientSocketId = clientSocket.id
         expect(clientSocketId).toEqual(serverSocketID)
         client.stopped = true
@@ -175,9 +177,12 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
 });
 
 describe('\n\n=================== SOCKET.IO & APP TESTS ========================', () => {
-    
-    beforeEach("Before", async ()=>{
+   
+    before("Before", async ()=>{
+        app = require("../sio-app.js")  
+    })
 
+    beforeEach("Before", async ()=>{
 
     })
 
@@ -404,10 +409,27 @@ describe('\n\n=================== MONGODB TESTS ========================', () =>
 
     })
 
-    it("MONGODB BASIC CONNECTIVITY", async ()=>{
-        const client = await require('../mongoclient.js')
-        client.close()
+    it("Socket.io Client MongoDB Collection", async ()=>{
+        try{
+            let db,client,clientObj,result
+            db = await (require("../mongooseclient.js"))()
+            client = "testclient1123456"
+            await db.deleteClient(client)
+            await db.createClient(client)
+            clientObj = await db.getClient(client)
+            result = await db.verifyClient(clientObj.client,clientObj.token)
+            expect(result).toEqual(true)     
+            result = await db.verifyClient(clientObj.client,"123")
+            expect(result).toEqual(false)     
+            result = await db.verifyClient("123",clientObj.token)
+            expect(result).toEqual(false) 
+            await db.deleteClient(client)    
+            await db.close()  
+        } catch (error) {
+            console.log(error)
+        }
     })
+
 
 })
 
