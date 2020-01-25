@@ -5,7 +5,7 @@ var log = require("ucipass-logger")("sio-client")
 log.transports.console.level = 'info'
 const JSONData = require('./jsondata.js')
 const socks5 = require('simple-socks')
-
+const ConnectionRetryMs = 10000  // if connection fails retry
 
 /**** FLOW *****
 1. Client connects to server: start()
@@ -54,9 +54,28 @@ class SocketIoClient  {
                 this.socketId = this.socket.id
                 if (this.username != "anonymous")
                     {
-                        await this.login.call(this, this.username, this.password)
+                        let result = await this.login.call(this, this.username, this.password)
+                        if (result == "ack"){
+                            return resolve(this.socket)
+                        }
+                        else{
+                            resolve(this.socket)
+                            await new Promise((resolve, reject) => {
+                                setTimeout( resolve, 1000);
+                            });                            
+                            while (result != "ack" && !this.stopped) {
+                                await new Promise((resolve, reject) => {
+                                    setTimeout( resolve, ConnectionRetryMs);
+                                });
+                                log.info(`${this.socket.id} ${this.username} login attempt path: ${this.sio_opts.path}`)
+                                result = await this.login.call(this, this.username, this.password)                                
+                            }
+                            return true
+                        }
+                    }else{
+                        resolve(this.socket)
                     }
-                return resolve(this.socket)
+
             })    
 
             this.socket.on('disconnect', (reason) => {

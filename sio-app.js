@@ -1,14 +1,14 @@
 const express = require('express');
 const app = express();
+const createError = require('http-errors');
 const serveIndex = require('serve-index');
 const path = require('path')
 const JSONData = require("./jsondata.js")
 const session = require('express-session');
+const mongoose = require('mongoose')
 const MongoStore = require('connect-mongo')(session);
 let cors = require('cors') // ONLY FOR DEVELOPMENT!!!
 
-// ENVIRONMENT
-const clientInstancePromise = require('./mongoclient.js')
 const SECRET_KEY    = process.env.SECRET_KEY
 const PREFIX        = process.env.VUE_APP_PREFIX ? path.posix.join("/",process.env.VUE_APP_PREFIX) : "/"
 const PREFIX_SCHEMA = path.posix.join("/",PREFIX, "schema")
@@ -18,6 +18,24 @@ const PREFIX_UPDATE = path.posix.join("/",PREFIX, "update")
 const PREFIX_DELETE = path.posix.join("/",PREFIX, "delete")
 const PREFIX_SIOCLIENTS_READ   = path.posix.join("/",PREFIX, "sioclients", "read")
 
+// 
+mongoose.set('useCreateIndex', true);
+const DATABASE_URL      = process.env.DATABASE_URL
+const DATABASE_USERNAME = process.env.DATABASE_USERNAME
+const DATABASE_PASSWORD = process.env.DATABASE_PASSWORD
+let options ={
+  useUnifiedTopology: true,
+  useNewUrlParser: true,
+  user: DATABASE_USERNAME,
+  pass: DATABASE_PASSWORD,                  
+  auth:{
+      authSource: 'admin'                    
+  }
+}
+const mongooseConnection  = mongoose.createConnection( DATABASE_URL, options);
+app.mongooseConnection = mongooseConnection // For mocha test to be ablt to close connection
+
+
 // LOGGING
 var log = require("ucipass-logger")("sio-app")
 log.transports.console.level = 'info'
@@ -25,27 +43,16 @@ log.transports.console.level = 'info'
 // const config = require('config');
 
 let sio = null;
-
-const createError = require('http-errors');
 const events = require("./events.js")
 events.on("onSocketIoStarted", (sioInstance)=>{
   sio = sioInstance;
 })
 
-let schema =  
-  {
-      name: "",
-      rcvName: "",
-      rcvPort: "",
-      fwdName: "",
-      fwdHost: "",
-      fwdPort: ""
-  }
-
 
 app.use(session({
   store: new MongoStore({
-      clientPromise: clientInstancePromise
+      // clientPromise: clientInstancePromise
+      mongooseConnection: mongooseConnection
       // url: DATABASE_URL.href
   }),
   secret: SECRET_KEY,
@@ -77,6 +84,15 @@ app.get('/', (req, res) => {
 app.get('/favicon.ico', (req, res) => res.status(204));
 
 app.post(PREFIX_SCHEMA, (req, res) => {
+  let schema =  
+  {
+      name: "",
+      rcvName: "",
+      rcvPort: "",
+      fwdName: "",
+      fwdHost: "",
+      fwdPort: ""
+  }
   res.json(schema)
 })
 

@@ -26,22 +26,69 @@ const url = new URL("http://localhost:"+ port +"/"+ prefix + "/")
 const sio_path = path.posix.join(url.pathname,"socket.io")
 let app = null //set later cause I don't want to kill the mongoose connection
 
+describe('\n\n=================== MONGODB TESTS ========================', () => {
+    
+    beforeEach("Before", async ()=>{
+
+    })
+
+    afterEach("After",  async ()=>{
+
+    })
+
+    it("MongoDB Client Management", async ()=>{
+        try{
+            let db,client,clientObj,result
+            db = await (require("../mongooseclient.js"))()
+            client = "testclient1123456"
+            await db.deleteClient(client)
+            await db.createClient(client)
+            clientObj = await db.getClient(client)
+            result = await db.verifyClient(clientObj.client,clientObj.token)
+            expect(result).toEqual(true)     
+            result = await db.verifyClient(clientObj.client,"123")
+            expect(result).toEqual(false)     
+            result = await db.verifyClient("123",clientObj.token)
+            expect(result).toEqual(false) 
+            await db.deleteClient(client)    
+            await db.close()  
+        } catch (error) {
+            console.log(error)
+        }
+    })
+
+})
 
 describe('\n\n=================== SOCKET.IO TESTS ========================', () => {
     
     let server = null;
 
+    before("Before", async()=>{
+        this.db = await (require("../mongooseclient.js"))()        
+        await this.db.deleteClient("client1")
+        await this.db.deleteClient("client2")
+        this.clientObj1 = await this.db.createClient("client1")
+        this.clientObj2 = await this.db.createClient("client2")    
+    })
+
     beforeEach("Before", async()=>{
         let appalt = require('express')();
         this.testServer = new TestServer(appalt,port)
         server = await this.testServer.start()
+
     })
 
     afterEach("After",  async()=>{
         await this.testServer.stop()
     })
 
-    it('Socket.io Client Only Connect Test', async () => {
+    after("Before", async()=>{
+        await this.db.deleteClient(this.clientObj1.client)
+        await this.db.deleteClient(this.clientObj2.client)
+        await this.db.close()            
+    })
+
+    it('Socket.io Native Client Only Connect Test', async () => {
         let serverSocketID = null
         let io = require('socket.io')(server,{path:sio_path});
         io.on('connection', function(socket){
@@ -61,7 +108,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
     });
 
     it('Socket.io Server/Clients (re)Connect Test', async () => {
-        let sio = new SIO(server)
+        let sio = await (new SIO(server)).start()
         let client1 = new SIOClient(null,null,url.href)
         let client2 = new SIOClient(null,null,url.href)
         let clientSocket1 = await client1.start()
@@ -74,20 +121,22 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
     });
 
     it('Socket.io Authentication', async () => {
-        let sio = new SIO(server)
-        let client1 = new SIOClient("client1","client1",url.href)
-        let client2 = new SIOClient("client2","client2",url.href)
+
+        let sio = await (new SIO(server)).start()
+        let client1 = new SIOClient(this.clientObj1.client,this.clientObj1.token,url.href)
+        // let client2 = new SIOClient(this.clientObj2.client,this.clientObj2.token,url.href)
+        let client2 = new SIOClient(this.clientObj2.client,"123",url.href)
         let clientSock1 = await client1.start()
         let clientSock2 = await client2.start()
         expect(sio.getSocketById(clientSock1.id).auth).toEqual(true);
-        expect(sio.getSocketById(clientSock2.id).auth).toEqual(true);
+        expect(sio.getSocketById(clientSock2.id).auth).toEqual(false);
         await client1.stop()
         await client2.stop()
         await sio.stop()
     });
     
     it('Socket.io Room Join/Leave Test', async () => {
-        let sio = new SIO(server)
+        let sio = await (new SIO(server)).start()
         let room1 = {
             "name": "room1",
             "rcvName": "client1",
@@ -106,8 +155,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         }
         sio.rooms.set(room1.name,room1)
         sio.rooms.set(room2.name,room2)
-        let client1 = new SIOClient("client1","client1",url.href)
-        let client2 = new SIOClient("client2","client2",url.href)
+        let client1 = new SIOClient(this.clientObj1.client,this.clientObj1.token,url.href)
+        let client2 = new SIOClient(this.clientObj2.client,this.clientObj2.token,url.href)
         let socket1 = await client1.start()
         let socket2 = await client2.start()
         expect((await sio.getRoomMembers('room1')).length).toEqual(2);
@@ -120,7 +169,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
     });
 
     it('Socket.io Private Room Test', async () => {
-        let sio = new SIO(server)
+        let sio = await (new SIO(server)).start()
         let room1 = {
             "name": "room1",
             "rcvName": "client1",
@@ -130,8 +179,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
             "fwdPort": "22"
         }
         sio.rooms.set(room1.name,room1)
-        let client1 = new SIOClient("client1","client1",url.href)
-        let client2 = new SIOClient("client2","client2",url.href)
+        let client1 = new SIOClient(this.clientObj1.client,this.clientObj1.token,url.href)
+        let client2 = new SIOClient(this.clientObj2.client,this.clientObj2.token,url.href)
         let socket1 = await client1.start()
         let socket2 = await client2.start()
         let json = new JSONData("client1","onSendPrivateMsg",{room:"room1",msg:"test1"})
@@ -143,7 +192,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
     });
 
     it('Socket.io EchoClient', async () => {
-        let sio = new SIO(server)
+        let sio = await (new SIO(server)).start()
         let SERVER_PORT = 4002;
         let CLIENT_PORT = 4001;
         let room1 = {
@@ -156,8 +205,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
             connections: new Map()
         }
         sio.rooms.set(room1.name,room1)
-        let client1 = new SIOClient("client1","client1",url.href)
-        let client2 = new SIOClient("client2","client2",url.href)
+        let client1 = new SIOClient(this.clientObj1.client,this.clientObj1.token,url.href)
+        let client2 = new SIOClient(this.clientObj2.client,this.clientObj2.token,url.href)
         let socket1 = await client1.start()
         let socket2 = await client2.start()
 
@@ -180,6 +229,11 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
    
     before("Before", async ()=>{
         app = require("../sio-app.js")  
+        this.db = await (require("../mongooseclient.js"))()        
+        await this.db.deleteClient("client1")
+        await this.db.deleteClient("client2")
+        this.clientObj1 = await this.db.createClient("client1")
+        this.clientObj2 = await this.db.createClient("client2")    
     })
 
     beforeEach("Before", async ()=>{
@@ -190,9 +244,11 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         
     })
 
-    after("Afterall", async ()=>{
-        let mongoclient = await require("../mongoclient.js")
-        mongoclient.close()
+    after("After", async ()=>{
+        app.mongooseConnection.close()
+        await this.db.deleteClient(this.clientObj1.client)
+        await this.db.deleteClient(this.clientObj2.client)
+        await this.db.close()            
     })
 
     it("COMPLETE REST API Create/Delete/Update Test", async ()=>{
@@ -222,7 +278,7 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         }
         this.testServer = new TestServer(app,port)
         this.server = await this.testServer.start()
-        let sio = new SIO(this.server)
+        let sio = await (new SIO(this.server)).start()
         // deleting all existing rooms
         for (const room of sio.rooms.values()) {
             sio.rooms.delete(room.name)
@@ -232,8 +288,8 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         const superagent = require('superagent');
         await superagent.post( url.href + 'create').send(room1)
         await superagent.post( url.href + 'create' ).send(room2)
-        let client1 = new SIOClient("client1","client1",url.href)
-        let client2 = new SIOClient("client2","client2",url.href)
+        let client1 = new SIOClient(this.clientObj1.client,this.clientObj1.token,url.href)
+        let client2 = new SIOClient(this.clientObj2.client,this.clientObj2.token,url.href)
         await client1.start()
         await client2.start()
         await superagent.post( url.href + 'delete').send(room1)
@@ -266,15 +322,15 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         }
         this.testServer = new TestServer(app,port)
         this.server = await this.testServer.start()
-        let sio = new SIO(this.server)
+        let sio = await (new SIO(this.server)).start()
         // deleting all existing rooms
         for (const room of sio.rooms.values()) {
             sio.rooms.delete(room.name)
         }
         const superagent = require('superagent');
         await superagent.post( url.href + 'create').send(room1)
-        let client1 = new SIOClient("client1","client1",url.href)
-        let client2 = new SIOClient("client2","client2",url.href)
+        let client1 = new SIOClient(this.clientObj1.client,this.clientObj1.token,url.href)
+        let client2 = new SIOClient(this.clientObj2.client,this.clientObj2.token,url.href)
         await client1.start()
         await client2.start()
 
@@ -320,9 +376,9 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         let app = require("../sio-app.js")
         let testserver1 = new TestServer(app,port)
         let server = await testserver1.start()
-        let sio = new SIO(server)
-        let client1 = new SIOClient("client1","client1",url.href)
-        let client2 = new SIOClient("client2","client2",url.href)
+        let sio = await (new SIO(server)).start()
+        let client1 = new SIOClient(this.clientObj1.client,this.clientObj1.token,url.href)
+        let client2 = new SIOClient(this.clientObj2.client,this.clientObj2.token,url.href)
         await client1.start()
         await client2.start()
         const superagent = require('superagent');
@@ -339,7 +395,7 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         }
         let testserver2 = new TestServer(app,port)
         let server2 = await testserver2.start()
-        sio = new SIO(server2)
+        sio = await (new SIO(server2)).start()
         await superagent.post( url.href + 'create').send(room1)
         while ( !client1.rooms.size || !client2.rooms.size) { 
             await delay(200) 
@@ -367,9 +423,9 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         let app = require("../sio-app.js")
         let testserver1 = new TestServer(app,port)
         let server = await testserver1.start()
-        let sio = new SIO(server)
-        let client1 = new SIOClient("client1","client1",url.href)
-        let client2 = new SIOClient("client2","client2",url.href)
+        let sio = await (new SIO(server)).start()
+        let client1 = new SIOClient(this.clientObj1.client,this.clientObj1.token,url.href)
+        let client2 = new SIOClient(this.clientObj2.client,this.clientObj2.token,url.href)
         await client1.start()
         await client2.start()
         const superagent = require('superagent');
@@ -381,7 +437,7 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         expect(reply1).toEqual("ABCD");
         await client1.stop()
 
-        client1 = new SIOClient("client1","client1",url.href)
+        client1 = new SIOClient(this.clientObj1.client,this.clientObj1.token,url.href)
         await client1.start()
         while ( !client1.rooms.size || !client2.rooms.size) { 
             await delay(200) 
@@ -399,37 +455,4 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
 
 })
 
-describe('\n\n=================== MONGODB TESTS ========================', () => {
-    
-    beforeEach("Before", async ()=>{
-
-    })
-
-    afterEach("After",  async ()=>{
-
-    })
-
-    it("Socket.io Client MongoDB Collection", async ()=>{
-        try{
-            let db,client,clientObj,result
-            db = await (require("../mongooseclient.js"))()
-            client = "testclient1123456"
-            await db.deleteClient(client)
-            await db.createClient(client)
-            clientObj = await db.getClient(client)
-            result = await db.verifyClient(clientObj.client,clientObj.token)
-            expect(result).toEqual(true)     
-            result = await db.verifyClient(clientObj.client,"123")
-            expect(result).toEqual(false)     
-            result = await db.verifyClient("123",clientObj.token)
-            expect(result).toEqual(false) 
-            await db.deleteClient(client)    
-            await db.close()  
-        } catch (error) {
-            console.log(error)
-        }
-    })
-
-
-})
 

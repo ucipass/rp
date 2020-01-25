@@ -1,6 +1,6 @@
 const socketio = require('socket.io')
 const path = require('path')
-const config = require('config');
+const mongooseclient = require("./mongooseclient.js")
 const JSONData = require('./jsondata.js')
 var log = require("ucipass-logger")("sio-server")
 log.transports.console.level = 'info'
@@ -19,10 +19,8 @@ class SIO  {
         this.log = log;
         this.io = socketio( server, this.sio_opts)
         log.info("Listening path:", this.sio_path.toString() )
-        this.io.on('connection', this.onConnection.bind(this))
-        // this.loadRoomDB( config.get("roomDB") )
         this.events = require('./events.js')
-        this.events.emit("onSocketIoStarted",this)
+        this.db = null
     }
 
     onConnection(socket){
@@ -58,27 +56,44 @@ class SIO  {
 
     }
     
+    async start(){
+        return mongooseclient()
+        .then((db)=>{
+            this.db = db
+            this.io.on('connection', this.onConnection.bind(this))
+            this.events.emit("onSocketIoStarted",this)
+            return this; 
+        })
+        .catch((error)=>{
+            log.error("Database connection failure, exiting...")
+            log.error(error)
+            process.exit()
+        })
+    }
+    
     async stop(){
-        let reply = new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => {
             this.events.removeListener('onRoomRefresh',()=>{});
             this.io.close(()=>{
                 log.info("server close complete",()=>{
                     resolve(true)
                 })
             })
-        });
-        return reply
+        })
+        .then(()=> this.db.close() )
     }
+    
     // Calls onNewClient if login successful
     async onLogin (socket,data,replyFn){
-        socket.auth = await this.authFn(data)
+        
+        socket.auth = await this.db.verifyClient(data.username,data.password)
         if (socket.auth) {
             socket.username = data.username
             log.info(`${socket.id}(${socket.username}) login success`)
             replyFn('ack')
             this.onNewClient(socket)
         }else{
-            log.warn(`${socket.id} login ${socket.username} failure`)
+            log.warn(`${socket.id} login ${data.username} failure`)
             replyFn('reject')
         }
     }
@@ -247,20 +262,6 @@ class SIO  {
             return replyFn(json)
         }
         
-    }
-
-    async authFn(data){
-        if (
-            data.username == 'test' && data.password == 'test' ||
-            data.username == 'client1' && data.password == 'client1' ||
-            data.username == 'client2' && data.password == 'client2' ||
-            data.username == 'client3' && data.password == 'client3' ||
-            data.username == 'client4' && data.password == 'client4' 
-            ){
-            return true
-        }else{
-            return false
-        }
     }
     
     getRooms(){
