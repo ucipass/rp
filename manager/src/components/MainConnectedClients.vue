@@ -27,7 +27,7 @@
 <script>
 // import TableRow from './TableRow.vue'
 import axios from 'axios';
-import {URL_SIOCLIENTS_READ, URL_SCHEMA } from './constants.js';
+import {URL_SIOCLIENTS_READ } from './constants.js';
 
 
 
@@ -91,25 +91,16 @@ methods:{
     }
   },
   mounted: async function () {
-    // Download the schema from the server
-    let _this = this
-    await axios
-    .post(URL_SCHEMA,{})
-    .then(response => {
-      console.log("SUCCES",response)
-      _this.schema = response.data
-    })
-    .catch(error => console.log("Error reading schema from server",error))   
 
-    await this.refreshMainConnectedClients()
+    // await this.refreshMainConnectedClients()
 
     this.$root.$on('showMainConnectedClients', () => {
       this.showMainConnectedClients = true;
-      this.refreshMainConnectedClients();
+      // this.refreshMainConnectedClients();
       console.log("Event: showMainConnectedClients");
     })    
     this.$root.$on('hideMainConnectedClients', () => {
-        this.showMainConnectedClients = false
+        // this.showMainConnectedClients = false
         console.log("Event: hideMainConnectedClients")
     })    
 

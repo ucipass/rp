@@ -68,14 +68,13 @@ methods:{
       console.log('showModalCreateRoom')
     },
     async refreshMainRendezvousPoints(){
-      axios
-      .post(URL_READ,{})
+      console.log(1)
+      return axios.post(URL_READ,{})
       .then(response => {
         console.log("SUCCES",response)
         this.receivedData = response.data
       })
-      .catch(error => console.log("ERROR",error))      
-      console.log("Event: showMainRendezvousPoints")      
+      .catch(error => console.log("ERROR",error))           
     },
     async updateRoom(room){
       console.log("Update",room)
