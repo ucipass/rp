@@ -12,7 +12,7 @@ COPY manager ./manager
 
 COPY events.js .
 COPY jsondata.js .
-COPY mongoclient.js .
+COPY mongooseclient.js .
 COPY server.js .
 COPY sio-app.js .
 COPY sio-client.js .
