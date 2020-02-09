@@ -1,6 +1,6 @@
 <template>
-  <b-container fluid v-if='showMainConnectedClients'>
-    <h1>Connected Clients</h1>
+  <b-container fluid v-if='showMainClients'>
+    <h1>Clients</h1>
     <!-- <b-table striped hover :items="db"></b-table> -->
     <b-row>
       <b-col class="font-weight-bold">Room Name</b-col>
@@ -32,23 +32,23 @@ import {URL_SIOCLIENTS_READ } from './constants.js';
 
 
 export default {
-  name: 'MainConnectedClients',
+  name: 'MainClients',
   components: {
     // TableRow
   },
   props: {
     title: {
-      default: "MainConnectedClients",
+      default: "MainClients",
       type: String
     },
     id: {
-      default: "MainConnectedClients",
+      default: "MainClients",
       type: String
     }
   },
   data: ()=> { 
     return{
-      showMainConnectedClients: false,
+      showMainClients: false,
       field1: "field1",
       field2: "field2",
       test:[
@@ -67,7 +67,7 @@ methods:{
       this.$root.$emit('showModalCreateRoom')
       console.log('showModalCreateRoom')
     },
-    async refreshMainConnectedClients(){
+    async refreshMainClients(){
       axios
       .post(URL_SIOCLIENTS_READ,{})
       .then(response => {
@@ -75,7 +75,7 @@ methods:{
         this.receivedData = response.data
       })
       .catch(error => console.log("ERROR",error))      
-      console.log("Event: showMainConnectedClients")      
+      console.log("Event: showMainClients")      
     }
   },
   computed:{
@@ -92,16 +92,20 @@ methods:{
   },
   mounted: async function () {
 
-    // await this.refreshMainConnectedClients()
+    // await this.refreshMainClients()
 
-    this.$root.$on('showMainConnectedClients', () => {
-      this.showMainConnectedClients = true;
-      // this.refreshMainConnectedClients();
-      console.log("Event: showMainConnectedClients");
+    this.$root.$on('showMainClients', () => {
+      this.refreshMainClients();
+      this.showMainClients = true;
+      console.log("Event: showMainClients");
     })    
-    this.$root.$on('hideMainConnectedClients', () => {
-        // this.showMainConnectedClients = false
-        console.log("Event: hideMainConnectedClients")
+    this.$root.$on('hideMainClients', () => {
+      this.showMainClients = false
+      console.log("Event: hideMainClients")
+    })    
+    this.$root.$on('hideMainAll', () => {
+      this.showMainClients = false
+      console.log("Event: hideMainClients")
     })    
 
   }

@@ -24,6 +24,7 @@ class SIO  {
     }
 
     onConnection(socket){
+        let address = socket.handshake.address;
         let socketId = socket.id
         this.sockets.set(socketId,socket)
         socket.auth = true //temporary allowed

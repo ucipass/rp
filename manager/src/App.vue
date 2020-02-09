@@ -2,7 +2,8 @@
   <div id="app">
     <NavBarMain/>
     <MainRendezvousPoints/>
-    <MainConnectedClients/>
+    <MainClients/>
+    <MainConnections/>
     <ModalCreateRoom/>
 
   </div>
@@ -11,13 +12,14 @@
 <script>
 import NavBarMain from './components/NavBarMain.vue'
 import MainRendezvousPoints from './components/MainRendezvousPoints.vue'
-import MainConnectedClients from './components/MainConnectedClients.vue'
+import MainClients from './components/MainClients.vue'
+import MainConnections from './components/MainConnections.vue'
 import ModalCreateRoom from './components/ModalCreateRoom.vue'
 
 export default {
   name: 'app',
   components: {
-    NavBarMain, MainRendezvousPoints, MainConnectedClients, ModalCreateRoom
+    NavBarMain, MainRendezvousPoints, MainClients, MainConnections, ModalCreateRoom
   },
   mounted: function(){
   }

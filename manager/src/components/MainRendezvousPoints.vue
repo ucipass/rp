@@ -27,8 +27,10 @@
 <script>
 // import TableRow from './TableRow.vue'
 import axios from 'axios';
+axios.defaults.withCredentials = true
+/* eslint-disable no-unused-vars */
 import {URL_UPDATE, URL_READ, URL_DELETE, URL_SCHEMA } from './constants.js';
-console.log(URL_READ)
+import { eventBus } from './events.js'
 
 
 export default {
@@ -48,7 +50,7 @@ export default {
   },
   data: ()=> { 
     return{
-      showMainRendezvousPoints: true,
+      showMainRendezvousPoints: false,
       field1: "field1",
       field2: "field2",
       test:[
@@ -60,42 +62,52 @@ export default {
     } 
   },
 methods:{
-    testfn: async function(){
-      console.log("TEST")
-    },
-    showModalCreateRoom(){
-      this.$root.$emit('showModalCreateRoom')
-      console.log('showModalCreateRoom')
-    },
-    async refreshMainRendezvousPoints(){
-      console.log(1)
-      return axios.post(URL_READ,{})
+    refresh(){
+      axios.post(URL_SCHEMA,{})
       .then(response => {
-        console.log("SUCCES",response)
+        this.schema = response.data
+      })
+      .catch(error => {
+        console.log("Error reading schema from server",error)
+      }) 
+      
+      axios.post(URL_READ,{})
+      .then(response => {
         this.receivedData = response.data
       })
       .catch(error => console.log("ERROR",error))           
     },
+    showModalCreateRoom(){
+      eventBus.$emit('showModalCreateRoom')
+      console.log('MainRendezvousPoints: showModalCreateRoom')
+    },
     async updateRoom(room){
-      console.log("Update",room)
       let response = await axios
       .post(URL_UPDATE,room)
       .catch(error => console.log("UPDATE ERROR",error))
         
       this.status = response.data
       if(this.status == "success"){
-        this.status = await this.refreshMainRendezvousPoints()
-        console.log(this.status)
+        console.log("MainRendezvousPoints: updateRoom",room.name,"OK")
+      }else{
+        console.log("MainRendezvousPoints: updateRoom",room.name,"failed")
       }
+      this.refresh()
+
     },
     async deleteRoom(room){
-      console.log("Delete",room)
+      console.log("MainRendezvousPoints: deleteRoom",room)
       let response = await axios
       .post(URL_DELETE,room)
       .catch(error => console.log("DELETE ERROR",error))
-      this.status = response.data
 
-      await this.refreshMainRendezvousPoints()
+      this.status = response.data
+      if(this.status == "success"){
+        console.log("MainRendezvousPoints: deleteRoom",room.name,"OK")
+      }else{
+        console.log("MainRendezvousPoints: deleteRoom",room.name,"failed")
+      }
+      this.refresh()
 
     }
   },
@@ -112,26 +124,12 @@ methods:{
     }
   },
   mounted: async function () {
-    // Download the schema from the server
-    let _this = this
-    await axios
-    .post(URL_SCHEMA,{})
-    .then(response => {
-      console.log("SUCCES",response)
-      _this.schema = response.data
-    })
-    .catch(error => console.log("Error reading schema from server",error))   
-
-    await this.refreshMainRendezvousPoints()
-
-    this.$root.$on('showMainRendezvousPoints', () => {
+    eventBus.$on('showMainRendezvousPoints', async () => {
+      this.refresh();
       this.showMainRendezvousPoints = true;
-      this.refreshMainRendezvousPoints();
-      console.log("Event: showMainRendezvousPoints");
     })    
-    this.$root.$on('hideMainRendezvousPoints', () => {
-        this.showMainRendezvousPoints = false
-        console.log("Event: hideMainRendezvousPoints")
+    eventBus.$on('hideMainRendezvousPoints', () => {
+      this.showMainRendezvousPoints = false
     })    
 
   }

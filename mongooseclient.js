@@ -4,9 +4,10 @@ mongoose.set('useCreateIndex', true);
 const DATABASE_URL      = process.env.DATABASE_URL
 const DATABASE_USERNAME = process.env.DATABASE_USERNAME
 const DATABASE_PASSWORD = process.env.DATABASE_PASSWORD
-const COLLECTION = 'Clients'
+const CollectionClients = 'Clients'
+const CollectionWebusers = 'Webusers'
 
-module.exports = async function(){
+module.exports = function(){
     let options ={
         useUnifiedTopology: true,
         useNewUrlParser: true,
@@ -17,13 +18,21 @@ module.exports = async function(){
         }
     }
 
-    const connection  = await mongoose.createConnection( DATABASE_URL, options);
+    const connection  = mongoose.createConnection( DATABASE_URL, options);
     const ClientSchema = new mongoose.Schema({
         client: { type: String, required: true, unique: true },
         token: { type: String, required: true },
-        expiration: { type: Date, required: true, default: Date.now }
+        ipaddr: { type: Date, required: false, default: Date.now },
+        expiration: { type: Date, required: true, default: Date.now },
     });
-    const Client = connection.model( COLLECTION, ClientSchema)
+    const Client = connection.model( CollectionClients, ClientSchema)
+
+    const WebuserSchema = new mongoose.Schema({
+        username: { type: String, required: true, unique: true },
+        password: { type: String, required: true },
+        expiration: { type: Date, required: true, default: Date.now },
+    });
+    const Webuser = connection.model( CollectionWebusers, WebuserSchema)
 
     connection.createClient = async (client)=>{
         return new Promise((resolve, reject) => {
@@ -60,6 +69,30 @@ module.exports = async function(){
                 return false
             }
         })                
+    }
+
+    connection.getWebuser = async (username)=>{
+        let reply = await Webuser.findOne({ "username" : username})  
+        return reply       
+    }
+    connection.deleteWebuser = async (username)=>{
+        return Webuser.deleteOne({ username : username})                 
+    }
+    connection.createWebuser = async (username,password)=>{
+        return new Promise((resolve, reject) => {
+            require('crypto').randomBytes(24, function(err, buffer) {
+                if(err){
+                    return(reject(err))
+                }else{
+                    return(resolve(buffer.toString('hex')))
+                }
+            });            
+        })
+        .then((token)=>{
+            let doc = new Webuser ({username: username, password: password})
+            return doc.save()              
+        })                
+
     }
 
     return connection

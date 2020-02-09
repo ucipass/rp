@@ -2,12 +2,7 @@
   <div>
     <b-modal :id="id" class="text-center" :title="title">
       <b-container >
-          <b-row><b-col>Room Name</b-col><b-col><b-input v-model='room.name'></b-input></b-col></b-row>
-          <b-row><b-col>Room rcvName</b-col><b-col><b-input v-model='room.rcvName'></b-input></b-col></b-row>
-          <b-row><b-col>Room rcvPort</b-col><b-col><b-input v-model='room.rcvPort'></b-input></b-col></b-row>
-          <b-row><b-col>Room fwdName</b-col><b-col><b-input v-model='room.fwdName'></b-input></b-col></b-row>
-          <b-row><b-col>Room fwdHost</b-col><b-col><b-input v-model='room.fwdHost'></b-input></b-col></b-row>
-          <b-row><b-col>Room fwdPort</b-col><b-col><b-input v-model='room.fwdPort'></b-input></b-col></b-row>
+          <b-row><b-col>Client Name</b-col><b-col><b-input v-model='client.name'></b-input></b-col></b-row>
       </b-container>
       <div slot="modal-footer" class="w-100">
         <p class="float-left text-danger">{{status}}</p>
@@ -21,39 +16,35 @@
 <script>
 import axios from 'axios';
 import {URL_CREATE } from './constants.js';
-import { eventBus } from './events.js'
 
 
 export default {
-  name: 'ModalCreateRoom',
+  name: 'ModalCreateClient',
   props: {
     title: {
-      default: "Create Room",
+      default: "Create Client",
       type: String
     },
     id: {
-      default: "ModalCreateRoom",
+      default: "ModalCreateClient",
       type: String
     }
   },
   data: function(){
     return{
-      room:{
-        name: "room1",
-        rcvName: "client1",
-        rcvPort: "11111",
-        fwdName: "client2",
-        fwdHost: "localhost",
-        fwdPort: "22"
+      client:{
+        client: "client1"
       },
       status: ""
     }
   },
   methods:{
     show: function(){
+      console.log("SHOW")
       this.$bvModal.show(this.id)
     },
     hide: function(){
+      console.log("HIDE")
       this.$bvModal.hide(this.id)
     },
     create: async function(){
@@ -63,13 +54,15 @@ export default {
       this.status = response.data
       if(this.status == 'success'){
         this.hide();
-        eventBus.$emit('showMainRendezvousPoints')
+        this.$root.$emit('showMainRendezvousPoints')
       }
     }
   },
   mounted: function () {
-    eventBus.$on('showModalCreateRoom', () => {
-    this.show()
+    console.log("MOUNTED")
+    this.$root.$on('showModalCreateRoom', () => {
+        console.log("Event Received: showModalCreateRoom", event)
+        this.show()
     })
   }
 }
