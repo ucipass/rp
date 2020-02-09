@@ -38,8 +38,6 @@ let options ={
   }
 }
 
-
-
 // LOGGING
 var log = require("ucipass-logger")("sio-app")
 log.transports.console.level = 'debug'

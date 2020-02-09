@@ -16,7 +16,7 @@ const expect = require('expect');
 const path = require('path')
 // const fs = require('fs');
 // const config = require('config');
-// const logg = require('why-is-node-running')
+const logg = require('why-is-node-running')
 // const File = require("ucipass-file")
 // const log = require("ucipass-logger")("mocha")
 
@@ -234,6 +234,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
 describe('\n\n=================== SOCKET.IO & APP TESTS ========================', () => {
    
     before("Before", async ()=>{
+        console.log("START")
         app = require("../sio-app.js")
         this.db = await (require("../mongooseclient.js"))()
         // CREATE CLIENTS      
@@ -468,7 +469,8 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         for (const room of sio.rooms.values()) {
             sio.rooms.delete(room.name)
         }
-        const superagent = require('superagent');
+        const superagent = require('superagent').agent();
+        await superagent.post( url.href + 'login').send({username:this.username,password:this.password})
         await superagent.post( url.href + 'create').send(room1)
         let client1 = new SIOClient(this.clientObj1.client,this.clientObj1.token,url.href)
         let client2 = new SIOClient(this.clientObj2.client,this.clientObj2.token,url.href)

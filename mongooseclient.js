@@ -41,6 +41,9 @@ Webuser.findOne({ "username" : "admin" })
         return doc.save()  
     }
 })
+.then(()=>{
+    return connection.close()
+})
 .catch((error)=>{
     log.error("Mongo DB error with admin user id",error)
 })
