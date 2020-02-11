@@ -1,6 +1,6 @@
 <template>
   <b-container fluid v-if='showMainRendezvousPoints'>
-    <h1>Rendezvous Points</h1>
+    <h1>Rendezvous points</h1>
     <!-- <b-table striped hover :items="db"></b-table> -->
     <b-row>
       <b-col class="font-weight-bold">Room Name</b-col>
