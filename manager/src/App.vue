@@ -5,6 +5,7 @@
     <MainClients/>
     <MainConnections/>
     <ModalCreateRoom/>
+    <MainWelcome/>
 
   </div>
 </template>
@@ -15,11 +16,13 @@ import MainRendezvousPoints from './components/MainRendezvousPoints.vue'
 import MainClients from './components/MainClients.vue'
 import MainConnections from './components/MainConnections.vue'
 import ModalCreateRoom from './components/ModalCreateRoom.vue'
+import MainWelcome from './components/MainWelcome.vue'
+
 
 export default {
   name: 'app',
   components: {
-    NavBarMain, MainRendezvousPoints, MainClients, MainConnections, ModalCreateRoom
+    MainWelcome, NavBarMain, MainRendezvousPoints, MainClients, MainConnections, ModalCreateRoom
   },
   mounted: function(){
   }

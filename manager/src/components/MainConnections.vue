@@ -1,5 +1,7 @@
 <template>
+
   <b-container fluid v-if='showMainConnections'>
+    <h1>Connections</h1>    
     <div class="text-center">
       <b-table
         id="myTabel"
@@ -17,6 +19,8 @@
 </template>
 
 <script>
+import { eventBus, hideMainAll } from './events.js'
+
 export default {
   name: "App",
   data: () => ({
@@ -50,20 +54,31 @@ export default {
 
     // await this.refreshMainRendezvousPoints()
 
-    this.$root.$on('showMainConnections', () => {
-      // this.refreshshowMainConnections();
+    eventBus.$on('showMainConnections', () => {
+      hideMainAll()
+      this.refresh();
       this.showMainConnections = true;
       console.log("Event: showMainConnections");
     })    
-    this.$root.$on('hideMainConnections', () => {
+    eventBus.$on('hideMainConnections', () => {
       this.showMainConnections = false
       console.log("Event: hideMainConnections")
-    })    
-    this.$root.$on('hideMainAll', () => {
-      this.showMainConnections = false
-      console.log("Event: hideMainConnections")
-    })    
-
+    })   
+  },
+  methods:{
+    testfn: async function(){
+      console.log("TEST")
+    },
+    async refresh(){
+      // axios
+      // .post(URL_SIOCLIENTS_READ,{})
+      // .then(response => {
+      //   console.log("SUCCES",response)
+      //   this.receivedData = response.data
+      // })
+      // .catch(error => console.log("ERROR",error))      
+      console.log("Event: showMainClients")      
+    }
   }
 };
 </script>

@@ -9,8 +9,8 @@
         <b-navbar-nav>
           <b-dropdown left variant="outline-primary" v-if="loggedIn" text='Menu'>
             <b-dropdown-item @click="showMainClients()">Clients</b-dropdown-item>
-            <b-dropdown-item @click="showMainRendezvousPoints()">Rendezvous Points</b-dropdown-item>
             <b-dropdown-item @click="showMainConnections()">Connections</b-dropdown-item>
+            <b-dropdown-item @click="showMainRendezvousPoints()">Rendezvous Points</b-dropdown-item>
           </b-dropdown>
         </b-navbar-nav>
         <b-navbar-nav class="ml-auto">
@@ -28,7 +28,7 @@
 
 <script>
 import ModalLogin from './ModalLogin.vue'
-import { eventBus } from './events.js'
+import { eventBus, hideMainAll, showMainWelcome } from './events.js'
 import { URL_LOGIN, URL_LOGOUT } from './constants.js'
 import axios from 'axios';
 axios.defaults.withCredentials = true
@@ -74,23 +74,16 @@ export default {
       })
     },
     showMainRendezvousPoints(){
-      this.hideMainAll()
       eventBus.$emit('showMainRendezvousPoints')
       console.log("NavBarMain: showMainRendezvousPoints")
     },
     showMainClients(){
-      this.hideMainAll()
       eventBus.$emit('showMainClients')
       console.log("NavBarMain: showMainClients")
     },
     showMainConnections(){
-      this.hideMainAll()
       eventBus.$emit('showMainConnections')
       console.log("NavBarMain: showMainConnections")
-    },
-    hideMainAll(){
-      eventBus.$emit('hideMainAll')
-      console.log("NavBarMain: hideMainAll")
     },
     showLoginWindow(){
       eventBus.$emit('showLoginWindow')
@@ -99,11 +92,12 @@ export default {
     logout: function(){
       axios.post(URL_LOGOUT)
       .then(response => {
-        let loginSuccess = response.data
-        if(loginSuccess){
-          this.loggedIn = true
+        let logoutSuccess = response.data
+        if(logoutSuccess){
+          this.loggedIn = false
           console.log("NavBarMain: Logout success")      
-          eventBus.$emit('logoutEvent')
+          hideMainAll()
+          showMainWelcome()
         }
         else{
           this.loggedIn = false

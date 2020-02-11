@@ -1,26 +1,6 @@
 <template>
   <b-container fluid v-if='showMainClients'>
     <h1>Clients</h1>
-    <!-- <b-table striped hover :items="db"></b-table> -->
-    <b-row>
-      <b-col class="font-weight-bold">Room Name</b-col>
-      <b-col class="font-weight-bold">Receiver Name</b-col>
-      <b-col class="font-weight-bold">Receiver Port</b-col>
-      <b-col class="font-weight-bold">Forwarder Name</b-col>
-      <b-col class="font-weight-bold">Forwarder Host</b-col>
-      <b-col class="font-weight-bold">Forwarder Port</b-col>
-      <b-col md="auto" style="visibility:hidden"><b-button >Update</b-button><b-button>Delete</b-button></b-col>
-    </b-row>
-    <b-row class="justify-content-md-center" v-for="room in receivedData" v-bind:key="room.name">
-      <b-col><b-input v-model='room.name'></b-input></b-col>
-      <b-col><b-input v-model='room.rcvName'></b-input></b-col>
-      <b-col><b-input v-model='room.rcvPort'></b-input></b-col>
-      <b-col><b-input v-model='room.fwdName'></b-input></b-col>
-      <b-col><b-input v-model='room.fwdHost'></b-input></b-col>
-      <b-col><b-input v-model='room.fwdPort'></b-input></b-col>
-      <b-col md="auto"><b-button @click="updateRoom(room)">Update</b-button><b-button @click="deleteRoom(room)">Delete</b-button></b-col>
-    </b-row>
-    <b-row><div class="p-3"><b-button @click="showModalCreateRoom()">Create</b-button></div></b-row>
   </b-container>
 </template>
 
@@ -28,6 +8,7 @@
 // import TableRow from './TableRow.vue'
 import axios from 'axios';
 import {URL_SIOCLIENTS_READ } from './constants.js';
+import { eventBus, hideMainAll } from './events.js'
 
 
 
@@ -63,11 +44,7 @@ methods:{
     testfn: async function(){
       console.log("TEST")
     },
-    showModalCreateRoom(){
-      this.$root.$emit('showModalCreateRoom')
-      console.log('showModalCreateRoom')
-    },
-    async refreshMainClients(){
+    async refresh(){
       axios
       .post(URL_SIOCLIENTS_READ,{})
       .then(response => {
@@ -92,21 +69,16 @@ methods:{
   },
   mounted: async function () {
 
-    // await this.refreshMainClients()
-
-    this.$root.$on('showMainClients', () => {
-      this.refreshMainClients();
+    eventBus.$on('showMainClients', () => {
+      hideMainAll()
+      this.refresh();
       this.showMainClients = true;
       console.log("Event: showMainClients");
     })    
-    this.$root.$on('hideMainClients', () => {
+    eventBus.$on('hideMainClients', () => {
       this.showMainClients = false
       console.log("Event: hideMainClients")
-    })    
-    this.$root.$on('hideMainAll', () => {
-      this.showMainClients = false
-      console.log("Event: hideMainClients")
-    })    
+    })       
 
   }
 }

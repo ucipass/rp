@@ -1,6 +1,6 @@
 <template>
   <b-container fluid v-if='showMainRendezvousPoints'>
-    <h1>Rendezvous points</h1>
+    <h1>Rendezvous Points</h1>
     <!-- <b-table striped hover :items="db"></b-table> -->
     <b-row>
       <b-col class="font-weight-bold">Room Name</b-col>
@@ -30,7 +30,7 @@ import axios from 'axios';
 axios.defaults.withCredentials = true
 /* eslint-disable no-unused-vars */
 import {URL_UPDATE, URL_READ, URL_DELETE, URL_SCHEMA } from './constants.js';
-import { eventBus } from './events.js'
+import { eventBus, hideMainAll } from './events.js'
 
 
 export default {
@@ -125,6 +125,7 @@ methods:{
   },
   mounted: async function () {
     eventBus.$on('showMainRendezvousPoints', async () => {
+      hideMainAll()
       this.refresh();
       this.showMainRendezvousPoints = true;
     })    
