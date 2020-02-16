@@ -14,7 +14,6 @@ class SIO  {
         this.sockets = new Map()
         this.rooms = new Map()
         this.users = new Map()
-        this.connections = new Map()
         this.latency = 0
         this.log = log;
         this.io = socketio( server, this.sio_opts)
@@ -58,18 +57,18 @@ class SIO  {
     }
     
     async start(){
-        return mongooseclient()
-        .then((db)=>{
-            this.db = db
-            this.io.on('connection', this.onConnection.bind(this))
-            this.events.emit("onSocketIoStarted",this)
-            return this; 
-        })
+
+        this.db = await mongooseclient()
         .catch((error)=>{
             log.error("Database connection failure, exiting...")
             log.error(error)
             process.exit()
         })
+        await this.refresh() // Load rooms from database
+        this.io.on('connection', this.onConnection.bind(this))
+        this.events.emit("onSocketIoStarted",this)
+        return this; 
+
     }
     
     async stop(){
@@ -83,7 +82,32 @@ class SIO  {
         })
         .then(()=> this.db.close() )
     }
-    
+
+    async refresh(){
+        let newrooms = await this.db.getRooms()
+        let oldrooms = this.rooms.values()
+
+        for (const oldroom of oldrooms ) {
+            if( ! newrooms.find( (newroom)=>{ newroom == oldroom.name} ) ){
+                let json = new JSONData( "server","onCloseRoom",{} )
+                json.att.room = oldroom
+                await this.onCloseRoom(json)
+                this.rooms.delete(oldroom.name) 
+            }
+        }
+
+        for (const newroom of newrooms) {
+            if( ! this.rooms.has(newroom.name) ){
+                let json = new JSONData( "server","onOpenRoom",{} )
+                newroom.connections = new Map()
+                json.att.room = newroom
+                this.rooms.set(newroom.name,newroom) 
+                await this.onOpenRoom(json)
+            }
+        }
+        return this.rooms
+    }
+
     // Calls onNewClient if login successful
     async onLogin (socket,data,replyFn){
         
@@ -267,20 +291,6 @@ class SIO  {
     
     getRooms(){
         return this.io.sockets.adapter.rooms  
-    }
-
-    loadRoomDB(roomDB){
-        roomDB.forEach(room => {
-            let newRoom = JSON.parse(JSON.stringify(room))
-            newRoom.connections = new Map() // add object for future connections
-            this.rooms.set(newRoom.name,newRoom)
-        });
-    }
-
-    loadUserDB(userDB){
-        userDB.forEach(user => {
-            this.users.set(user.username,user)
-        });
     }
 
     getRoomMembers(room){

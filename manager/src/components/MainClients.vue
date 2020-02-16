@@ -1,6 +1,16 @@
 <template>
   <b-container fluid v-if='showMainClients'>
     <h1>Clients</h1>
+    <div class="text-center">
+      <b-table
+        id="myClientsTable"
+        hover
+        striped
+        :items="receivedData"
+
+      >
+      </b-table>
+    </div>    
   </b-container>
 </template>
 
@@ -9,8 +19,6 @@
 import axios from 'axios';
 import {URL_SIOCLIENTS_READ } from './constants.js';
 import { eventBus, hideMainAll } from './events.js'
-
-
 
 export default {
   name: 'MainClients',
@@ -37,10 +45,16 @@ export default {
         {f1:"B1",f2:"B2"}
       ],
       receivedData:[],
-      schema: {}
+      schema: {},
+      tableColumns: [
+        { key: "Client", label: "Client", sortable: false },
+        { key: "Token", label: "Token", sortable: false },
+        { key: "Ipaddr", label: "IP Address", sortable: false },
+        { key: "Expiration", label: "Expiration", sortable: false }
+      ]      
     } 
   },
-methods:{
+  methods:{
     testfn: async function(){
       console.log("TEST")
     },
@@ -48,10 +62,13 @@ methods:{
       axios
       .post(URL_SIOCLIENTS_READ,{})
       .then(response => {
-        console.log("SUCCES",response)
-        this.receivedData = response.data
+        console.log("SUCCES",response.data)
+        this.receivedData = response.data.map( e => {delete e._id; delete e.__v;return e})
+        console.log(this.receivedData)
       })
-      .catch(error => console.log("ERROR",error))      
+      .catch(error => {
+        console.log("ERROR",error)
+      })      
       console.log("Event: showMainClients")      
     }
   },

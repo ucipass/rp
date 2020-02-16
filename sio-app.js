@@ -195,50 +195,38 @@ app.post(PREFIX_SCHEMA, passport.checkLogin ,(req, res) => {
 
 app.post(PREFIX_CREATE, passport.checkLogin, async (req, res) => {
   let room = req.body
-  let json = new JSONData("server","onOpenRoom",{room:room})
-  sio.rooms.set(room.name,room)
-  await sio.onOpenRoom(json)
+  await mongooseConnection.createRoom(room).catch(()=>{})
+  await sio.refresh()
   res.json("success");
 })
 
-app.post(PREFIX_READ, passport.checkLogin, (req, res) => {
-  let roomArray = Array.from(sio.rooms.values())
+app.post(PREFIX_READ, passport.checkLogin, async (req, res) => {
+  let roomArray = await mongooseConnection.getRooms().catch(()=> [])
   res.json(roomArray)
 })
 
-app.post(PREFIX_UPDATE, passport.checkLogin, (req, res) => {
+app.post(PREFIX_UPDATE, passport.checkLogin, async (req, res) => {
   let room = req.body
-
-  let jsonclose = new JSONData("server","onCloseRoom",{room:room})
-  sio.onCloseRoom(jsonclose)
-  .then(()=>{
-    let jsonopen = new JSONData("server","onOpenRoom",{room:room})
-    sio.rooms.set(room.name,room)
-    return sio.onOpenRoom(jsonopen)
-  })
-  .then(()=>{
-    return res.json("success");       
-  })  
-
+  await mongooseConnection.updateRoom(room).catch(()=>{})
+  await sio.refresh()
+  return res.json("success");
 })
 
 app.post(PREFIX_DELETE, passport.checkLogin, async (req, res) => {
-  let room = req.body
-  let json = new JSONData("server","onCloseRoom",{room:room})
-  await sio.onCloseRoom(json)
-  sio.rooms.delete(room.name)
-  res.json("success");
-})
-
-app.post(PREFIX_SIOCLIENTS_READ, passport.checkLogin, (req, res) => {
-  let siorooms = sio.getRooms()
-  if (siorooms){
-    let roomArray = Array.from(sio.rooms.values())
-    res.json(roomArray)    
-  }else{
-    res.json(null)
+  try {
+    let room = req.body
+    await mongooseConnection.deleteRoom(room).catch(()=>{})
+    await sio.refresh()
+    res.json("success");    
+  } catch (error) {
+    res.json(`Error: ${PREFIX_DELETE}`);         
   }
 
+})
+
+app.post(PREFIX_SIOCLIENTS_READ, passport.checkLogin, async (req, res) => {
+  let Clients = await mongooseConnection.getClients().catch(()=>{[]})  
+  res.json(Clients)
 })
 
 // catch 404 and forward to error handler

@@ -21,7 +21,7 @@ if (process.env.NODE_ENV != "production"){
     PREFIX_SIOCLIENTS_READ = DEV_URL + path.join("/", PREFIX, "sioclients", "read")
 }
 
-console.log(PREFIX,PREFIX,PREFIX)
+console.log( PREFIX == "" ? "Prefix: /" : `Prefix: /${PREFIX}`)
 
 export const URL_LOGIN  = PREFIX_LOGIN;
 export const URL_LOGOUT = PREFIX_LOGOUT;
