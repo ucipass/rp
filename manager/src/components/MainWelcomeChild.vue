@@ -1,5 +1,5 @@
 <template>
-  <b-container fluid v-if='showMainWelcome'>
+  <b-container fluid v-if='showMainWelcomeChild'>
     <h1>Welcome Child</h1>
       <p><slot name='step-1' :childvar="childvar"></slot></p>
       <p><slot name='step-2' :childvar="childvar"></slot></p>
@@ -9,29 +9,26 @@
 </template>
 
 <script>
-import { eventBus, hideMainAll } from './events.js'
-
-
 
 export default {
-  name: 'MainWelcome',
+  name: 'MainWelcomeChild',
   components: {
-    // TableRow
+
   },
   props: {
     title: {
-      default: "MainWelcome",
+      default: "MainWelcomeChild",
       type: String
     },
     id: {
-      default: "MainWelcome",
+      default: "MainWelcomeChild",
       type: String
     }
   },
   data: ()=> { 
     return{
       childvar: "child123",
-      showMainWelcome: true,
+      showMainWelcomeChild: false,
       field1: "field1",
       field2: "field2",
       test:[
@@ -54,33 +51,13 @@ methods:{
       //   this.receivedData = response.data
       // })
       // .catch(error => console.log("ERROR",error))      
-      console.log("Event: showMainWelcome")      
+      console.log("Event: showMainWelcomeChild")      
     }
   },
   computed:{
-    // getjson(){
-    //   return{ prefix:this.prefix,region:this.region}
-    // },
-    // db(){
-      
-    //   if (this.receivedData.length) {
-    //     return this.receivedData
-    //   }
-    //   else return [this.schema]
-    // }
-  },
-  mounted: async function () {
 
-    eventBus.$on('showMainWelcome', () => {
-      hideMainAll()
-      this.refresh();
-      this.showMainWelcome = true;
-      console.log("Event: showMainWelcome");
-    })    
-    eventBus.$on('hideMainClients', () => {
-      this.showMainWelcome = false
-      console.log("Event: hideMainWelcome")
-    })       
+  },
+  mounted: async function () {    
 
   }
 }
