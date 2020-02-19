@@ -8,17 +8,23 @@ let PREFIX_CREATE = "create"
 let PREFIX_READ   = "read"
 let PREFIX_UPDATE = "update"
 let PREFIX_DELETE = "delete"  
+let PREFIX_SIOCLIENTS_CREATE   = "sioclients/create"
 let PREFIX_SIOCLIENTS_READ   = "sioclients/read"
+let PREFIX_SIOCLIENTS_UPDATE   = "sioclients/update"
+let PREFIX_SIOCLIENTS_DELETE   = "sioclients/delete"
 
 if (process.env.NODE_ENV != "production"){
     PREFIX_LOGIN = DEV_URL + path.join("/", PREFIX, "login")
     PREFIX_LOGOUT = DEV_URL + path.join("/", PREFIX, "logout")
     PREFIX_SCHEMA = DEV_URL + path.join("/", PREFIX, "schema")
     PREFIX_CREATE = DEV_URL + path.join("/", PREFIX, "create")
-    PREFIX_READ =   DEV_URL + path.join("/", PREFIX, "read")
+    PREFIX_READ   = DEV_URL + path.join("/", PREFIX, "read")
     PREFIX_UPDATE = DEV_URL + path.join("/", PREFIX, "update")
     PREFIX_DELETE = DEV_URL + path.join("/", PREFIX, "delete")   
-    PREFIX_SIOCLIENTS_READ = DEV_URL + path.join("/", PREFIX, "sioclients", "read")
+    PREFIX_SIOCLIENTS_CREATE = DEV_URL + path.join("/", PREFIX, "sioclients", "create")
+    PREFIX_SIOCLIENTS_READ   = DEV_URL + path.join("/", PREFIX, "sioclients", "read")
+    PREFIX_SIOCLIENTS_UPDATE = DEV_URL + path.join("/", PREFIX, "sioclients", "update")
+    PREFIX_SIOCLIENTS_DELETE = DEV_URL + path.join("/", PREFIX, "sioclients", "delete")
 }
 
 console.log( PREFIX == "" ? "Prefix: /" : `Prefix: /${PREFIX}`)
@@ -30,4 +36,7 @@ export const URL_CREATE = PREFIX_CREATE;
 export const URL_READ   = PREFIX_READ;
 export const URL_UPDATE = PREFIX_UPDATE;
 export const URL_DELETE = PREFIX_DELETE;
+export const URL_SIOCLIENTS_CREATE = PREFIX_SIOCLIENTS_CREATE;
 export const URL_SIOCLIENTS_READ = PREFIX_SIOCLIENTS_READ;
+export const URL_SIOCLIENTS_UPDATE = PREFIX_SIOCLIENTS_UPDATE;
+export const URL_SIOCLIENTS_DELETE = PREFIX_SIOCLIENTS_DELETE;

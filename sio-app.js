@@ -21,7 +21,10 @@ const PREFIX_CREATE = path.posix.join("/",PREFIX, "create")
 const PREFIX_READ   = path.posix.join("/",PREFIX, "read")
 const PREFIX_UPDATE = path.posix.join("/",PREFIX, "update")
 const PREFIX_DELETE = path.posix.join("/",PREFIX, "delete")
+const PREFIX_SIOCLIENTS_CREATE   = path.posix.join("/",PREFIX, "sioclients", "create")
 const PREFIX_SIOCLIENTS_READ   = path.posix.join("/",PREFIX, "sioclients", "read")
+const PREFIX_SIOCLIENTS_UPDATE   = path.posix.join("/",PREFIX, "sioclients", "update")
+const PREFIX_SIOCLIENTS_DELETE   = path.posix.join("/",PREFIX, "sioclients", "delete")
 
 // 
 mongoose.set('useCreateIndex', true);
@@ -224,9 +227,31 @@ app.post(PREFIX_DELETE, passport.checkLogin, async (req, res) => {
 
 })
 
+app.post(PREFIX_SIOCLIENTS_CREATE, passport.checkLogin, async (req, res) => {
+  let client = req.body
+  mongooseConnection.createClient(client)
+  .then((response)=> res.json("success"))  
+  .catch((error)=> res.json("failure"))  
+  
+})
+
 app.post(PREFIX_SIOCLIENTS_READ, passport.checkLogin, async (req, res) => {
   let Clients = await mongooseConnection.getClients().catch(()=>{[]})  
   res.json(Clients)
+})
+
+app.post(PREFIX_SIOCLIENTS_UPDATE, passport.checkLogin, async (req, res) => {
+  let Clients = await mongooseConnection.updateClient(client).catch(()=>{[]})  
+  res.json(Clients)
+})
+
+app.post(PREFIX_SIOCLIENTS_DELETE, passport.checkLogin, async (req, res) => {
+
+  let client = req.body
+  mongooseConnection.deleteClient(client)
+  .then((response)=> res.json("success"))  
+  .catch((error)=> res.json("failure"))  
+
 })
 
 // catch 404 and forward to error handler

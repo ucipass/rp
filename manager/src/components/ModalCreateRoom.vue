@@ -68,6 +68,7 @@ export default {
     }
   },
   mounted: function () {
+    console.log("ModalCreateRoom: Mounted")
     eventBus.$on('showModalCreateRoom', () => {
     this.show()
     })

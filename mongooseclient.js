@@ -12,9 +12,9 @@ const CollectionWebusers = 'Webusers'
 const CollectionRooms = 'Rooms'
 
 const ClientSchema = new mongoose.Schema({
-    client: { type: String, required: true, unique: true },
+    name: { type: String, required: true, unique: true },
     token: { type: String, required: true },
-    ipaddr: { type: Date, required: false, default: Date.now },
+    ipaddr: { type: String, required: false, default: "0.0.0.0/0" },
     expiration: { type: Date, required: true, default: Date.now },
 });
 
@@ -76,7 +76,7 @@ module.exports = function(){
     const Room = connection.model( CollectionRooms, RoomsSchema)
 
     connection.createClient = async (client)=>{
-        return new Promise((resolve, reject) => {
+        let token = await new Promise((resolve, reject) => {
             require('crypto').randomBytes(24, function(err, buffer) {
                 if(err){
                     return(reject(err))
@@ -85,15 +85,22 @@ module.exports = function(){
                 }
             });            
         })
-        .then((token)=>{
-            let doc = new Client ({client: client, token: token})
-            return doc.save()              
-        })                
+
+        if(typeof client === 'object' && client !== null){
+            client.token = client.token ? client.token : token
+            let doc = new Client (client)
+            return doc.save() 
+        }
+        else{
+                let doc = new Client ({name: client, token: token})
+                return doc.save()              
+        }
+           
 
     }
 
     connection.getClient = async (client)=>{
-        return Client.findOne({ client : client})              
+        return Client.findOne({ name : client})              
     }
 
     connection.getClients = async (client)=>{
@@ -101,13 +108,22 @@ module.exports = function(){
     }
 
     connection.deleteClient = async (client)=>{
-        return Client.deleteOne({ client : client})              
+
+
+
+        if(typeof client === 'object' && client !== null){
+            return Client.deleteOne({ name : client.name})  
+        }
+        else{
+            return Client.deleteOne({ name : client})  
+        }        
+                    
     }
 
     connection.verifyClient = async (client,token)=>{
         return connection.getClient(client)
         .then((clientObj)=>{
-            if(clientObj && clientObj.client == client && clientObj.token == token){
+            if(clientObj && clientObj.name == client && clientObj.token == token){
                 return true
             }
             else{

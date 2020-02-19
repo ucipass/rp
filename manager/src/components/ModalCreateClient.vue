@@ -15,7 +15,8 @@
 
 <script>
 import axios from 'axios';
-import {URL_CREATE } from './constants.js';
+import { URL_SIOCLIENTS_CREATE } from './constants.js';
+import { eventBus } from './events.js'
 
 
 export default {
@@ -33,7 +34,7 @@ export default {
   data: function(){
     return{
       client:{
-        client: "client1"
+        name: ""
       },
       status: ""
     }
@@ -48,20 +49,21 @@ export default {
       this.$bvModal.hide(this.id)
     },
     create: async function(){
+      console.log(URL_SIOCLIENTS_CREATE)
       let response = await axios
-      .post(URL_CREATE,this.room)
+      .post(URL_SIOCLIENTS_CREATE,this.client)
       .catch(error => { console.log("ERROR",error); return null })
       this.status = response.data
       if(this.status == 'success'){
         this.hide();
-        this.$root.$emit('showMainRendezvousPoints')
+        eventBus.$emit('showMainClients')
       }
     }
   },
   mounted: function () {
-    console.log("MOUNTED")
-    this.$root.$on('showModalCreateRoom', () => {
-        console.log("Event Received: showModalCreateRoom", event)
+    console.log("ModalCreateClient: Mounted")
+    eventBus.$on('showModalCreateClient', () => {
+        console.log("Event Received: showModalCreateClient", event)
         this.show()
     })
   }

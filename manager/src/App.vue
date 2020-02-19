@@ -1,28 +1,35 @@
 <template>
   <div id="app">
     <NavBarMain/>
+    <MainWelcome/>
     <MainRendezvousPoints/>
     <MainClients/>
     <MainConnections/>
     <ModalCreateRoom/>
-    <MainWelcome/>
+    <ModalCreateClient/>
 
   </div>
 </template>
 
 <script>
 import NavBarMain from './components/NavBarMain.vue'
+import MainWelcome from './components/MainWelcome.vue'
 import MainRendezvousPoints from './components/MainRendezvousPoints.vue'
 import MainClients from './components/MainClients.vue'
 import MainConnections from './components/MainConnections.vue'
 import ModalCreateRoom from './components/ModalCreateRoom.vue'
-import MainWelcome from './components/MainWelcome.vue'
-
+import ModalCreateClient from './components/ModalCreateClient.vue'
 
 export default {
   name: 'app',
   components: {
-    MainWelcome, NavBarMain, MainRendezvousPoints, MainClients, MainConnections, ModalCreateRoom
+    NavBarMain, 
+    MainWelcome, 
+    MainRendezvousPoints, 
+    MainClients, 
+    MainConnections, 
+    ModalCreateRoom,
+    ModalCreateClient
   },
   mounted: function(){
   }
