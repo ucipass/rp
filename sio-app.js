@@ -231,7 +231,7 @@ app.post(PREFIX_SIOCLIENTS_CREATE, passport.checkLogin, async (req, res) => {
   let client = req.body
   mongooseConnection.createClient(client)
   .then((response)=> res.json("success"))  
-  .catch((error)=> res.json("failure"))  
+  .catch((error)=> res.json(error))  
   
 })
 
