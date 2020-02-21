@@ -16,6 +16,7 @@ const SECRET_KEY    = process.env.SECRET_KEY
 const PREFIX        = process.env.VUE_APP_PREFIX ? path.posix.join("/",process.env.VUE_APP_PREFIX) : "/"
 const PREFIX_LOGIN  = path.posix.join("/",PREFIX, "login")
 const PREFIX_LOGOUT = path.posix.join("/",PREFIX, "logout")
+const PREFIX_STATUS = path.posix.join("/",PREFIX, "status")
 const PREFIX_SCHEMA = path.posix.join("/",PREFIX, "schema")
 const PREFIX_CREATE = path.posix.join("/",PREFIX, "create")
 const PREFIX_READ   = path.posix.join("/",PREFIX, "read")
@@ -194,6 +195,16 @@ app.post(PREFIX_SCHEMA, passport.checkLogin ,(req, res) => {
       fwdPort: ""
   }
   res.json(schema)
+})
+
+app.post(PREFIX_STATUS, passport.checkLogin , async (req, res) => {
+  let reply = await sio.status()
+  res.json(reply)
+})
+
+app.get(PREFIX_STATUS, passport.checkLogin , async (req, res) => {
+  let reply = await sio.status()
+  res.json(reply)
 })
 
 app.post(PREFIX_CREATE, passport.checkLogin, async (req, res) => {

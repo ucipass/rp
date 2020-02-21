@@ -89,23 +89,35 @@ class SIO  {
 
         for (const oldroom of oldrooms ) {
             if( ! newrooms.find( (newroom)=>{ newroom == oldroom.name} ) ){
-                let json = new JSONData( "server","onCloseRoom",{} )
-                json.att.room = oldroom
-                await this.onCloseRoom(json)
+                await this.closeRoom(oldroom)
                 this.rooms.delete(oldroom.name) 
             }
         }
 
         for (const newroom of newrooms) {
             if( ! this.rooms.has(newroom.name) ){
-                let json = new JSONData( "server","onOpenRoom",{} )
-                newroom.connections = new Map()
-                json.att.room = newroom
-                this.rooms.set(newroom.name,newroom) 
-                await this.onOpenRoom(json)
+                await this.openRoom(newroom)
             }
         }
         return this.rooms
+    }
+
+    async status(){
+        let clients = Array.from(this.sockets.values()).map((socket)=>{
+            let rooms = []
+            for (const room in socket.rooms) {
+                rooms.push(room)
+            }
+            return {
+                name : socket.username,
+                address : socket.conn.remoteAddress,
+                loginDate : socket.handshake.time,
+                id : socket.id,
+                rooms: rooms,
+                connected : socket.connected
+            }
+        })
+        return { clients: clients, rooms: Array.from(this.rooms.values())}
     }
 
     // Calls onNewClient if login successful
@@ -115,8 +127,13 @@ class SIO  {
         if (socket.auth) {
             socket.username = data.username
             log.info(`${socket.id}(${socket.username}) login success`)
+            // goes through the room list and sends client the assigned rooms
+            for (const room of this.rooms.values()) {
+                if( room.rcvName == socket.username  || room.fwdName == socket.username ){
+                    await this.sendOpenRoom(socket,room)                                   
+                }
+            }
             replyFn('ack')
-            this.onNewClient(socket)
         }else{
             log.warn(`${socket.id} login ${data.username} failure`)
             replyFn('reject')
@@ -128,50 +145,48 @@ class SIO  {
         replyFn('ack')
     }
 
-    async onNewClient(socket){    
-        this.rooms.forEach((room)=>{
-            if( room.rcvName == socket.username  || room.fwdName == socket.username ){
-                log.info(`${socket.id}(${socket.username}) joining ${room.name} room !`)  
-                socket.join(room.name,(err)=>{
-                    if (err) log.error(`${socket.id}(${socket.username}) failed to join ${room.name} room !`, err)
-                })
-                let json = new JSONData("server","onOpenRoom",{room:room})
-                socket.emit("onOpenRoom",json,()=>{})                       
-            }
-        })
-    }
-
-    async onOpenRoom(data){
-        let json = (new JSONData()).setjson(data.json)
-        let room = json.att.room
+    // Called when new room opened and sends it to all clients registered with that room
+    async openRoom(room){
         room.connections = new Map()
         this.rooms.set(room.name,room)
-
         this.sockets.forEach(async socket => {
-            await new Promise((resolve, reject) => {
                 if (socket.username == room.rcvName || socket.username == room.fwdName){
-                    socket.join(room.name,(err)=>{
-                        if (err){
-                            log.error(`${socket.id}(${socket.username}) failed to join ${room.name} room !`, err)
-                        }else{
-                            log.info(`${socket.id}(${socket.username}) joined ${room.name} room !`)              
-                        }
-                    })  
-                    socket.emit("onOpenRoom",json,()=>{
-                        resolve(true)
-                    })
-                }                
-            });
+                    await this.sendOpenRoom(socket,room)   
+                }  
         });
     }
 
-    async onCloseRoom(data){
-        let json = (new JSONData()).setjson(data.json)
-        let room = this.rooms.get(json.att.room.name)
+    // Called by onOpenRoom and onNewClient to send room info to client
+    async sendOpenRoom(socket,room){
+        return new Promise((resolve, reject) => {
+            let json = new JSONData("server","onOpenRoom",{room:room})
+            socket.join(room.name,(err)=>{
+                if (err){
+                    log.error(`${socket.id}(${socket.username}) failed to join ${room.name} room !`, err)
+                    reject(`${socket.id}(${socket.username}) failed to join ${room.name} room !`)
+                }else{
+                    socket.emit("onOpenRoom",json,()=>{
+                        if (socket.username == room.rcvName){
+                            room.rcvId = socket.id
+                        }
+                        else {
+                            room.fwdId = socket.id
+                        }
+                        log.info(`${socket.id}(${socket.username}) joined ${room.name} room !`) 
+                        resolve(true)
+                    })              
+                }
+            })              
+        });
+
+    }
+
+    async closeRoom(room){
         let socketIds = room.name ? await this.getRoomMembers(room.name) : []
         for (const socketId of socketIds) {
             await new Promise((resolve, reject) => {
                 let socket = this.sockets.get(socketId)
+                let json = new JSONData("server","onCloseRoom",{room:room})
                 socket.emit("onCloseRoom",json,()=>{
                     log.debug(`${socket.id}(${socket.username}) replied that room is closed!`)
                     socket.leave(room.name,(err)=>{

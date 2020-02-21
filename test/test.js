@@ -85,9 +85,9 @@ describe('\n\n=================== MONGODB TESTS ========================', () =>
                 expiration: new Date()
             }
 
-            roomNumber = (await db.getRooms()).length
             result = await db.deleteRoom(room1)
             result = await db.deleteRoom(room2)
+            roomNumber = (await db.getRooms()).length
             result = await db.createRoom(room1)
             result = await db.createRoom(room2)
             result = await db.getRooms()
@@ -206,8 +206,10 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,url.href)
         let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,url.href)
         let socket1 = await client1.start()
-        let socket2 = await client2.start()
-        expect((await sio.getRoomMembers("testmocharoom1")).length).toEqual(2);
+        let socket2 = await client2.start()    
+        let status 
+        status = await sio.status()
+        expect(status.clients.length).toEqual(2);
         await sio.leaveRoom("testmocharoom1",socket1.id)
         expect((await sio.getRoomMembers("testmocharoom1")).length).toEqual(1);
         await client1.stop()
