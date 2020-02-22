@@ -18,7 +18,8 @@ RUN npm run client_mac  --only=production
 
 WORKDIR /source/rp/manager
 RUN npm install 
-RUN npm run build 
+RUN npm run build
+COPY dist ./manager
 
 WORKDIR /source/rp
 COPY manager ./manager
