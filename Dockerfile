@@ -15,7 +15,6 @@ COPY sio-server.js .
 RUN npm run client_win  --only=production
 RUN npm run client_lin  --only=production
 RUN npm run client_mac  --only=production
-COPY download ./download
 
 WORKDIR /source/rp/manager
 RUN npm install 
