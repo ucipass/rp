@@ -8,6 +8,7 @@ export const  hideMainAll = () => {
     eventBus.$emit('hideMainClients')
     eventBus.$emit('hideMainConnections')
     eventBus.$emit('hideMainWelcome')
+    eventBus.$emit('hideMainDownload')
 }
 
 export const  showMainWelcome = () => {

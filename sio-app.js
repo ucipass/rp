@@ -12,16 +12,17 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const mongooseConnection  =  require("./mongooseclient.js")()
 app.mongooseConnection = mongooseConnection // For mocha test to close
-const SECRET_KEY    = process.env.SECRET_KEY
-const PREFIX        = process.env.VUE_APP_PREFIX ? path.posix.join("/",process.env.VUE_APP_PREFIX) : "/"
-const PREFIX_LOGIN  = path.posix.join("/",PREFIX, "login")
-const PREFIX_LOGOUT = path.posix.join("/",PREFIX, "logout")
-const PREFIX_STATUS = path.posix.join("/",PREFIX, "status")
-const PREFIX_SCHEMA = path.posix.join("/",PREFIX, "schema")
-const PREFIX_CREATE = path.posix.join("/",PREFIX, "create")
-const PREFIX_READ   = path.posix.join("/",PREFIX, "read")
-const PREFIX_UPDATE = path.posix.join("/",PREFIX, "update")
-const PREFIX_DELETE = path.posix.join("/",PREFIX, "delete")
+const SECRET_KEY      = process.env.SECRET_KEY
+const PREFIX          = process.env.VUE_APP_PREFIX ? path.posix.join("/",process.env.VUE_APP_PREFIX) : "/"
+const PREFIX_LOGIN    = path.posix.join("/",PREFIX, "login")
+const PREFIX_LOGOUT   = path.posix.join("/",PREFIX, "logout")
+const PREFIX_STATUS   = path.posix.join("/",PREFIX, "status")
+const PREFIX_SCHEMA   = path.posix.join("/",PREFIX, "schema")
+const PREFIX_DOWNLOAD = path.posix.join("/",PREFIX, "download")
+const PREFIX_CREATE   = path.posix.join("/",PREFIX, "create")
+const PREFIX_READ     = path.posix.join("/",PREFIX, "read")
+const PREFIX_UPDATE   = path.posix.join("/",PREFIX, "update")
+const PREFIX_DELETE   = path.posix.join("/",PREFIX, "delete")
 const PREFIX_SIOCLIENTS_CREATE   = path.posix.join("/",PREFIX, "sioclients", "create")
 const PREFIX_SIOCLIENTS_READ   = path.posix.join("/",PREFIX, "sioclients", "read")
 const PREFIX_SIOCLIENTS_UPDATE   = path.posix.join("/",PREFIX, "sioclients", "update")
@@ -133,6 +134,7 @@ passport.checkLogin = function(req, res, next) {
 //=================================================
 
 app.use( PREFIX ,express.static('manager/dist'))
+app.use( PREFIX_DOWNLOAD ,express.static('download'))
 app.use( "/clients" ,express.static('clients'), serveIndex('clients', {'icons': true}))
 log.info("Listening path:", PREFIX)
 

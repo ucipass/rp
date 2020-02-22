@@ -11,6 +11,7 @@
             <b-dropdown-item @click="showMainClients()">Clients</b-dropdown-item>
             <b-dropdown-item @click="showMainConnections()">Connections</b-dropdown-item>
             <b-dropdown-item @click="showMainRendezvousPoints()">Rendezvous Points</b-dropdown-item>
+            <b-dropdown-item @click="showMainDownload()">Downloads</b-dropdown-item>
           </b-dropdown>
         </b-navbar-nav>
         <b-navbar-nav class="ml-auto">
@@ -84,6 +85,10 @@ export default {
     showMainConnections(){
       eventBus.$emit('showMainConnections')
       console.log("NavBarMain: showMainConnections")
+    },
+    showMainDownload(){
+      eventBus.$emit('showMainDownload')
+      console.log("NavBarMain: showMainDownload")
     },
     showLoginWindow(){
       eventBus.$emit('showLoginWindow')

@@ -17,6 +17,8 @@
           <b-input v-model='receivedData[slot.index].expiration'></b-input>
         </template>    
         <template v-slot:cell(actionColumn)="slot">
+          <a :id="`Download${slot.index}`"></a>
+          <b-button class="mr-1" @click='downloadToken(slot.index)'>Download</b-button>
           <b-button class="mr-1" @click='updateData(slot.index)'>Update</b-button>
           <b-button              @click='deleteData(slot.index)'>Delete</b-button>
         </template>    
@@ -61,6 +63,25 @@ export default {
   methods:{
     testfn: async function(){
       console.log("TEST")
+    },
+    downloadToken: function (index){
+      let token = {
+        name: this.receivedData[index].name,
+        token: this.receivedData[index].token,
+        url: "https://aws.arato.biz/rp"
+      }
+      console.log("Download Token:",token)
+      let filename, text
+      text = JSON.stringify(token)
+      filename = "token.json"
+      var element = document.getElementById("Download"+index);
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+      element.setAttribute('download', filename);
+      element.click()
+      // element.style.display = 'none';
+      // document.body.appendChild(element);
+      // document.body.removeChild(element);
+
     },
     updateData: function (index){
       console.log("UPDATE DATA:",this.receivedData[index])

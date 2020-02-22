@@ -48,19 +48,31 @@
             "runtimeExecutable": null,
             "outputCapture": "std"
         },
-
-
         {
             "type": "node",
             "request": "launch",
-            "name": "client",
+            "name": "client_env",
+            "args": [],
+            "env": {
+                "NODE_ENV": "development",
+                "RP_CLIENT" : "client1",
+                "RP_TOKEN": "31424534gfgbzdb34543",
+                "RP_URL": "https://aws.arato.biz/rp",
+            },            
+            "program": "${workspaceFolder}/sio-client.js",
+            "cwd": "${workspaceRoot}",
+            "runtimeExecutable": null,
+            "outputCapture": "std"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "client_file",
             "args": [
-                "-u","client1", "-p", "client1", "https://aws.arato.biz/rp"
+               "token.json"
             ],
             "env": {
                 "NODE_ENV": "development",
-                "port":"3000", 
-                "CLIENT_URL": "http://localhost:3000/rp/"
             },            
             "program": "${workspaceFolder}/sio-client.js",
             "cwd": "${workspaceRoot}",

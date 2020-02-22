@@ -7,8 +7,12 @@ WORKDIR /source/rp
 COPY package.json .
 
 RUN npm install  --only=production
+RUN npm run client_win  --only=production
+RUN npm run client_lin  --only=production
+RUN npm run client_mac  --only=production
 
 COPY manager ./manager
+COPY download ./download
 
 COPY events.js .
 COPY jsondata.js .

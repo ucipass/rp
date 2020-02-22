@@ -5,6 +5,7 @@ var log = require("ucipass-logger")("sio-client")
 log.transports.console.level = 'info'
 const JSONData = require('./jsondata.js')
 const socks5 = require('simple-socks')
+const File = require('ucipass-file')
 const ConnectionRetryMs = 10000  // if connection fails retry
 
 /**** FLOW *****
@@ -35,7 +36,7 @@ class SocketIoClient  {
         this.socket = null
         this.reconnectAttempt = 0
         this.stopped = false
-        this.socketId = "123"
+        this.socketId = ""
         this.auth = false
         this.log = log
         this.proxy = null
@@ -625,17 +626,29 @@ class SocketIoClient  {
 module.exports = SocketIoClient
 
 if (require.main === module) {
-    var argv = require('minimist')(process.argv.slice(2));
-    if ( argv._[0] && argv.u && argv.p){
-        let client = new SocketIoClient(argv.u,argv.p,argv._[0])
-        try {
-            let clientSocket1 = client.start()
-        } catch (error) {
-            console.log(error)
+    if (process.env.RP_URL && process.env.RP_CLIENT && process.env.RP_TOKEN){
+        let json = {
+            name: process.env.RP_CLIENT,
+            token: process.env.RP_TOKEN,
+            url: process.env.RP_URL,
         }
-        
+        Promise.resolve(new SocketIoClient(json.name,json.token,json.url) )
+        .then( client => client.start() )
+        .catch( error => {
+        process.exit( console.log( "*****Execution Error*****\n", error ))
+        })        
     }else{
-        console.log( "parameters  [-u username] [-p password] http(s)://<host>:<port>/<prefix>")
-        process.exit()
+        var argv = require('minimist')(process.argv.slice(2));
+        let filename = typeof argv._[0] === 'string' ? argv._[0] : "token.json"
+        Promise.resolve( new File(filename) )
+        .then( file   => file.readJson() )
+        .catch(error  => process.exit( console.log( "Invalid configuration file token.json\n", error )))
+        .then( json   => new SocketIoClient(json.name,json.token,json.url) )
+        .then( client => client.start() )
+        .catch( error => {
+        process.exit( console.log( "*****Execution Error*****\n", error ))
+        })
+        
     }
+
 }

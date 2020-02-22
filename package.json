@@ -8,6 +8,9 @@
     "test": "cross-env VUE_APP_PREFIX=rp VUE_APP_SERVER_PORT=3010 DATABASE_URL=mongodb://localhost:27017 DATABASE_USERNAME=admin DATABASE_PASSWORD=admin SECRET_KEY=MySuperSecretKey node ./node_modules/mocha/bin/mocha",
     "build": "node ./node_modules/pkg/lib-es5/bin.js sio-client.js --out-path ./clients",
     "pkg": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 pkg sio-client.js --out-path ./clients",
+    "client_win": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 node ./node_modules/pkg/lib-es5/bin.js -o ./download/client_win -t node12-win-x64 sio-client.js",
+    "client_lin": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 node ./node_modules/pkg/lib-es5/bin.js -o ./download/client_lin -t node12-lin-x64 sio-client.js",
+    "client_mac": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 node ./node_modules/pkg/lib-es5/bin.js -o ./download/client_mac -t node12-mac-x64 sio-client.js",
     "greet": "cross-env-shell GREETING=Hi NAME=Joe \"echo $GREETING && echo $NAME\""
   },
   "author": "",
@@ -35,6 +38,7 @@
     "simple-socks": "^1.0.3",
     "socket.io": "^2.3.0",
     "socket.io-client": "^2.3.0",
+    "ucipass-file": "^1.0.24",
     "ucipass-logger": "^1.0.4",
     "websocket-stream": "^5.5.0",
     "winston": "^3.2.1"
@@ -44,7 +48,6 @@
     "mocha": "^6.2.2",
     "socks": "^2.3.3",
     "superagent": "^5.1.3",
-    "ucipass-file": "^1.0.15",
     "why-is-node-running": "^2.1.0"
   }
 }
