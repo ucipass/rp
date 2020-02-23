@@ -13,9 +13,9 @@ COPY sio-app.js .
 COPY sio-client.js .
 COPY sio-server.js .
 COPY manager ./manager
-RUN npm run client_win  --only=production
-RUN npm run client_lin  --only=production
-RUN npm run client_mac  --only=production
+# RUN npm run client_win  --only=production
+# RUN npm run client_lin  --only=production
+# RUN npm run client_mac  --only=production
 
 WORKDIR /source/rp/manager
 RUN npm install 
