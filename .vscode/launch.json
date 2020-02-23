@@ -51,6 +51,19 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "server no params",
+            "args": [
+            ],
+            "env": {
+            },            
+            "program": "${workspaceFolder}/server.js",
+            "cwd": "${workspaceRoot}",
+            "runtimeExecutable": null,
+            "outputCapture": "std"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "client_env",
             "args": [],
             "env": {

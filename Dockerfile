@@ -12,6 +12,7 @@ COPY server.js .
 COPY sio-app.js .
 COPY sio-client.js .
 COPY sio-server.js .
+COPY manager ./manager
 RUN npm run client_win  --only=production
 RUN npm run client_lin  --only=production
 RUN npm run client_mac  --only=production
@@ -19,14 +20,14 @@ RUN npm run client_mac  --only=production
 WORKDIR /source/rp/manager
 RUN npm install 
 RUN npm run build
-COPY dist .
+# DELETE EVERYTHING EXCEPT dist to save space
+RUN ls | grep -v dist | xargs rm -rf 
 
 WORKDIR /source/rp
-COPY manager ./manager
-
 
 EXPOSE 3000
 
 RUN export VUE_APP_PREFIX="rp"
 
 CMD ["sh", "-c", "node server.js"]
+#CMD ["sh", "-c", "sleep 6000"]
