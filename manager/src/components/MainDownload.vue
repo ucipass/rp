@@ -19,7 +19,7 @@
 
 <script>
 import { eventBus, hideMainAll } from './events.js'
-import { URL_DOWNLOAD } from './constants.js'
+// import { URL_DOWNLOAD } from './constants.js'
 
 export default {
   name: "App",
