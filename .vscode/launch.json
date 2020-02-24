@@ -97,12 +97,29 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "client_file",
+            "name": "client_env",
+            "args": [],
+            "env": {
+                "NODE_ENV": "development",
+                "RP_CLIENT" : "client1",
+                "RP_TOKEN": "31424534gfgbzdb34543",
+                "RP_URL": "https://aws.arato.biz/rp",
+            },            
+            "program": "${workspaceFolder}/sio-client.js",
+            "cwd": "${workspaceRoot}",
+            "runtimeExecutable": null,
+            "outputCapture": "std"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "client Windows Download",
             "args": [
-               "token.json"
+               "c:/Users/aarato/Downloads/token.json"
             ],
             "env": {
                 "NODE_ENV": "development",
+                "LOG_LEVEL": "info",
             },            
             "program": "${workspaceFolder}/sio-client.js",
             "cwd": "${workspaceRoot}",
