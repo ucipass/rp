@@ -1,6 +1,6 @@
 <template>
   <b-container fluid v-if='showMainWelcome'>
-    <h1>Welcome</h1>
+    <h1>Welcome!</h1>
     <MainWelcomeChild>
       <template 
         v-slot:[step.id]="{childvar}"

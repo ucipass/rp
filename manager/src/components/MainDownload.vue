@@ -27,7 +27,7 @@ export default {
     showMainDownload: false,
     tableData: [
       {
-        title: "Win64 Binary",
+        title: "Win64 Binary test",
         download: "https://github.com/ucipass/rp/raw/master/download/client_win.exe",
         desc: "Windows 64 Binary"
       },
