@@ -28,22 +28,22 @@ export default {
     tableData: [
       {
         title: "Win64 Binary",
-        download: URL_DOWNLOAD + "https://github.com/ucipass/rp/raw/master/download/client_win.exe",
+        download: "https://github.com/ucipass/rp/raw/master/download/client_win.exe",
         desc: "Windows 64 Binary"
       },
       {
         title: "Win64 Base64",
-        download: URL_DOWNLOAD + "https://github.com/ucipass/rp/raw/master/download/client_win.b64",
+        download: "https://github.com/ucipass/rp/raw/master/download/client_win.b64",
         desc: "Windows 64 Binary - Base64 encoded"
       },
       {
         title: "Linux Binary",
-        download: URL_DOWNLOAD + "https://github.com/ucipass/rp/raw/master/download/client_lin",
+        download: "https://github.com/ucipass/rp/raw/master/download/client_lin",
         desc: "Linux 64 Binary"
       },
       {
         title: "Linux Base64",
-        download: URL_DOWNLOAD + "https://github.com/ucipass/rp/raw/master/download/client_lin.b64",
+        download: "https://github.com/ucipass/rp/raw/master/download/client_lin.b64",
         desc: "Linux 64 Binary - Base64 encoded"
       },
     ],
