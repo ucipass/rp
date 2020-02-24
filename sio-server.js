@@ -3,8 +3,7 @@ const path = require('path')
 const mongooseclient = require("./mongooseclient.js")
 const JSONData = require('./jsondata.js')
 var log = require("ucipass-logger")("sio-server")
-log.transports.console.level = 'info'
-// log.transports.file.level = 'error'
+log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "error"
 
 class SIO  {
     constructor(server) {
@@ -73,7 +72,9 @@ class SIO  {
     
     async stop(){
         return new Promise((resolve, reject) => {
-            this.events.removeListener('onRoomRefresh',()=>{});
+            this.events.removeListener('onRoomRefresh',()=>{ 
+                console.log("REMOVE LSIT")
+            });
             this.io.close(()=>{
                 log.info("server close complete",()=>{
                     resolve(true)
@@ -133,6 +134,11 @@ class SIO  {
                     await this.sendOpenRoom(socket,room)                                   
                 }
             }
+            // starts proxy server if allowed
+            let client = await this.db.getClient(data.username)
+            if ( parseFloat(client.proxyport) > 0 ){
+                await this.sendStartProxy(socket,client.proxyport)
+            }
             replyFn('ack')
         }else{
             log.warn(`${socket.id} login ${data.username} failure`)
@@ -181,6 +187,23 @@ class SIO  {
 
     }
 
+    async sendStartProxy(socket,proxyport){
+        return new Promise((resolve, reject) => {
+            let json = new JSONData("server","onStartProxy",{proxyport:proxyport})
+            socket.emit("onStartProxy",json,(result)=>{
+                if (result){
+                    log.info(`${socket.id}(${socket.username}) started proxy in port ${proxyport}!`) 
+                    resolve(result)
+                }
+                else {
+                    log.error(`${socket.id}(${socket.username}) failed proxy in port ${proxyport}!`) 
+                    resolve(result)
+                }
+            }) 
+        });        
+    }
+    
+    
     async closeRoom(room){
         let socketIds = room.name ? await this.getRoomMembers(room.name) : []
         for (const socketId of socketIds) {

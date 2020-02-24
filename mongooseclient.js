@@ -3,7 +3,7 @@ var log = require("ucipass-logger")("mongooseclient")
 log.transports.console.level = 'info'
 const mongoose = require('mongoose')
 mongoose.set('useCreateIndex', true);
-const DATABASE_URL      = process.env.DATABASE_URL ? process.env.DATABASE_URL : "mongodb://localhost:27017/mydb"
+const DATABASE_URL      = process.env.DATABASE_URL ? process.env.DATABASE_URL : "mongodb://localhost:27017/rp"
 const DATABASE_USERNAME = process.env.DATABASE_USERNAME ? process.env.DATABASE_USERNAME : "admin"
 const DATABASE_PASSWORD = process.env.DATABASE_PASSWORD ? process.env.DATABASE_USERNAME : "admin"
 
@@ -15,6 +15,7 @@ const ClientSchema = new mongoose.Schema({
     name: { type: String, required: true, unique: true },
     token: { type: String, required: true },
     ipaddr: { type: String, required: false, default: "0.0.0.0/0" },
+    proxyport: { type: String, required: false, default: "0" },
     expiration: { type: Date, required: true, default: Date.now },
 });
 
@@ -37,6 +38,7 @@ const RoomsSchema = new mongoose.Schema({
 let options ={
     useUnifiedTopology: true,
     useNewUrlParser: true,
+    useFindAndModify: false,
     user: DATABASE_USERNAME,
     pass: DATABASE_PASSWORD,                  
     auth:{
@@ -131,6 +133,13 @@ module.exports = function(){
             }
         })                
     }
+
+    connection.updateClient = async (clientobj)=>{
+        var query = { name: clientobj.name };
+        let newclientobj = await Client.findOneAndUpdate(query, clientobj)
+        return newclientobj;
+    }
+
 
     connection.getWebuser = async (username)=>{
         let reply = await Webuser.findOne({ "username" : username})  

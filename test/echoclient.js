@@ -1,6 +1,6 @@
 const net = require('net');
 const log = require("ucipass-logger")("echoclient")
-log.transports.console.level = 'error'
+log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "error"
 // log.transports.file.level = 'error'
 
 class echoClient {
@@ -24,6 +24,10 @@ class echoClient {
             this.receivedData = recvData
             _client.destroy(); // kill client after server's response
         });
+
+        _client.on('error', (error) => {
+            log.error(error)
+        });
         
         _client.on('close', ()=> {
             log.info('EchoClient: connection closed');
@@ -39,10 +43,10 @@ class echoClient {
             }
         });
         
-        setTimeout(() => {
-            let message = 'EchoClient: sent data' + sendData+ ', but TIMEOUT occured!'
-            reject(message)            
-        }, 1000);
+        // setTimeout(() => {
+        //     let message = 'EchoClient: sent data' + sendData+ ', but TIMEOUT occured!'
+        //     reject(message)            
+        // }, 1000);
         return p
     }
 

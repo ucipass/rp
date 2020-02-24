@@ -43,11 +43,14 @@ let options ={
   }
 }
 
-// LOGGING
+// // LOGGING
+
 var log = require("ucipass-logger")("sio-app")
-log.transports.console.level = 'debug'
+log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "error"
 // log.transports.file.level = 'error'
 // const config = require('config');
+// var log = {}
+// log.info = function(msg){ console.log(msg)}
 
 let sio = null;
 const events = require("./events.js")
@@ -154,7 +157,13 @@ app.post(PREFIX_LOGIN, function (req,res,next) {
     }                    //If error return next with error
     
     if (!user) {
-      log.error("Authentication failed","IP:",req.clientIp);
+      if (process.env.NODE_ENV == 'testing' || process.env.NODE_ENV == 'development'){
+        log.info("Authentication failed","IP:",req.clientIp);
+      }
+      else{
+        log.error("Authentication failed","IP:",req.clientIp);
+      }
+      
       return res.json(false);
     }  //If user is not there redirect it to login page
     

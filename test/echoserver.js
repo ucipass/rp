@@ -1,6 +1,6 @@
 const net = require('net');
 const log = require("ucipass-logger")("echoserver")
-log.transports.console.level = 'error'
+log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "error"
 // log.transports.file.level = 'error'
 
 class echoServer {

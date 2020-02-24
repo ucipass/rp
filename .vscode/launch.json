@@ -7,7 +7,7 @@
 
 
         {
-            "name": "Run mocha",
+            "name": "Mocha",
             "type": "node",
             "request": "launch",
             "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
@@ -15,18 +15,35 @@
             "args": ["test/**/*.js", "--no-timeouts"],
             "cwd": "${workspaceRoot}",
             "runtimeExecutable": null,
-            "env": { "NODE_ENV": "testing",
-                     "VUE_APP_PREFIX": "rpp",
-                     "VUE_APP_SERVER_PORT": "3010",
-                     "DATABASE_URL": "mongodb://localhost:27017/mydb",
-                     "DATABASE_USERNAME": "admin",
-                     "DATABASE_PASSWORD": "admin",
-                     "SECRET_KEY": "MySuperSecretKey"
+            "env": { 
+                "LOG_LEVEL": "error",
+                "NODE_ENV": "testing",
+                "VUE_APP_PREFIX": "rpp",
+                "VUE_APP_SERVER_PORT": "3010",
+                "DATABASE_URL": "mongodb://localhost:27017/rp",
+                "DATABASE_USERNAME": "admin",
+                "DATABASE_PASSWORD": "admin",
+                "SECRET_KEY": "MySuperSecretKey"
+                },
+            "outputCapture": "std"
+        },
+        {
+            "name": "Mocha no env",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+            "stopOnEntry": false,
+            "args": ["test/**/*.js", "--no-timeouts"],
+            "cwd": "${workspaceRoot}",
+            "runtimeExecutable": null,
+            "env": { 
+                "NODE_ENV": "testing",
+                "LOG_LEVEL": "debug",
+                "VUE_APP_PREFIX": "rp",
+                "DATABASE_URL": "mongodb://localhost:27017/rptest"
                     },
             "outputCapture": "std"
         },
-
-
         {
             "type": "node",
             "request": "launch",
@@ -38,7 +55,7 @@
                 "NODE_ENV": "development",
                 "VUE_APP_PREFIX": "",
                 "VUE_APP_SERVER_PORT": "3000",
-                "DATABASE_URL": "mongodb://localhost:27017/mydb",
+                "DATABASE_URL": "mongodb://localhost:27017/rp",
                 "DATABASE_USERNAME": "admin",
                 "DATABASE_PASSWORD": "admin",
                 "SECRET_KEY": "MySuperSecretKey"
