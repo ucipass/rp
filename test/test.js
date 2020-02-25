@@ -287,7 +287,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
 
 });
 
-describe('\n\n=================== SOCKET.IO & APP TESTS ========================', () => {
+describe.only('\n\n=================== SOCKET.IO & APP TESTS ========================', () => {
    
     before("Before", async ()=>{
         app = require("../sio-app.js")
@@ -364,26 +364,26 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         let room1 = {
             "name": "testmocharoom1",
             "rcvName": "testclient1",
-            "rcvPort": "3001",
+            "rcvPort": "33001",
             "fwdName": "testclient2",
             "fwdHost": "localhost",
-            "fwdPort": "3002"
+            "fwdPort": "33002"
         }
         let room2 = {
             "name": "testmocharoom2",
             "rcvName": "testclient1",
-            "rcvPort": "4001",
+            "rcvPort": "44001",
             "fwdName": "testclient2",
             "fwdHost": "localhost",
-            "fwdPort": "4002"
+            "fwdPort": "44002"
         }
         let room3 = {
             "name": "testroom3",
             "rcvName": "testclient1",
-            "rcvPort": "5001",
+            "rcvPort": "55001",
             "fwdName": "testclient2",
             "fwdHost": "localhost",
-            "fwdPort": "5002"
+            "fwdPort": "55002"
         }
         this.testServer = new TestServer(app,PORT_MGR)
         this.siotestServer = new TestServer(app,PORT_SIO)
@@ -429,7 +429,7 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         await this.siotestServer.stop()
     })
 
-    it.skip("SERVER FAILURE TEST", async ()=>{
+    it("SERVER FAILURE TEST", async ()=>{
         let room1 = {
             "name": "testmocharoom1",
             "rcvName": "testclient1",
