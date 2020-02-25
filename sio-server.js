@@ -4,6 +4,7 @@ const mongooseclient = require("./mongooseclient.js")
 const JSONData = require('./jsondata.js')
 var log = require("ucipass-logger")("sio-server")
 log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "error"
+const MANAGER_PORT = process.env.MANAGER_PORT ? process.env.MANAGER_PORT : "8888"
 
 class SIO  {
     constructor(server) {
@@ -16,6 +17,7 @@ class SIO  {
         this.latency = 0
         this.log = log;
         this.io = socketio( server, this.sio_opts)
+        this.iomgr = socketio.listen(MANAGER_PORT);
         log.info("Listening path:", this.sio_path.toString() )
         this.events = require('./events.js')
         this.db = null
@@ -25,7 +27,7 @@ class SIO  {
         let address = socket.handshake.address;
         let socketId = socket.id
         this.sockets.set(socketId,socket)
-        socket.auth = true //temporary allowed
+        // socket.auth = true //temporary allowed
         log.info(`${socketId} connected`);
 
         socket.on('disconnect', (data)=>{
@@ -43,15 +45,30 @@ class SIO  {
 
         socket.on('login', (data,replyFn)  => { this.onLogin.call(this,socket,data,replyFn ) })
 
-        socket.on('logout', (data,replyFn) => { this.onLogout.call(this,socket,data,replyFn) })
+        socket.on('logout', (data,replyFn) => { 
+            if(socket.auth) this.onLogout.call(this,socket,data,replyFn)
+            else log.error(`${socketId}(${socket.username}) client intiated unauthenticated logout`);
+        })
 
-        socket.on('onTcpConnRequest', (data,replyFn) => { this.onTcpConnRequest.call(this,socket,data,replyFn) })
+        socket.on('onTcpConnRequest', (data,replyFn) => { 
+            if(socket.auth) this.onTcpConnRequest.call(this,socket,data,replyFn)
+            else log.error(`${socketId}(${socket.username}) client intiated unauthenticated onTcpConnRequest`);
+        })
 
-        socket.on('onTcpConnClose', (data,replyFn) => { this.onTcpConnClose.call(this,socket,data,replyFn) })
+        socket.on('onTcpConnClose', (data,replyFn) => { 
+            if(socket.auth) this.onTcpConnClose.call(this,socket,data,replyFn) 
+            else log.error(`${socketId}(${socket.username}) client intiated unauthenticated onTcpConnClose`);
+        })
 
-        socket.on('onData', (data,replyFn) => { this.onData.call(this,socket,data,replyFn) })
+        socket.on('onData', (data,replyFn) => { 
+            if(socket.auth) this.onData.call(this,socket,data,replyFn) 
+            else log.error(`${socketId}(${socket.username}) client intiated unauthenticated onData`);
+        })
 
-        socket.on('onSendPrivateMsg', (data,replyFn) => { this.onSendPrivateMsg.call(this,socket,data,replyFn) });
+        socket.on('onSendPrivateMsg', (data,replyFn) => { 
+            if(socket.auth) this.onSendPrivateMsg.call(this,socket,data,replyFn) 
+            else log.error(`${socketId}(${socket.username}) client intiated unauthenticated onSendPrivateMsg`);
+        });
 
     }
     
@@ -76,8 +93,10 @@ class SIO  {
                 console.log("REMOVE LSIT")
             });
             this.io.close(()=>{
-                log.info("server close complete",()=>{
-                    resolve(true)
+                this.iomgr.close(()=>{
+                    log.info("Socket.io close complete",()=>{
+                        resolve(true)
+                    })
                 })
             })
         })

@@ -16,7 +16,7 @@
             "cwd": "${workspaceRoot}",
             "runtimeExecutable": null,
             "env": { 
-                "LOG_LEVEL": "error",
+                "LOG_LEVEL": "info",
                 "NODE_ENV": "testing",
                 "VUE_APP_PREFIX": "rpp",
                 "VUE_APP_SERVER_PORT": "3010",

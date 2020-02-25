@@ -1,6 +1,7 @@
 "use strict";
 require('events').EventEmitter.defaultMaxListeners = 35;
 //############ PRODUCTION #######################
+const socketio = require('socket.io')
 const SIO = require("../sio-server.js")
 const SIOClient = require("../sio-client.js")
 const JSONData = require('../jsondata.js')
@@ -20,20 +21,23 @@ const path = require('path')
 // const log = require("ucipass-logger")("mocha")
 
 //########### Constants ######################
-const port   = process.env.VUE_APP_SERVER_PORT ? process.env.VUE_APP_SERVER_PORT : "3111"
 const prefix = process.env.VUE_APP_PREFIX ? process.env.VUE_APP_PREFIX : ""
-const url = new URL("http://localhost/")
-url.pathname = prefix 
-url.port = port
-const URL_LOGIN = url.origin + path.posix.join("/",prefix,"login")
-const URL_CREATE = url.origin + path.posix.join("/",prefix,"create")
-const URL_READ = url.origin + path.posix.join("/",prefix,"login")
-const URL_UPDATE = url.origin + path.posix.join("/",prefix,"login")
-const URL_DELETE = url.origin + path.posix.join("/",prefix,"login")
+const URL_MGR = new URL("http://localhost/")
+const PORT_MGR   = process.env.VUE_APP_SERVER_PORT ? process.env.VUE_APP_SERVER_PORT : "3111"
+URL_MGR.pathname = prefix 
+URL_MGR.port = PORT_MGR
+const URL_MGR_LOGIN = URL_MGR.origin + path.posix.join("/",prefix,"login")
+const URL_MGR_CREATE = URL_MGR.origin + path.posix.join("/",prefix,"create")
+const URL_MGR_READ = URL_MGR.origin + path.posix.join("/",prefix,"read")
+const URL_MGR_UPDATE = URL_MGR.origin + path.posix.join("/",prefix,"update")
+const URL_MGR_DELETE = URL_MGR.origin + path.posix.join("/",prefix,"delete")
 
+const URL_SIO = new URL("http://localhost/")
+const PORT_SIO = process.env.PORT_MGR ? process.env.PORT_MGR : "3002"
+URL_SIO.pathname = prefix 
+URL_SIO.port = PORT_SIO
 
-
-const sio_path = path.posix.join(url.pathname,"socket.io")
+const sio_path = path.posix.join(URL_SIO.pathname,"socket.io")
 let app = null //set later cause I don't want to kill the mongoose connection
 
 describe('\n\n=================== MONGODB TESTS ========================', () => {
@@ -131,7 +135,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
 
     beforeEach("Before", async()=>{
         let appalt = require('express')();
-        this.testServer = new TestServer(appalt,port)
+        this.testServer = new TestServer(appalt,PORT_SIO)
         server = await this.testServer.start()
 
     })
@@ -157,7 +161,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
             // })            
         });
 
-        let client = new SIOClient(null,null,url.href)
+        let client = new SIOClient(null,null,URL_SIO.href)
         let clientSocket = await client.start()
         let clientSocketId = clientSocket.id
         expect(clientSocketId).toEqual(serverSocketID)
@@ -167,8 +171,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
 
     it('Socket.io Server/Clients (re)Connect Test', async () => {
         let sio = await (new SIO(server)).start()
-        let client1 = new SIOClient(null,null,url.href)
-        let client2 = new SIOClient(null,null,url.href)
+        let client1 = new SIOClient(null,null,URL_SIO.href)
+        let client2 = new SIOClient(null,null,URL_SIO.href)
         let clientSocket1 = await client1.start()
         let clientSocket2 = await client2.start()
         expect( sio.sockets.size ).toEqual(2);
@@ -181,8 +185,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
     it('Socket.io Authentication', async () => {
 
         let sio = await (new SIO(server)).start()
-        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,url.href)
-        let client2 = new SIOClient(this.clientObj2.name,"123",url.href)
+        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,URL_SIO.href)
+        let client2 = new SIOClient(this.clientObj2.name,"123",URL_SIO.href)
         let clientSock1 = await client1.start()
         let clientSock2 = await client2.start()
         expect(sio.getSocketById(clientSock1.id).auth).toEqual(true);
@@ -212,8 +216,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         }
         sio.rooms.set(room1.name,room1)
         sio.rooms.set(room2.name,room2)
-        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,url.href)
-        let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,url.href)
+        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,URL_SIO.href)
+        let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,URL_SIO.href)
         let socket1 = await client1.start()
         let socket2 = await client2.start()    
         let status 
@@ -238,8 +242,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
             "fwdPort": "22"
         }
         sio.rooms.set(room1.name,room1)
-        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,url.href)
-        let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,url.href)
+        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,URL_SIO.href)
+        let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,URL_SIO.href)
         let socket1 = await client1.start()
         let socket2 = await client2.start()
         let json = new JSONData("testclient1","onSendPrivateMsg",{room:"testmocharoom1",msg:"test1"})
@@ -264,8 +268,8 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
             connections: new Map()
         }
         sio.rooms.set(room1.name,room1)
-        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,url.href)
-        let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,url.href)
+        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,URL_SIO.href)
+        let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,URL_SIO.href)
         let socket1 = await client1.start()
         let socket2 = await client2.start()
 
@@ -333,7 +337,7 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
 
     
     it("USER-AUTH REST API Create/Delete/Update Test", async ()=>{
-        this.testServer = new TestServer(app,port)
+        this.testServer = new TestServer(app,PORT_MGR)
         this.server = await this.testServer.start()
         let result
         let username = "testdbuser1"
@@ -342,15 +346,15 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         this.webuser1 = await this.db.createWebuser(username,password)           
         var user1 = superagent.agent();
         var user2 = superagent.agent();
-        result = await user1.post( url.href + '/login').send({username:username, password:password})
+        result = await user1.post( URL_MGR_LOGIN).send({username:username, password:password})
         expect(result.body.id).toEqual(username);
-        result = await user1.get( url.href + '/login').send({})
+        result = await user1.get( URL_MGR_LOGIN).send({})
         expect(result.body).not.toEqual(false);
-        result = await user2.post( url.href + '/login').send({username:"baduser", password:password})
+        result = await user2.post( URL_MGR_LOGIN).send({username:"baduser", password:password})
         expect(result.body).toEqual(false);
-        result = await user2.post( url.href + '/login').send({username:username, password:"badpass"})
+        result = await user2.post( URL_MGR_LOGIN).send({username:username, password:"badpass"})
         expect(result.body).toEqual(false);
-        result = await user2.post( url.href + '/login').send({})
+        result = await user2.post( URL_MGR_LOGIN).send({})
         expect(result.body).toEqual(false);
         this.webuser1 = await this.db.deleteWebuser(username)           
         await this.testServer.stop()
@@ -381,97 +385,111 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
             "fwdHost": "localhost",
             "fwdPort": "5002"
         }
-        this.testServer = new TestServer(app,port)
+        this.testServer = new TestServer(app,PORT_MGR)
+        this.siotestServer = new TestServer(app,PORT_SIO)
         this.server = await this.testServer.start()
-        let sio = await (new SIO(this.server)).start()
+        this.sioserver = await this.siotestServer.start()
+        let sio = await (new SIO(this.sioserver)).start()
         // deleting all existing rooms
         for (const room of sio.rooms.values()) {
             sio.rooms.delete(room.name)
         }
-        let loginres = await this.agent.post( url.href + '/login').send({username:this.username,password:this.password})
+        let loginres = await this.agent.post( URL_MGR_LOGIN).send({username:this.username,password:this.password})
         let echoserver = new Echoserver(room3.fwdPort)
         await echoserver.start()
-        await this.agent.post( URL_CREATE).send(room1)
-        await this.agent.post( URL_CREATE).send(room2)        
-        await this.agent.post( URL_CREATE).send(room3)   
-        await this.agent.post( url.href + '/create').send(room1)
-        await this.agent.post( url.href + '/create').send(room2)
-        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,url.href)
-        let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,url.href)
+        await this.agent.post( URL_MGR_CREATE).send(room1)
+        await this.agent.post( URL_MGR_CREATE).send(room2)        
+        await this.agent.post( URL_MGR_CREATE).send(room3)   
+        await this.agent.post( URL_MGR_CREATE).send(room1)
+        await this.agent.post( URL_MGR_CREATE).send(room2)
+        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,URL_SIO.href)
+        let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,URL_SIO.href)
         await client1.start()
         await client2.start()
-        await this.agent.post( URL_CREATE).send(room1)
-        await this.agent.post( URL_CREATE).send(room2)
-        await this.agent.post( url.href + '/create').send(room3)
+        await this.agent.post( URL_MGR_CREATE).send(room1)
+        await this.agent.post( URL_MGR_CREATE).send(room2)
+        await this.agent.post( URL_MGR_CREATE).send(room3)
         let echoclient1 = await new Echoclient(room3.rcvPort);
         let reply1 = await echoclient1.send("ABCD").catch( error => error)
         expect(reply1).toEqual("ABCD");
         room3.rcvPort = "6001"
-        await this.agent.post( url.href + '/update').send(room3)
+        await this.agent.post( URL_MGR_UPDATE).send(room3)
         await delay(1000)
         let echoclient2 = await new Echoclient(room3.rcvPort);
         let reply2 = await echoclient2.send("1234").catch( error => error)
         expect(reply2).toEqual("1234");
-        await this.agent.post( URL_CREATE).send(room1)
-        await this.agent.post( URL_CREATE).send(room2)
-        await this.agent.post( URL_CREATE).send(room3)
+        await this.agent.post( URL_MGR_CREATE).send(room1)
+        await this.agent.post( URL_MGR_CREATE).send(room2)
+        await this.agent.post( URL_MGR_CREATE).send(room3)
         await echoserver.stop()
         await client1.stop()
         await client2.stop()
         await sio.stop()
         await this.testServer.stop()
+        await this.siotestServer.stop()
     })
 
-    it("SERVER FAILURE TEST", async ()=>{
+    it.skip("SERVER FAILURE TEST", async ()=>{
         let room1 = {
             "name": "testmocharoom1",
             "rcvName": "testclient1",
-            "rcvPort": "3001",
+            "rcvPort": "33001",
             "fwdName": "testclient2",
             "fwdHost": "localhost",
-            "fwdPort": "3002"
+            "fwdPort": "33002"
         }
+
         let app = require("../sio-app.js")
-        let testserver1 = new TestServer(app,port)
+        let testserver1 = new TestServer(app,PORT_MGR)     
         let server = await testserver1.start()
-        let sio = await (new SIO(server)).start()
-        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,url.href)
-        let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,url.href)
+
+        let sioapp = require('express')()
+        let siotestserver1 = new TestServer(sioapp,PORT_SIO)
+        let sioserver = await siotestserver1.start()
+
+        let sio = await (new SIO(sioserver)).start()
+        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,URL_SIO.href)
+        let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,URL_SIO.href)
         await client1.start()
         await client2.start()
         const superagent = require('superagent').agent();
-        await superagent.post( url.href + '/login').send({username:this.username,password:this.password})
-        await superagent.post( url.href + '/create').send(room1)
+        await superagent.post( URL_MGR_LOGIN).send({username:this.username,password:this.password})
+        await superagent.post( URL_MGR_CREATE).send(room1)
         let echoserver = new Echoserver(room1.fwdPort)
         await echoserver.start()
+        await delay(1000)
         let echoclient1 = await new Echoclient(room1.rcvPort);
         let reply1 = await echoclient1.send("ABCD").catch( error => error)
         expect(reply1).toEqual("ABCD");
-        await superagent.post( URL_CREATE).send(room1)
+        await superagent.post( URL_MGR_CREATE).send(room1)
         await sio.stop()
         await testserver1.stop()
+        await siotestserver1.stop()
         while ( client1.rooms.size || client1.rooms.size) { 
             await delay(200) 
         }
-        let testserver2 = new TestServer(app,port)
+        let testserver2 = new TestServer(app,PORT_MGR)
         let server2 = await testserver2.start()
-        sio = await (new SIO(server2)).start()
-        await superagent.post( url.href + '/create').send(room1)
+        let siotestserver2 = new TestServer(app,PORT_SIO)
+        let sioserver2 = await siotestserver2.start()
+        sio = await (new SIO(sioserver2)).start()
+        await superagent.post( URL_MGR_CREATE).send(room1)
         while ( !client1.rooms.size || !client2.rooms.size) { 
-            await delay(200) 
+            await delay(500) 
         }
-
         let echoclient2 = await new Echoclient(room1.rcvPort);
         let reply2 = await echoclient2.send("1234").catch( error => console.log("ECHOCLIENT CONNECTION ERROR:",error))
         expect(reply2).toEqual("1234");
-        await superagent.post( URL_CREATE).send(room1)
+        await superagent.post( URL_MGR_CREATE).send(room1)
         await echoserver.stop()
         await client1.stop()
         await client2.stop()
-        await sio.stop()        
+        await sio.stop()
+        await testserver2.stop()
+        await siotestserver2.stop()        
     })
 
-    it("CLIENT FAILURE TEST", async ()=>{
+    it.skip("CLIENT FAILURE TEST", async ()=>{
         let room1 = {
             "name": "testmocharoom1",
             "rcvName": "testclient1",
@@ -481,16 +499,16 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
             "fwdPort": "3002"
         }
         let app = require("../sio-app.js")
-        let testserver1 = new TestServer(app,port)
+        let testserver1 = new TestServer(app,PORT_MGR)
         let server = await testserver1.start()
         let sio = await (new SIO(server)).start()
-        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,url.href)
-        let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,url.href)
+        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,URL_SIO.href)
+        let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,URL_SIO.href)
         await client1.start()
         await client2.start()
         const superagent = require('superagent').agent();
-        await superagent.post( url.href + '/login').send({username:this.username,password:this.password})
-        await superagent.post( url.href + '/create').send(room1)
+        await superagent.post( URL_MGR_LOGIN).send({username:this.username,password:this.password})
+        await superagent.post( URL_MGR_CREATE).send(room1)
         let echoserver = new Echoserver(room1.fwdPort)
         await echoserver.start()
         let echoclient1 = await new Echoclient(room1.rcvPort);
@@ -498,7 +516,7 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         expect(reply1).toEqual("ABCD");
         await client1.stop()
 
-        client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,url.href)
+        client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,URL_SIO.href)
         await client1.start()
         while ( !client1.rooms.size || !client2.rooms.size) { 
             await delay(200) 
@@ -508,14 +526,14 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         let reply2 = await echoclient2.send("1234").catch( error => console.log("ECHOCLIENT CONNECTION ERROR:",error))
         expect(reply2).toEqual("1234");
 
-        await superagent.post( URL_CREATE).send(room1)
+        await superagent.post( URL_MGR_CREATE).send(room1)
         await echoserver.stop()
         await client1.stop()
         await client2.stop()
         await sio.stop()        
     })
 
-    it("SOCKS5 PROXY TEST", async ()=>{
+    it.skip("SOCKS5 PROXY TEST", async ()=>{
         let result        
         let room1 = {
             "name": "testmocharoom1",
@@ -525,15 +543,15 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
             "fwdHost": "localhost",
             "fwdPort": this.clientObj2.proxyport
         }
-        this.testServer = new TestServer(app,port)
+        this.testServer = new TestServer(app,PORT_MGR)
         this.server = await this.testServer.start()
         let sio = await (new SIO(this.server)).start()
 
         const superagent = require('superagent').agent();
-        await superagent.post( url.href + '/login').send({username:this.username,password:this.password})
-        await superagent.post( url.href + '/create').send(room1)
-        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,url.href)
-        let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,url.href)
+        await superagent.post( URL_MGR_LOGIN).send({username:this.username,password:this.password})
+        await superagent.post( URL_MGR_CREATE).send(room1)
+        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,URL_SIO.href)
+        let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,URL_SIO.href)
         await client1.start()
         await client2.start()
 
@@ -548,7 +566,7 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
             command: 'connect', // SOCKS command (createConnection factory function only supports the connect command)
             destination: {
               host: 'localhost', // github.com (hostname lookups are supported with SOCKS v4a and 5)
-              port: parseInt(port)
+              port: parseInt(PORT_MGR)
             }
         };
 
@@ -558,7 +576,7 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
         
         expect(result).toEqual(true);
 
-        await superagent.post( URL_CREATE).send(room1)
+        await superagent.post( URL_MGR_CREATE).send(room1)
         await client1.stop()
         await client2.stop()
         await sio.stop()
