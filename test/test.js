@@ -489,7 +489,7 @@ describe.only('\n\n=================== SOCKET.IO & APP TESTS ===================
         await siotestserver2.stop()        
     })
 
-    it.skip("CLIENT FAILURE TEST", async ()=>{
+    it.only("CLIENT FAILURE TEST", async ()=>{
         let room1 = {
             "name": "testmocharoom1",
             "rcvName": "testclient1",
@@ -501,7 +501,12 @@ describe.only('\n\n=================== SOCKET.IO & APP TESTS ===================
         let app = require("../sio-app.js")
         let testserver1 = new TestServer(app,PORT_MGR)
         let server = await testserver1.start()
-        let sio = await (new SIO(server)).start()
+
+        let sioapp = require('express')()
+        let siotestserver1 = new TestServer(sioapp,PORT_SIO)
+        let sioserver = await siotestserver1.start()
+        
+        let sio = await (new SIO(sioserver)).start()
         let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,URL_SIO.href)
         let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,URL_SIO.href)
         await client1.start()
@@ -530,7 +535,9 @@ describe.only('\n\n=================== SOCKET.IO & APP TESTS ===================
         await echoserver.stop()
         await client1.stop()
         await client2.stop()
-        await sio.stop()        
+        await sio.stop()   
+        await testserver2.stop()
+        await siotestserver2.stop()                
     })
 
     it.skip("SOCKS5 PROXY TEST", async ()=>{
