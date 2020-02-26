@@ -20,7 +20,7 @@
                 "NODE_ENV": "testing",
                 "VUE_APP_PREFIX": "rpp",
                 "VUE_APP_SERVER_PORT": "3010",
-                "DATABASE_URL": "mongodb://localhost:27017/rp",
+                "DATABASE_URL": "mongodb://localhost:27017/rptest",
                 "DATABASE_USERNAME": "admin",
                 "DATABASE_PASSWORD": "admin",
                 "SECRET_KEY": "MySuperSecretKey"

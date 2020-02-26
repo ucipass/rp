@@ -121,16 +121,16 @@ describe('\n\n=================== MONGODB TESTS ========================', () =>
 
 })
 
-describe('\n\n=================== SOCKET.IO TESTS ========================', () => {
+describe.only('\n\n=================== SOCKET.IO TESTS ========================', () => {
     
     let server = null;
 
     before("Before", async()=>{
         this.db = require("../mongooseclient.js")()      
-        await this.db.deleteClient("testclient1")
-        await this.db.deleteClient("testclient2")
-        this.clientObj1 = await this.db.createClient("testclient1")
-        this.clientObj2 = await this.db.createClient("testclient2")    
+        await this.db.deleteClient("testsocketioclient1")
+        await this.db.deleteClient("testsocketioclient2")
+        this.clientObj1 = await this.db.createClient("testsocketioclient1")
+        this.clientObj2 = await this.db.createClient("testsocketioclient2")    
     })
 
     beforeEach("Before", async()=>{
@@ -154,11 +154,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         let serverSocketID = null
         let io = require('socket.io')(server,{path:sio_path});
         io.on('connection', function(socket){
-            serverSocketID = socket.id
-            // socket.on('close', (data,replyFn)=>{
-            //     replyFn('ack')
-            //     socket.disconnect()
-            // })            
+            serverSocketID = socket.id          
         });
 
         let client = new SIOClient(null,null,URL_SIO.href)
@@ -167,19 +163,6 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         expect(clientSocketId).toEqual(serverSocketID)
         client.stopped = true
         clientSocket.disconnect()
-    });
-
-    it('Socket.io Server/Clients (re)Connect Test', async () => {
-        let sio = await (new SIO(server)).start()
-        let client1 = new SIOClient(null,null,URL_SIO.href)
-        let client2 = new SIOClient(null,null,URL_SIO.href)
-        let clientSocket1 = await client1.start()
-        let clientSocket2 = await client2.start()
-        expect( sio.sockets.size ).toEqual(2);
-        await client1.stop()
-        await client2.stop()
-        expect( sio.sockets.size ).toEqual(0);
-        await sio.stop()
     });
 
     it('Socket.io Authentication', async () => {
@@ -195,22 +178,35 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         await client2.stop()
         await sio.stop()
     });
+
+    it('Socket.io Server/Clients (re)Connect Test', async () => {
+        let sio = await (new SIO(server)).start()
+        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,URL_SIO.href)
+        let client2 = new SIOClient(this.clientObj1.name,this.clientObj1.token,URL_SIO.href)
+        let clientSocket1 = await client1.start()
+        let clientSocket2 = await client2.start()
+        expect( sio.sockets.size ).toEqual(2);
+        await client1.stop()
+        await client2.stop()
+        expect( sio.sockets.size ).toEqual(0);
+        await sio.stop()
+    });
     
     it('Socket.io Room Join/Leave Test', async () => {
         let sio = await (new SIO(server)).start()
         let room1 = {
             "name": "testmocharoom1",
-            "rcvName": "testclient1",
-            "rcvPort": "4001",
-            "fwdName": "testclient2",
+            "rcvName": this.clientObj1.name,
+            "rcvPort": "44001",
+            "fwdName": this.clientObj2.name,
             "fwdHost": "localhost",
             "fwdPort": "22"
         }
         let room2 = {
             "name": "testmocharoom2",
-            "rcvName": "testclient1",
-            "rcvPort": "4003",
-            "fwdName": "testclient2",
+            "rcvName": this.clientObj1.name,
+            "rcvPort": "44002",
+            "fwdName": this.clientObj2.name,
             "fwdHost": "localhost",
             "fwdPort": "23"
         }
@@ -223,11 +219,14 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         let status 
         status = await sio.status()
         expect(status.clients.length).toEqual(2);
-        await sio.leaveRoom("testmocharoom1",socket1.id)
-        expect((await sio.getRoomMembers("testmocharoom1")).length).toEqual(1);
+
         await client1.stop()
+        status = await sio.status()
+        expect(status.clients.length).toEqual(1);
+
         await client2.stop()
-        expect((await sio.getRoomMembers("testmocharoom1")).length).toEqual(0);
+        status = await sio.status()
+        expect(status.clients.length).toEqual(0);
         await sio.stop()
     });
 
@@ -235,9 +234,9 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         let sio = await (new SIO(server)).start()
         let room1 = {
             "name": "testmocharoom1",
-            "rcvName": "testclient1",
+            "rcvName": this.clientObj1.name,
             "rcvPort": "4001",
-            "fwdName": "testclient2",
+            "fwdName": this.clientObj2.name,
             "fwdHost": "localhost",
             "fwdPort": "22"
         }
@@ -248,10 +247,10 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         let socket2 = await client2.start()
         let json = new JSONData("testclient1","onSendPrivateMsg",{room:"testmocharoom1",msg:"test1"})
         let jsonReply = await client1.emit(json)
-        expect(jsonReply.att.msg).toEqual("ack");
         await client1.stop()
         await client2.stop()
         await sio.stop()
+        expect(jsonReply.att.msg).toEqual("ack");
     });
 
     it('Socket.io EchoClient', async () => {
@@ -260,9 +259,9 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
         let CLIENT_PORT = 4001;
         let room1 = {
             "name": "testmocharoom1",
-            "rcvName": "testclient1",
+            "rcvName": this.clientObj1.name,
             "rcvPort": CLIENT_PORT.toString(),
-            "fwdName": "testclient2",
+            "fwdName": this.clientObj2.name,
             "fwdHost": "localhost",
             "fwdPort": SERVER_PORT.toString(),
             connections: new Map()
@@ -287,7 +286,7 @@ describe('\n\n=================== SOCKET.IO TESTS ========================', () 
 
 });
 
-describe.only('\n\n=================== SOCKET.IO & APP TESTS ========================', () => {
+describe('\n\n=================== SOCKET.IO & APP TESTS ========================', () => {
    
     before("Before", async ()=>{
         app = require("../sio-app.js")
@@ -489,14 +488,14 @@ describe.only('\n\n=================== SOCKET.IO & APP TESTS ===================
         await siotestserver2.stop()        
     })
 
-    it.only("CLIENT FAILURE TEST", async ()=>{
+    it("CLIENT FAILURE TEST", async ()=>{
         let room1 = {
             "name": "testmocharoom1",
             "rcvName": "testclient1",
-            "rcvPort": "3001",
+            "rcvPort": "33001",
             "fwdName": "testclient2",
             "fwdHost": "localhost",
-            "fwdPort": "3002"
+            "fwdPort": "33002"
         }
         let app = require("../sio-app.js")
         let testserver1 = new TestServer(app,PORT_MGR)
@@ -536,11 +535,11 @@ describe.only('\n\n=================== SOCKET.IO & APP TESTS ===================
         await client1.stop()
         await client2.stop()
         await sio.stop()   
-        await testserver2.stop()
-        await siotestserver2.stop()                
+        await testserver1.stop()
+        await siotestserver1.stop()                
     })
 
-    it.skip("SOCKS5 PROXY TEST", async ()=>{
+    it("SOCKS5 PROXY TEST", async ()=>{
         let result        
         let room1 = {
             "name": "testmocharoom1",
@@ -552,7 +551,12 @@ describe.only('\n\n=================== SOCKET.IO & APP TESTS ===================
         }
         this.testServer = new TestServer(app,PORT_MGR)
         this.server = await this.testServer.start()
-        let sio = await (new SIO(this.server)).start()
+
+        
+        let sioapp = require('express')()
+        let siotestserver1 = new TestServer(sioapp,PORT_SIO)
+        let sioserver = await siotestserver1.start()
+        let sio = await (new SIO(sioserver)).start()
 
         const superagent = require('superagent').agent();
         await superagent.post( URL_MGR_LOGIN).send({username:this.username,password:this.password})
@@ -588,6 +592,7 @@ describe.only('\n\n=================== SOCKET.IO & APP TESTS ===================
         await client2.stop()
         await sio.stop()
         await this.testServer.stop()
+        await siotestserver1.stop()
     })
 
 })
