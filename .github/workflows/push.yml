@@ -14,17 +14,20 @@ jobs:
     - name: Install Dependencies
       run: npm install 
     - name: Run testing scripts
-      run: npm run testmongodb
-    - run: npm run testmanager
-    - run: npm run testsioserver
+      run: |
+        npm run testmongodb
+        npm run testmanager
+        npm run testsioserver
     - name: Docker Login
       env:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
     - name: Docker Build & Publish Manager
-      run: docker build -f manager.Dockerfile -t ucipass/manager .
-    - run: docker push ucipass/manager
+      run: |
+        docker build -f manager.Dockerfile -t ucipass/manager .
+        docker push ucipass/manager
     - name: Docker Build & Publish Socket.IO Server
-      run: docker build -f sioserver.Dockerfile -t ucipass/sioserver .
-    - run: docker push ucipass/sioserver
+      run: |
+        docker build -f sioserver.Dockerfile -t ucipass/sioserver .
+        docker push ucipass/sioserver
