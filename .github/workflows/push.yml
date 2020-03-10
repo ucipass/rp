@@ -12,14 +12,18 @@ jobs:
     - name: Docker Mongo
       run: docker run -d -p27017:27017 --restart unless-stopped -v /mongodb:/data/db -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin --name mongodb  mongo 
     - run: npm install 
-    - run: npm test
-    - run: rm -rf dist
+    # - run: npm test
+    # - run: rm -rf dist
     - name: Docker Login
       env:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-    - name: Docker Build
-      run: docker build -t ucipass/rp .
+    - name: Docker Build Manager
+      run: docker build -f manager.Dockerfile -t ucipass/manager .
+    - name: Docker Build Socket.IO Server
+      run: docker build -f sioserver.Dockerfile -t ucipass/sioserver .
     - name: Docker Publish
-      run: docker push ucipass/rp
+      run: docker push ucipass/manager
+    - name: Docker Publish
+      run: docker push ucipass/sioserver
