@@ -1,14 +1,20 @@
 const socketio = require('socket.io')
 const path = require('path')
-const mongooseclient = require("./mongooseclient.js")
-const JSONData = require('./jsondata.js')
+const express = require('express')
+const HTTPServer = require("../lib/httpserver.js")
+const mongooseclient = require("../lib/mongooseclient.js")
+const JSONData = require('../lib/jsondata.js')
 var log = require("ucipass-logger")("sio-server")
-log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "error"
-const MANAGER_PORT = process.env.MANAGER_PORT ? process.env.MANAGER_PORT : "8888"
+log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "info"
+const PORT = process.env.PORT ? process.env.PORT : "8081"
+const PREFIX = process.env.PREFIX ? process.env.PREFIX : "/" 
 
 class SIO  {
-    constructor(server) {
-        this.prefix = process.env.VUE_APP_PREFIX ? process.env.VUE_APP_PREFIX : "/" 
+    constructor() {
+        this.httpserver = null
+        this.port = PORT
+        this.app = null
+        this.prefix = PREFIX
         this.sio_path = path.posix.join("/", this.prefix, "socket.io")
         this.sio_opts = { path: this.sio_path }
         this.sockets = new Map()
@@ -16,10 +22,8 @@ class SIO  {
         this.users = new Map()
         this.latency = 0
         this.log = log;
-        this.io = socketio( server, this.sio_opts)
-        this.iomgr = socketio.listen(MANAGER_PORT);
-        log.info("Listening path:", this.sio_path.toString() )
-        this.events = require('./events.js')
+        this.io = null
+        this.events = null
         this.db = null
     }
 
@@ -73,6 +77,11 @@ class SIO  {
     }
     
     async start(){
+        this.app = await this.httpcontrol()
+        this.httpserver = new HTTPServer( { port:this.port, app:this.app})
+        let server = await this.httpserver.start()
+        this.io = socketio( server, this.sio_opts)
+        log.info("Listening path:", this.sio_path.toString() )
 
         this.db = await mongooseclient()
         .catch((error)=>{
@@ -82,35 +91,74 @@ class SIO  {
         })
         await this.refresh() // Load rooms from database
         this.io.on('connection', this.onConnection.bind(this))
-        this.events.emit("onSocketIoStarted",this)
         return this; 
 
     }
     
     async stop(){
-        return new Promise((resolve, reject) => {
-            this.events.removeListener('onRoomRefresh',()=>{ 
-                console.log("REMOVE LSIT")
-            });
+        log.debug("Before DB Server close")
+        await this.db.close()        
+        let sockets = Array.from(this.sockets.values())
+        for (const socket of sockets) {
+            log.debug("Force Close Starting of Socket:",socket.id)
+            socket.disconnect()
+        }
+
+        log.debug("Before Socket.io close number of connected sockets:",this.io.sockets.connected.length ? this.io.sockets.connected.length : 0)
+        await new Promise((resolve, reject) => {
             this.io.close(()=>{
-                this.iomgr.close(()=>{
-                    log.info("Socket.io close complete",()=>{
-                        resolve(true)
-                    })
-                })
+                log.info("Socket.io close complete")
+                resolve(true)
             })
         })
-        .then(()=> this.db.close() )
+        log.debug("Before HTTP Server close")
+        await this.httpserver.stop().catch( err => {
+            log.error(err)
+        })
+        return true
+    }
+
+    async httpcontrol(){
+        const app = express()
+        // app.use((req, res, next) => {
+        //     console.log('Time:', Date.now(),req.path)
+        //     next()
+        //   }) 
+        const url_status  = path.posix.join("/",PREFIX,"/status") 
+        const url_refresh = path.posix.join("/",PREFIX,"/refresh")     
+        app.get( url_status , async (req, res) => {
+            res.json(await this.status())
+          })
+        app.get( url_refresh, async (req, res) => {
+            await this.refresh()
+            res.json(await this.status())
+        })
+        app.all( path.posix.join("/*",PREFIX) , async (req, res) => {
+            res.json("sio")
+        })
+          
+        return app
     }
 
     async refresh(){
-        let newrooms = await this.db.getRooms()
-        let oldrooms = this.rooms.values()
+        let newrooms = Array.from (await this.db.getRooms())
+        let oldrooms = Array.from (this.rooms.values()) //this.rooms.values()
+        let clients = await this.db.getClients()
 
         for (const oldroom of oldrooms ) {
-            if( ! newrooms.find( (newroom)=>{ newroom == oldroom.name} ) ){
+            let match = newrooms.find( (newroom)=>  {
+                let result =                     
+                newroom.name       == oldroom.name  &&
+                newroom.fwdName    == oldroom.fwdName  &&
+                newroom.rcvName    == oldroom.rcvName  &&
+                newroom.fwdPort    == oldroom.fwdPort  &&
+                newroom.rcvPort    == oldroom.rcvPort  
+                return (result)
+                    
+            })
+            if( ! match ){
                 await this.closeRoom(oldroom)
-                this.rooms.delete(oldroom.name) 
+                await this.rooms.delete(oldroom.name) 
             }
         }
 
@@ -119,25 +167,44 @@ class SIO  {
                 await this.openRoom(newroom)
             }
         }
+
+        for (const socket of this.sockets.values()) {
+            let valid = false;
+            for (const client of clients ) {            
+                if (socket.username == client.name){
+                    valid = true
+                }
+            }
+            if (!valid){
+                log.info(`${socket.id}(${socket.username}) disconnecting invalid client`)
+                socket.disconnect()
+            }    
+
+
+        }        
+
         return this.rooms
     }
 
     async status(){
+        let clients_authenticated = 0
         let clients = Array.from(this.sockets.values()).map((socket)=>{
             let rooms = []
             for (const room in socket.rooms) {
                 rooms.push(room)
             }
+            if (socket.auth) clients_authenticated++
             return {
                 name : socket.username,
                 address : socket.conn.remoteAddress,
                 loginDate : socket.handshake.time,
                 id : socket.id,
                 rooms: rooms,
-                connected : socket.connected
+                connected : socket.connected,
+                auth : socket.auth
             }
         })
-        return { clients: clients, rooms: Array.from(this.rooms.values())}
+        return { clients: clients, rooms: Array.from(this.rooms.values()), clients_authenticated: clients_authenticated}
     }
 
     // Calls onNewClient if login successful
@@ -162,6 +229,7 @@ class SIO  {
         }else{
             log.warn(`${socket.id} login ${data.username} failure`)
             replyFn('reject')
+            socket.disconnect()
         }
     }
 
@@ -174,11 +242,13 @@ class SIO  {
     async openRoom(room){
         room.connections = new Map()
         this.rooms.set(room.name,room)
-        this.sockets.forEach(async socket => {
-                if (socket.username == room.rcvName || socket.username == room.fwdName){
-                    await this.sendOpenRoom(socket,room)   
-                }  
-        });
+        let sockets = this.sockets.values()
+        for (const socket of sockets) {
+            if (socket.username == room.rcvName || socket.username == room.fwdName){
+                await this.sendOpenRoom(socket,room)   
+            }          
+        }
+        return true
     }
 
     // Called by onOpenRoom and onNewClient to send room info to client
@@ -397,28 +467,18 @@ class SIO  {
                 if (err){
                     log.error(err)
                 }else{
-                    log.info(`${room} room leave: ${socketId}`)
+                    log.info(`${room} room leaves: ${socketId}`)
                     resolve(socketId)                   
                 }
             })            
         });
     }
 
-
 }
 
 module.exports = SIO
 
 if (require.main === module) {
-    var argv = require('minimist')(process.argv.slice(2));
-    if ( argv.p){
-        const express = require('express')
-        const app = express()
-        const port = argv.p
-        app.get('/', (req, res) => res.send('Hello World!'))       
-        let server = app.listen(port, "0.0.0.0", () => console.log(`Socket.io standalone mode listening on port ${port}!`))
-        let sio = new SIO(server)
-    }else{
-        console.log( "need -p for tcp port")
-    }
+    let sio = new SIO()
+    sio.start()
 }

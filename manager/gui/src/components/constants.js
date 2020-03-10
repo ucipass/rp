@@ -1,5 +1,5 @@
 import * as path from 'path';
-export const DEV_URL = process.env.DEV_URL ? process.env.DEV_URL : "http://localhost:3000"
+export const DEV_URL = process.env.DEV_URL ? process.env.DEV_URL : "http://localhost:8080"
 export const PREFIX = process.env.VUE_APP_PREFIX ? process.env.VUE_APP_PREFIX : ""
 let PREFIX_LOGIN = "login"
 let PREFIX_LOGOUT = "logout"

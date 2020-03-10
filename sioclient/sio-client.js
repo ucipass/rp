@@ -3,10 +3,11 @@ const net = require('net');
 const path = require('path')
 var log = require("ucipass-logger")("sio-client")
 log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "error"
-const JSONData = require('./jsondata.js')
+const JSONData = require('../lib/jsondata.js')
 const socks5 = require('simple-socks')
 const File = require('ucipass-file')
-const ConnectionRetryMs = 10000  // if connection fails retry
+const delay = require('../lib/delay.js')
+
 
 /**** FLOW *****
 1. Client connects to server: start()
@@ -18,20 +19,31 @@ const ConnectionRetryMs = 10000  // if connection fails retry
 
 class SocketIoClient  {
     constructor(username,password,url) {
+        if(typeof username === 'object' && username !== null){
+            this.username = username.name 
+            this.password = username.token
+            this.url = username.url
+        }else{
+            this.username = username ? username : "anonymous"
+            this.password = password ? password : "anonymous"
+            this.url = url          
+        }
+
         try {
-            this.url = new URL( url )
+            this.url = new URL( this.url )
         } catch (error) {
-            log.error("INVALID URL:", url)
+            log.error("INVALID URL:", this.url)
             process.exit()
         }   
+
         this.sio_url = this.url.origin
         this.sio_path = path.posix.join(this.url.pathname,"socket.io")
         this.sio_opts = { 
             reconnection: true, 
             path: this.sio_path 
         }
-        this.username = username ? username : "anonymous"
-        this.password = password ? password : "anonymous"
+
+        this.connectionRetryMs = 10000  // if connection fails retry
         this.rooms = new Map()
         this.socket = null
         this.reconnectAttempt = 0
@@ -53,33 +65,20 @@ class SocketIoClient  {
                 this.reconnectAttempt = 0
                 log.info(`${this.socket.id} connected to: ${this.sio_url} path: ${this.sio_opts.path}`)
                 this.socketId = this.socket.id
-                if (this.username != "anonymous")
-                    {
-                        let result = await this.login.call(this, this.username, this.password)
-                        if (result == "ack"){
-                            return resolve(this.socket)
-                        }
-                        else{
-                            resolve(this.socket)
-                            await new Promise((resolve, reject) => {
-                                setTimeout( resolve, 1000);
-                            });                            
-                            while (result != "ack" && !this.stopped) {
-                                await new Promise((resolve, reject) => {
-                                    setTimeout( resolve, ConnectionRetryMs);
-                                });
-                                log.info(`${this.socket.id} ${this.username} login attempt path: ${this.sio_opts.path}`)
-                                result = await this.login.call(this, this.username, this.password)                                
-                            }
-                            return true
-                        }
-                    }else{
-                        resolve(this.socket)
-                    }
+                let result = await this.login.call(this, this.username, this.password)
+                if (result == "ack"){
+                    log.info(`${this.socket.id} login scucces!`)
+                    return resolve(this.socket)
+                }
+                else{
+                    log.info(`${this.socket.id} login failure!`)
+                    let socket = this.socket
+                    return resolve(socket)                     
+                }
 
             })    
 
-            this.socket.on('disconnect', (reason) => {
+            this.socket.on('disconnect', async (reason) => {
                 this.reconnectAttempt = 0
                 log.info(`${this.socketId}(${this.username}) disconnect reason:`,reason)
                 this.rooms.forEach((room)=>{
@@ -100,6 +99,31 @@ class SocketIoClient  {
                     })
                     this.rooms.delete(room.name)
                 })
+
+                let counter = 0
+                log.debug(`${this.id}: waiting for explicit client stop in 500ms until reconnect`);
+                await delay(500)
+                while(!this.stopped){
+                    counter = counter + 100
+                    log.debug(`${this.id}: connection will restart in ${this.connectionRetryMs-counter} ms`);
+                    if(counter >= this.connectionRetryMs){
+                        this.stopped = false
+                        this.start()
+                        break                    
+                    }else{
+                        await delay(100)
+                    } 
+
+                }
+                return true
+                // if (this.stopped){
+                //     log.debug(`${this.id}: connection will not restart`);
+                //     return true
+                // }else{
+                //     log.debug(`${this.id}: connection will restart in ${this.connectionRetryMs} ms`);
+                //     await delay(this.connectionRetryMs)
+                //     this.start()                    
+                // }
 
             });
 
@@ -148,13 +172,13 @@ class SocketIoClient  {
             
             this.socket.on('connect_timeout', (error)=>{
                 log.error(`${this.id}:connect_timeout:`,error.message)
-                reject(true)
+                // reject(true)
             })            
 
             this.socket.on('error', (error)=>{
                 if (this.stopped){
                     log.debug(`${this.id}: ${this.socketId} already stopped error:`,error.message)
-                    reject(true)     
+                    // reject(true)     
                 }else{
                     log.error(`${this.id}error:`,error.message)
                     reject(true)                    
@@ -171,51 +195,41 @@ class SocketIoClient  {
         });
     }
 
-    stop(){
+    async stop(){
         this.stopped = true
-        return new Promise((resolve, reject) => {
 
-            // Closing Proxy
-            this.stopProxy()
+        // Closing Proxy
+        await this.stopProxy()
 
-            // CLOSING TCP
-            this.rooms.forEach(room => {
-                log.debug(`${this.id} closing room ${room.name}`)
-                // Closing TCP Sockets
-                if (room.connections){
-                    room.connections.forEach(connection => {
-                        log.debug(`${this.id}: closing tcp socket ${room.name}`);
-                        connection.tcpsocket.destroy()
-                    });                    
-                }
-                // Closing TCP Server
-                if (room.tcpserver){
-                    room.tcpserver.close(()=>{
-                        log.debug(`${this.id}: stopped listening at ${room.rcvPort}`);
-                        room.tcpserver.unref()
-                        // resolve(true)
-                    })
-                }              
-            });
-
-            // CLOSING SOCKET.IO 
-            log.debug(`${this.id} close initiated`)
-            let timer = setTimeout(() => {
-                this.socket.disconnect()
-                log.error(`${this.id} close complete with timeout`)
-                return resolve(true) 
-            }, 3000);        
-            this.socket.emit('close','close',()=>{
-                clearTimeout(timer)
-                log.debug(`${this.id} close completed`)
-                this.socket.disconnect()
-                return resolve(true)                
-            })
-
-                
-
+        // CLOSING TCP
+        this.rooms.forEach(room => {
+            log.debug(`${this.id} closing room ${room.name}`)
+            // Closing TCP Sockets
+            if (room.connections){
+                room.connections.forEach(connection => {
+                    log.debug(`${this.id}: closing tcp socket ${room.name}`);
+                    connection.tcpsocket.destroy()
+                });                    
+            }
+            // Closing TCP Server
+            if (room.tcpserver){
+                room.tcpserver.close(()=>{
+                    log.debug(`${this.id}: stopped listening at ${room.rcvPort}`);
+                    room.tcpserver.unref()
+                    // resolve(true)
+                })
+            }              
         });
 
+        // CLOSING SOCKET.IO 
+        log.debug(`${this.id} close initiated`)
+        while (this.socket && this.socket.connected){
+            this.socket.disconnect(true)
+            await new Promise((resolve) => {
+                setTimeout(resolve, 100);
+            });
+        }
+        return (true) 
     }
 
     startProxy(proxyport){

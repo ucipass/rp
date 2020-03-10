@@ -1,19 +1,21 @@
 const express = require('express');
 const app = express();
+const axios = require('axios');
 const createError = require('http-errors');
 const serveIndex = require('serve-index');
 const path = require('path')
-const JSONData = require("./jsondata.js")
+const JSONData = require("../lib/jsondata.js")
 const session = require('express-session');
 const mongoose = require('mongoose')
 const MongoStore = require('connect-mongo')(session);
 let cors = require('cors') // ONLY FOR DEVELOPMENT!!!
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
-const mongooseConnection  =  require("./mongooseclient.js")()
+const mongooseConnection  =  require("../lib/mongooseclient.js")()
 app.mongooseConnection = mongooseConnection // For mocha test to close
+const TESTING = process.env.NODE_ENV == "testing" ? true : false 
 const SECRET_KEY      = process.env.SECRET_KEY ? process.env.SECRET_KEY : "InsecureRandomSessionKey"
-const PREFIX          = process.env.VUE_APP_PREFIX ? path.posix.join("/",process.env.VUE_APP_PREFIX) : "/"
+const PREFIX          = process.env.MANAGER_PREFIX ? path.posix.join("/",process.env.MANAGER_PREFIX) : "/"
 const PREFIX_LOGIN    = path.posix.join("/",PREFIX, "login")
 const PREFIX_LOGOUT   = path.posix.join("/",PREFIX, "logout")
 const PREFIX_STATUS   = path.posix.join("/",PREFIX, "status")
@@ -27,8 +29,16 @@ const PREFIX_SIOCLIENTS_CREATE   = path.posix.join("/",PREFIX, "sioclients", "cr
 const PREFIX_SIOCLIENTS_READ   = path.posix.join("/",PREFIX, "sioclients", "read")
 const PREFIX_SIOCLIENTS_UPDATE   = path.posix.join("/",PREFIX, "sioclients", "update")
 const PREFIX_SIOCLIENTS_DELETE   = path.posix.join("/",PREFIX, "sioclients", "delete")
+const PREFIX_WEBUSERS_CREATE   = path.posix.join("/",PREFIX, "webusers", "create")
+const PREFIX_WEBUSERS_READ   = path.posix.join("/",PREFIX, "webusers", "read")
+const PREFIX_WEBUSERS_UPDATE   = path.posix.join("/",PREFIX, "webusers", "update")
+const PREFIX_WEBUSERS_DELETE   = path.posix.join("/",PREFIX, "webusers", "delete")
+const URL_SIO_STATUS = process.env.URL_SIO_STATUS ? process.env.URL_SIO_STATUS : "http://localhost:8081/status"
+const URL_SIO_REFRESH = process.env.URL_SIO_REFRESH ? process.env.URL_SIO_REFRESH : "http://localhost:8081/refresh"
 
-// 
+
+
+
 mongoose.set('useCreateIndex', true);
 const DATABASE_URL      = process.env.DATABASE_URL
 const DATABASE_USERNAME = process.env.DATABASE_USERNAME
@@ -45,25 +55,17 @@ let options ={
 
 // // LOGGING
 
-var log = require("ucipass-logger")("sio-app")
-log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "error"
+var log = require("ucipass-logger")("app")
+log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "info"
 // log.transports.file.level = 'error'
 // const config = require('config');
 // var log = {}
 // log.info = function(msg){ console.log(msg)}
 
-let sio = null;
-const events = require("./events.js")
-events.on("onSocketIoStarted", (sioInstance)=>{
-  sio = sioInstance;
-})
-
 app.use(cors({origin:true,credentials: true}));; //PLEASE REMOVE FOR PRODUCTION
 app.use(session({
   store: new MongoStore({
-      // clientPromise: clientInstancePromise
       mongooseConnection: mongooseConnection
-      // url: DATABASE_URL.href
   }),
   secret: SECRET_KEY,
   resave: false,
@@ -82,6 +84,13 @@ app.use(session({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+// DEBUG MIDDLEWARE
+app.use(function (req, res, next) {
+  if ( TESTING ){
+    log.debug('Middleware path:',req.path)
+  }
+  next()
+})
 
 
 app.use(passport.initialize());
@@ -123,8 +132,13 @@ passport.deserializeUser(function(id, done) {
 passport.checkLogin = function(req, res, next) {
 	if (req.isAuthenticated()){
 		return next();
-		}
-	log.error("AUTH - NOT LOGGED IN IP:",req.clientIp);
+    }
+  if (process.env.NODE_ENV == 'testing'){
+    log.warn("AUTH - NOT LOGGED IN IP:",req.clientIp);
+  }else{
+    log.error("AUTH - NOT LOGGED IN IP:",req.clientIp);
+  }
+	
 	res.json(false);
 	//res.redirect(PREFIX_LOGIN)
 	}
@@ -132,13 +146,17 @@ passport.checkLogin = function(req, res, next) {
 
 //=================================================
 //=================================================
+//=================================================
+//=================================================
 //  HTML GETS & POSTS
 //=================================================
 //=================================================
+//=================================================
+//=================================================
 
-app.use( PREFIX ,express.static('manager/dist'))
+app.use( PREFIX ,express.static( path.join(__dirname,'gui/dist') ))
 app.use( PREFIX_DOWNLOAD ,express.static('download'))
-app.use( "/clients" ,express.static('clients'), serveIndex('clients', {'icons': true}))
+// app.use( "/clients" ,express.static('clients'), serveIndex('clients', {'icons': true}))
 log.info("Listening path:", PREFIX)
 
 app.get('/', (req, res) => {
@@ -209,19 +227,35 @@ app.post(PREFIX_SCHEMA, passport.checkLogin ,(req, res) => {
 })
 
 app.post(PREFIX_STATUS, passport.checkLogin , async (req, res) => {
-  let reply = await sio.status()
+  let reply = await axios.get(URL_SIO_STATUS)
+  .catch( err => { 
+    log.error(err.message)
+    return err.message
+  })
   res.json(reply)
 })
 
 app.get(PREFIX_STATUS, passport.checkLogin , async (req, res) => {
-  let reply = await sio.status()
+  let reply = await axios.get(URL_SIO_STATUS)
+  .catch( err => { 
+    log.error(err.message)
+    return err.message
+  })
   res.json(reply)
 })
+
+//=================================================
+//  ROOMS
+//=================================================
 
 app.post(PREFIX_CREATE, passport.checkLogin, async (req, res) => {
   let room = req.body
   await mongooseConnection.createRoom(room).catch(()=>{})
-  await sio.refresh()
+  await axios.get(URL_SIO_REFRESH)
+  .catch( err => { 
+    log.error(err.message)
+    return err.message
+  })
   res.json("success");
 })
 
@@ -233,7 +267,7 @@ app.post(PREFIX_READ, passport.checkLogin, async (req, res) => {
 app.post(PREFIX_UPDATE, passport.checkLogin, async (req, res) => {
   let room = req.body
   await mongooseConnection.updateRoom(room).catch(()=>{})
-  await sio.refresh()
+  await axios.get(URL_SIO_REFRESH).catch( err => {err.message})
   return res.json("success");
 })
 
@@ -241,13 +275,17 @@ app.post(PREFIX_DELETE, passport.checkLogin, async (req, res) => {
   try {
     let room = req.body
     await mongooseConnection.deleteRoom(room).catch(()=>{})
-    await sio.refresh()
+    await axios.get(URL_SIO_REFRESH).catch( err => {err.message})
     res.json("success");    
   } catch (error) {
     res.json(`Error: ${PREFIX_DELETE}`);         
   }
 
 })
+
+//=================================================
+//  CLIENTS
+//=================================================
 
 app.post(PREFIX_SIOCLIENTS_CREATE, passport.checkLogin, async (req, res) => {
   let client = req.body
@@ -263,8 +301,10 @@ app.post(PREFIX_SIOCLIENTS_READ, passport.checkLogin, async (req, res) => {
 })
 
 app.post(PREFIX_SIOCLIENTS_UPDATE, passport.checkLogin, async (req, res) => {
-  let Clients = await mongooseConnection.updateClient(client).catch(()=>{[]})  
-  res.json(Clients)
+  let client = req.body
+  mongooseConnection.updateClient(client)
+  .then((response)=> res.json("success"))  
+  .catch((error)=> res.json(error))  
 })
 
 app.post(PREFIX_SIOCLIENTS_DELETE, passport.checkLogin, async (req, res) => {
@@ -275,6 +315,44 @@ app.post(PREFIX_SIOCLIENTS_DELETE, passport.checkLogin, async (req, res) => {
   .catch((error)=> res.json("failure"))  
 
 })
+
+//=================================================
+//  WEB USERS
+//=================================================
+
+app.post(PREFIX_WEBUSERS_CREATE, passport.checkLogin, async (req, res) => {
+  let webusers = req.body
+  mongooseConnection.createWebuser(webusers)
+  .then((response)=> res.json("success"))  
+  .catch((error)=> res.json(error))  
+  
+})
+
+app.post(PREFIX_WEBUSERS_READ, passport.checkLogin, async (req, res) => {
+  let webusers = await mongooseConnection.getWebusers().catch(()=>{[]})  
+  res.json(webusers)
+})
+
+app.post(PREFIX_WEBUSERS_DELETE, passport.checkLogin, async (req, res) => {
+  let webuser = req.body
+  mongooseConnection.deleteWebuser(webuser)
+  .then((response)=> res.json("success"))  
+  .catch((error)=> res.json(error))  
+  
+})
+
+app.post(PREFIX_WEBUSERS_UPDATE, passport.checkLogin, async (req, res) => {
+  let webuser = req.body
+  mongooseConnection.updateWebuser(webuser)
+  .then((response)=> res.json("success"))  
+  .catch((error)=> res.json(error))  
+  
+})
+
+
+//=================================================
+//  ERROR HANDLER
+//=================================================
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {

@@ -1,19 +1,52 @@
 version: '3'
 services:
-  rp:
-    container_name: "rp" 
-    image: ucipass/rp
+  sioserver:
+    container_name: "sioserver" 
+    # build:
+    #   context: ..
+    #   dockerfile: sioserver.Dockerfile    
+    image: ucipass/sioserver
     environment:
+      - LOG_LEVEL=info
+      # - PREFIX=rp
+      - PORT=8081      
       - NODE_ENV=production
-      - VUE_APP_PREFIX=rp
-      - VUE_APP_SERVER_PORT=3000
+      # - VUE_APP_PREFIX=rp
+      - VUE_APP_SERVER_PORT=8080
+      # - DATABASE_URL=mongodb://172.18.100.8:27017
       - DATABASE_URL=mongodb://mongodb:27017
       - DATABASE_USERNAME=admin
       - DATABASE_PASSWORD=admin
       - SECRET_KEY=MySuperSecretKey
-    command: node server.js
+    command: node sioserver/sio-server.js
     ports: 
-      - 3000:3000
+      - 8081:8081
+    links: 
+      - mongodb 
+    depends_on: 
+      - mongodb       
+  manager:
+    container_name: "manager" 
+    # build:
+    #   context: ..
+    #   dockerfile: sioserver.Dockerfile    
+    image: ucipass/manager
+    environment:
+      - LOG_LEVEL=info
+      # - MANAGER_PREFIX=rp
+      - MANAGER_PORT=8080      
+      - NODE_ENV=production
+      # - VUE_APP_PREFIX=rp
+      - VUE_APP_SERVER_PORT=8080
+      # - DATABASE_URL=mongodb://172.18.100.8:27017
+      - DATABASE_URL=mongodb://mongodb:27017
+      - DATABASE_USERNAME=admin
+      - DATABASE_PASSWORD=admin
+      - SECRET_KEY=MySuperSecretKey
+    command: node manager/index.js
+    # command: sh -c "sleep 6000"
+    ports: 
+      - 8080:8080
     links: 
       - mongodb 
     depends_on: 

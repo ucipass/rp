@@ -2,16 +2,16 @@
 require('events').EventEmitter.defaultMaxListeners = 35;
 //############ PRODUCTION #######################
 const socketio = require('socket.io')
-const SIO = require("../sio-server.js")
-const SIOClient = require("../sio-client.js")
-const JSONData = require('../jsondata.js')
+const SIO = require("../../sio-server.js")
+const SIOClient = require("../../sio-client.js")
+const JSONData = require('../../jsondata.js')
 const mongoose = require('mongoose')
 
 //############  TESTING   ####################
-const TestServer = require("./testserver.js")
-const Echoserver = require("./echoserver.js")
-const Echoclient = require("./echoclient.js")
-const delay = require("./delay.js")
+const TestServer = require("../testserver.js")
+const Echoserver = require("../echoserver.js")
+const Echoclient = require("../echoclient.js")
+const delay = require("../delay.js")
 const superagent = require('superagent');
 
 const expect = require('expect');
@@ -23,7 +23,7 @@ const path = require('path')
 //########### Constants ######################
 const prefix = process.env.VUE_APP_PREFIX ? process.env.VUE_APP_PREFIX : ""
 const URL_MGR = new URL("http://localhost/")
-const PORT_MGR   = process.env.VUE_APP_SERVER_PORT ? process.env.VUE_APP_SERVER_PORT : "3111"
+const PORT_MGR   = process.env.VUE_APP_SERVER_PORT ? process.env.VUE_APP_SERVER_PORT : "3001"
 URL_MGR.pathname = prefix 
 URL_MGR.port = PORT_MGR
 const URL_MGR_LOGIN = URL_MGR.origin + path.posix.join("/",prefix,"login")
@@ -37,260 +37,13 @@ const PORT_SIO = process.env.PORT_MGR ? process.env.PORT_MGR : "3002"
 URL_SIO.pathname = prefix 
 URL_SIO.port = PORT_SIO
 
-const sio_path = path.posix.join(URL_SIO.pathname,"socket.io")
 let app = null //set later cause I don't want to kill the mongoose connection
 
-describe('\n\n=================== MONGODB TESTS ========================', () => {
-    
-    beforeEach("Before", async ()=>{
-
-    })
-
-    afterEach("After",  async ()=>{
-
-    })
-
-    it("MongoDB Client Management", async ()=>{
-        try{
-            let db,client,clientObj,result
-            db = require("../mongooseclient.js")()
-            client = "testclient1123456"
-            await db.deleteClient(client)
-            await db.createClient(client)
-            clientObj = await db.getClient(client)
-            result = await db.verifyClient(clientObj.name,clientObj.token)
-            expect(result).toEqual(true)     
-            result = await db.verifyClient(clientObj.name,"123")
-            expect(result).toEqual(false)     
-            result = await db.verifyClient("123",clientObj.token)
-            expect(result).toEqual(false) 
-            await db.deleteClient(client)    
-            
-            await db.deleteWebuser("test1")   
-            await db.createWebuser("test1","test2")                
-            result = await db.getWebuser("test1")       
-            expect(result.username).toEqual("test1") 
-            await db.close()  
-        } catch (error) {
-            console.log(error)
-        }
-    })
-
-    it("MongoDB Rooms Management", async ()=>{
-        try{
-            let db,result,room1,room2,roomNumber
-            db = require("../mongooseclient.js")()
-            room1 = {
-                name: "testmocharoom1",
-                rcvName: "testclient1",
-                rcvPort: "2222",
-                fwdName: "localhost",
-                fwdHost: "testclient2",
-                fwdPort: "3333"
-            }
-            room2 = {
-                name: "testmocharoom2",
-                rcvName: "testclient1",
-                rcvPort: "2222",
-                fwdName: "localhost",
-                fwdHost: "testclient2",
-                fwdPort: "3333",
-                expiration: new Date()
-            }
-
-            result = await db.deleteRoom(room1)
-            result = await db.deleteRoom(room2)
-            roomNumber = (await db.getRooms()).length
-            result = await db.createRoom(room1)
-            result = await db.createRoom(room2)
-            result = await db.getRooms()
-            expect(result.length).toEqual(roomNumber+2)
-            result = await db.getRoom(room1)
-            expect(result.name).toEqual(room1.name) 
-            result = await db.deleteRoom(room1)
-            result = await db.getRooms()
-            expect(result.length).toEqual(roomNumber+1) 
-            result = await db.deleteRoom(room2)
-            result = await db.getRooms()
-            expect(result.length).toEqual(roomNumber) 
-            await db.close()  
-        } catch (error) {
-            console.log(error)
-        }
-    })
-
-})
-
-describe.only('\n\n=================== SOCKET.IO TESTS ========================', () => {
-    
-    let server = null;
-
-    before("Before", async()=>{
-        this.db = require("../mongooseclient.js")()      
-        await this.db.deleteClient("testsocketioclient1")
-        await this.db.deleteClient("testsocketioclient2")
-        this.clientObj1 = await this.db.createClient("testsocketioclient1")
-        this.clientObj2 = await this.db.createClient("testsocketioclient2")    
-    })
-
-    beforeEach("Before", async()=>{
-        let appalt = require('express')();
-        this.testServer = new TestServer(appalt,PORT_SIO)
-        server = await this.testServer.start()
-
-    })
-
-    afterEach("After",  async()=>{
-        await this.testServer.stop()
-    })
-
-    after("Before", async()=>{
-        await this.db.deleteClient(this.clientObj1.name)
-        await this.db.deleteClient(this.clientObj2.name)
-        await this.db.close()            
-    })
-
-    it('Socket.io Native Client Only Connect Test', async () => {
-        let serverSocketID = null
-        let io = require('socket.io')(server,{path:sio_path});
-        io.on('connection', function(socket){
-            serverSocketID = socket.id          
-        });
-
-        let client = new SIOClient(null,null,URL_SIO.href)
-        let clientSocket = await client.start()
-        let clientSocketId = clientSocket.id
-        expect(clientSocketId).toEqual(serverSocketID)
-        client.stopped = true
-        clientSocket.disconnect()
-    });
-
-    it('Socket.io Authentication', async () => {
-
-        let sio = await (new SIO(server)).start()
-        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,URL_SIO.href)
-        let client2 = new SIOClient(this.clientObj2.name,"123",URL_SIO.href)
-        let clientSock1 = await client1.start()
-        let clientSock2 = await client2.start()
-        expect(sio.getSocketById(clientSock1.id).auth).toEqual(true);
-        expect(sio.getSocketById(clientSock2.id).auth).toEqual(false);
-        await client1.stop()
-        await client2.stop()
-        await sio.stop()
-    });
-
-    it('Socket.io Server/Clients (re)Connect Test', async () => {
-        let sio = await (new SIO(server)).start()
-        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,URL_SIO.href)
-        let client2 = new SIOClient(this.clientObj1.name,this.clientObj1.token,URL_SIO.href)
-        let clientSocket1 = await client1.start()
-        let clientSocket2 = await client2.start()
-        expect( sio.sockets.size ).toEqual(2);
-        await client1.stop()
-        await client2.stop()
-        expect( sio.sockets.size ).toEqual(0);
-        await sio.stop()
-    });
-    
-    it('Socket.io Room Join/Leave Test', async () => {
-        let sio = await (new SIO(server)).start()
-        let room1 = {
-            "name": "testmocharoom1",
-            "rcvName": this.clientObj1.name,
-            "rcvPort": "44001",
-            "fwdName": this.clientObj2.name,
-            "fwdHost": "localhost",
-            "fwdPort": "22"
-        }
-        let room2 = {
-            "name": "testmocharoom2",
-            "rcvName": this.clientObj1.name,
-            "rcvPort": "44002",
-            "fwdName": this.clientObj2.name,
-            "fwdHost": "localhost",
-            "fwdPort": "23"
-        }
-        sio.rooms.set(room1.name,room1)
-        sio.rooms.set(room2.name,room2)
-        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,URL_SIO.href)
-        let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,URL_SIO.href)
-        let socket1 = await client1.start()
-        let socket2 = await client2.start()    
-        let status 
-        status = await sio.status()
-        expect(status.clients.length).toEqual(2);
-
-        await client1.stop()
-        status = await sio.status()
-        expect(status.clients.length).toEqual(1);
-
-        await client2.stop()
-        status = await sio.status()
-        expect(status.clients.length).toEqual(0);
-        await sio.stop()
-    });
-
-    it('Socket.io Private Room Test', async () => {
-        let sio = await (new SIO(server)).start()
-        let room1 = {
-            "name": "testmocharoom1",
-            "rcvName": this.clientObj1.name,
-            "rcvPort": "4001",
-            "fwdName": this.clientObj2.name,
-            "fwdHost": "localhost",
-            "fwdPort": "22"
-        }
-        sio.rooms.set(room1.name,room1)
-        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,URL_SIO.href)
-        let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,URL_SIO.href)
-        let socket1 = await client1.start()
-        let socket2 = await client2.start()
-        let json = new JSONData("testclient1","onSendPrivateMsg",{room:"testmocharoom1",msg:"test1"})
-        let jsonReply = await client1.emit(json)
-        await client1.stop()
-        await client2.stop()
-        await sio.stop()
-        expect(jsonReply.att.msg).toEqual("ack");
-    });
-
-    it('Socket.io EchoClient', async () => {
-        let sio = await (new SIO(server)).start()
-        let SERVER_PORT = 4002;
-        let CLIENT_PORT = 4001;
-        let room1 = {
-            "name": "testmocharoom1",
-            "rcvName": this.clientObj1.name,
-            "rcvPort": CLIENT_PORT.toString(),
-            "fwdName": this.clientObj2.name,
-            "fwdHost": "localhost",
-            "fwdPort": SERVER_PORT.toString(),
-            connections: new Map()
-        }
-        sio.rooms.set(room1.name,room1)
-        let client1 = new SIOClient(this.clientObj1.name,this.clientObj1.token,URL_SIO.href)
-        let client2 = new SIOClient(this.clientObj2.name,this.clientObj2.token,URL_SIO.href)
-        let socket1 = await client1.start()
-        let socket2 = await client2.start()
-
-
-        let echoserver = new Echoserver(SERVER_PORT)
-        await echoserver.start()
-        let echoclient1 = await new Echoclient(CLIENT_PORT);
-        let reply1 = await echoclient1.send("ABCD").catch( err => err)
-        expect("ABCD").toEqual(reply1);
-        await echoserver.stop()
-        await client1.stop()
-        await client2.stop()
-        await sio.stop()
-    });
-
-});
-
-describe('\n\n=================== SOCKET.IO & APP TESTS ========================', () => {
+describe.skip('\n\n=================== MANAGER TESTS ========================', () => {
    
     before("Before", async ()=>{
-        app = require("../sio-app.js")
-        this.db = await (require("../mongooseclient.js"))()
+        app = require("../../sio-app.js")
+        this.db = await (require("../../mongooseclient.js"))()
         // CREATE CLIENTS      
         let client1 = "testclient1"
         let client2 = "testclient2"
@@ -438,7 +191,7 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
             "fwdPort": "33002"
         }
 
-        let app = require("../sio-app.js")
+        let app = require("../../sio-app.js")
         let testserver1 = new TestServer(app,PORT_MGR)     
         let server = await testserver1.start()
 
@@ -497,7 +250,7 @@ describe('\n\n=================== SOCKET.IO & APP TESTS ========================
             "fwdHost": "localhost",
             "fwdPort": "33002"
         }
-        let app = require("../sio-app.js")
+        let app = require("../../sio-app.js")
         let testserver1 = new TestServer(app,PORT_MGR)
         let server = await testserver1.start()
 

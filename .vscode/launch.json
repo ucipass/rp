@@ -7,16 +7,17 @@
 
 
         {
-            "name": "Mocha",
+            "name": "Mocha Mongodb",
             "type": "node",
             "request": "launch",
             "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
             "stopOnEntry": false,
-            "args": ["test/**/*.js", "--no-timeouts"],
+            // "args": ["test/**/*.js", "--no-timeouts"],
+            "args": ["test/mongodb.js", "--no-timeouts"],
             "cwd": "${workspaceRoot}",
             "runtimeExecutable": null,
             "env": { 
-                "LOG_LEVEL": "info",
+                "LOG_LEVEL": "error",
                 "NODE_ENV": "testing",
                 "VUE_APP_PREFIX": "rpp",
                 "VUE_APP_SERVER_PORT": "3010",
@@ -28,22 +29,53 @@
             "outputCapture": "std"
         },
         {
-            "name": "Mocha no env",
+            "name": "Mocha Socket.IO",
             "type": "node",
             "request": "launch",
             "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
             "stopOnEntry": false,
-            "args": ["test/**/*.js", "--no-timeouts"],
+            // "args": ["test/**/*.js", "--no-timeouts"],
+            "args": ["test/sioserver.js", "--no-timeouts"],
+            "cwd": "${workspaceRoot}",
+            "runtimeExecutable": null,
+            "env": { 
+                "LOG_LEVEL": "error",
+                "NODE_ENV": "testing",
+                "PREFIX": "rppp",
+                "PORT": "3011",
+                "VUE_APP_SERVER_PORT": "3011",
+                "DATABASE_URL": "mongodb://localhost:27017/rptest",
+                "DATABASE_USERNAME": "admin",
+                "DATABASE_PASSWORD": "admin",
+                "SECRET_KEY": "MySuperSecretKey"
+                },
+            "outputCapture": "std"
+        },
+        {
+            "name": "Mocha Manager",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+            "stopOnEntry": false,
+            "args": ["test/manager.js", "--no-timeouts"],
             "cwd": "${workspaceRoot}",
             "runtimeExecutable": null,
             "env": { 
                 "NODE_ENV": "testing",
-                "LOG_LEVEL": "debug",
-                "VUE_APP_PREFIX": "rp",
-                "DATABASE_URL": "mongodb://localhost:27017/rptest"
-                    },
+                "LOG_LEVEL": "error",
+                // "VUE_APP_PREFIX": "rp",
+                // "VUE_APP_SERVER_PORT": "3000",
+                "MANAGER_PORT": "8080",
+                "MANAGER_PREFIX": "rp",
+                "URL_SIO_STATUS": "http://localhost:8081/rp/status",
+                "URL_SIO_REFRESH": "http://localhost:8081/rp/refresh",
+                "DATABASE_URL": "mongodb://localhost:27017/rptest",
+                "DATABASE_USERNAME": "admin",
+                "DATABASE_PASSWORD": "admin",
+                "SECRET_KEY": "MySuperSecretKey"
+                },
             "outputCapture": "std"
-        },
+        },        
         {
             "type": "node",
             "request": "launch",
@@ -51,16 +83,18 @@
             "args": [
                 ""
             ],
-            "env": {
-                "NODE_ENV": "development",
-                "VUE_APP_PREFIX": "",
-                "VUE_APP_SERVER_PORT": "3000",
-                "DATABASE_URL": "mongodb://localhost:27017/rp",
+            "env": { 
+                "LOG_LEVEL": "info",
+                "NODE_ENV": "testing",
+                "PREFIX": "rppp",
+                "PORT": "3011",
+                "VUE_APP_SERVER_PORT": "3011",
+                "DATABASE_URL": "mongodb://localhost:27017/rptest",
                 "DATABASE_USERNAME": "admin",
                 "DATABASE_PASSWORD": "admin",
                 "SECRET_KEY": "MySuperSecretKey"
-            },            
-            "program": "${workspaceFolder}/server.js",
+                },           
+            "program": "${workspaceFolder}/sio-server.js",
             "cwd": "${workspaceRoot}",
             "runtimeExecutable": null,
             "outputCapture": "std"
@@ -68,12 +102,12 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "server no params",
+            "name": "Server - no Environment",
             "args": [
             ],
             "env": {
             },            
-            "program": "${workspaceFolder}/server.js",
+            "program": "${workspaceFolder}/sio-server.js",
             "cwd": "${workspaceRoot}",
             "runtimeExecutable": null,
             "outputCapture": "std"

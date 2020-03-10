@@ -1,6 +1,6 @@
 <template>
   <b-container fluid v-if='showMainClients'>
-    <h1>Clients</h1>
+    <h1>Rendezvous Clients</h1>
     <b-row class="text-center">
       <!-- b-table uses "value" for actual cell value and "item" for row data and "slot" for the entire row -->
       <b-table hover striped :items="receivedData" :fields="tableColumns">
@@ -101,8 +101,9 @@ export default {
       axios
       .post(URL_SIOCLIENTS_READ,{})
       .then(response => {
-        console.log("SUCCES",response.data)
-        this.receivedData = response.data.map( e => {delete e._id; delete e.__v;return e})
+        console.log("URL_SIOCLIENTS_READ:",response.data)
+        let array = response.data ? response.data : []
+        this.receivedData = array.map( e => {delete e._id; delete e.__v;return e})
         if(this.receivedData && this.receivedData.length){
           let record = this.receivedData[0]
           let newcolumns = []
