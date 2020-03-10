@@ -15,8 +15,8 @@ jobs:
       run: npm install 
     - name: Run testing scripts
       run: npm run testmongodb
-      - run: npm run testmanager
-      - run: npm run testsioserver
+    - run: npm run testmanager
+    - run: npm run testsioserver
     - name: Docker Login
       - run: npm run testmongo
       env:
