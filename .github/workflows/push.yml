@@ -12,7 +12,7 @@ jobs:
     - name: Docker Mongo
       run: docker run -d -p27017:27017 --restart unless-stopped -v /mongodb:/data/db -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin --name mongodb  mongo 
     - run: npm install 
-    - run: npm testmongo
+    - run: npm run testmongo
     # - run: rm -rf dist
     - name: Docker Login
       env:
