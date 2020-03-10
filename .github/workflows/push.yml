@@ -21,7 +21,7 @@ jobs:
       run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
     - name: Docker Build & Publish Manager
       run: docker build -f manager.Dockerfile -t ucipass/manager .
-      run: docker push ucipass/manager
+    - run: docker push ucipass/manager
     - name: Docker Build & Publish Socket.IO Server
       run: docker build -f sioserver.Dockerfile -t ucipass/sioserver .
-      run: docker push ucipass/sioserver
+    - run: docker push ucipass/sioserver
