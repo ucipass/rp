@@ -9,12 +9,16 @@ jobs:
     - uses: actions/setup-node@v1
       with:
         node-version: 10.x 
-    - name: Docker Mongo
+    - name: Start Mongodb container for testing
       run: docker run -d -p27017:27017 --restart unless-stopped -v /mongodb:/data/db -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin --name mongodb  mongo 
-    - run: npm install 
-    - run: npm run testmongo
-    # - run: rm -rf dist
+    - name: Install Dependencies
+      run: npm install 
+    - name: Run testing scripts
+        run: npm run testmongodb
+      - run: npm run testmanager
+      - run: npm run testsioserver
     - name: Docker Login
+      - run: npm run testmongo
       env:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
