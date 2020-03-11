@@ -8,7 +8,7 @@
     "test": "cross-env NODE_ENV=testing VUE_APP_PREFIX=rp DATABASE_URL=mongodb://localhost:27017/rptest node ./node_modules/mocha/bin/mocha test/**/*.js --no-timeouts",
     "testmongodb": "cross-env LOG_LEVEL=error NODE_ENV=testing DATABASE_URL=mongodb://localhost:27017/rptest node ./node_modules/mocha/bin/mocha test/mongodb.js --no-timeouts",
     "testmanager": "cross-env LOG_LEVEL=error NODE_ENV=testing DATABASE_URL=mongodb://localhost:27017/rptest node ./node_modules/mocha/bin/mocha test/manager.js --no-timeouts",
-    "testsioserver": "cross-env LOG_LEVEL=error NODE_ENV=testing DATABASE_URL=mongodb://localhost:27017/rptest node ./node_modules/mocha/bin/mocha test/sioserver.js --no-timeouts",
+    "testsioserver": "cross-env LOG_LEVEL=error NODE_ENV=testing DATABASE_URL=mongodb://localhost:27017/rptest SECRET_KEY=MySuperSecretKey node ./node_modules/mocha/bin/mocha test/sioserver.js --no-timeouts",
     "build": "node ./node_modules/pkg/lib-es5/bin.js sio-client.js --out-path ./clients",
     "pkg": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 pkg sio-client.js --out-path ./clients",
     "client_win": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 node ./node_modules/pkg/lib-es5/bin.js -o ./download/client_win -t node12-win-x64 ./sio-client.js",

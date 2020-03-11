@@ -286,7 +286,7 @@ describe('=================== MANAGER TESTS ========================', () => {
                 "fwdPort": "44002"
             }
             room3 = {
-                "name": "testroom3",
+                "name": "testmocharoom3",
                 "rcvName": "testclient1",
                 "rcvPort": "55001",
                 "fwdName": "testclient2",

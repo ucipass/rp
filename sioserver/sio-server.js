@@ -8,7 +8,8 @@ var log = require("ucipass-logger")("sio-server")
 log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "info"
 const PORT = process.env.PORT ? process.env.PORT : "8081"
 const PREFIX = process.env.PREFIX ? process.env.PREFIX : "/" 
-
+console.log("PORT",PORT)
+console.log("PREFIX",PREFIX)
 class SIO  {
     constructor() {
         this.httpserver = null

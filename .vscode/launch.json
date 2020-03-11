@@ -38,8 +38,8 @@
             "env": { 
                 "LOG_LEVEL": "error",
                 "NODE_ENV": "testing",
-                "PREFIX": "rppp",
-                "PORT": "3011",
+                // "PREFIX": "rppp",
+                // "PORT": "3011",
                 "VUE_APP_SERVER_PORT": "3011",
                 "DATABASE_URL": "mongodb://localhost:27017/rptest",
                 "DATABASE_USERNAME": "admin",

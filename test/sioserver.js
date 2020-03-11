@@ -21,7 +21,7 @@ log.transports.console.level = 'error'
 //########### Constants ######################
 const PREFIX = process.env.PREFIX ? process.env.PREFIX : ""
 const URL_SIO = new URL("http://localhost/")
-const PORT_SIO = process.env.PORT ? process.env.PORT : "3002"
+const PORT_SIO = process.env.PORT ? process.env.PORT : "8081"
 URL_SIO.pathname = PREFIX 
 URL_SIO.port = PORT_SIO
 const SIO_PATH = path.posix.join(URL_SIO.pathname,"socket.io")
@@ -422,8 +422,9 @@ describe('=================== SOCKET.IO CLIENT/SERVER TESTS ====================
             await client1.start() 
             await client2.start() 
             const superagent = require('superagent');
-            const URL2 = URL_SIO.href + "/status"
-            let reply = await superagent.get(URL2).catch( e=> "failure")
+            const URL2 = new URL (URL_SIO.href)
+            URL2.pathname = path.posix.join (URL2.pathname, "status")
+            let reply = await superagent.get(URL2.href).catch( e=> "failure")
             let status = reply.body
             await client1.stop()
             await client2.stop()
@@ -439,11 +440,12 @@ describe('=================== SOCKET.IO CLIENT/SERVER TESTS ====================
             await client1.start() 
             await client2.start() 
             const superagent = require('superagent');
-            const URL = URL_SIO.href + "/refresh"
-            let reply1 = await superagent.get(URL).catch( e=> "failure")
+            const URL2 = new URL (URL_SIO.href)
+            URL2.pathname = path.posix.join (URL2.pathname, "refresh")
+            let reply1 = await superagent.get(URL2.href).catch( e=> "failure")
             let status1 = reply1.body
             await client1.stop()
-            let reply2 = await superagent.get(URL).catch( e=> "failure")
+            let reply2 = await superagent.get(URL2.href).catch( e=> "failure")
             let status2 = reply2.body
             await client2.stop()
             await sio.stop()
