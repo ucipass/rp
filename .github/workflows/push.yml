@@ -15,9 +15,9 @@ jobs:
       run: npm install 
     - name: Run Unit Tests
       run: |
-        npm run testmongodb
-        npm run testmanager
-        npm run testsioserver
+        npm run testdb
+        npm run testmgr
+        npm run testsio
     - name: Docker Login
       env:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
