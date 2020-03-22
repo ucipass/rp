@@ -21,7 +21,7 @@ log.transports.console.level = 'error'
 //########### Constants ######################
 const PREFIX = process.env.PREFIX ? process.env.PREFIX : ""
 const URL_SIO = new URL("http://localhost/")
-const PORT_SIO = process.env.PORT ? process.env.PORT : "8081"
+const PORT_SIO = process.env.PORT_SIO ? process.env.PORT_SIO : "8081"
 URL_SIO.pathname = PREFIX 
 URL_SIO.port = PORT_SIO
 const SIO_PATH = path.posix.join(URL_SIO.pathname,"socket.io")
