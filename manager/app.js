@@ -13,6 +13,16 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const mongooseConnection  =  require("../lib/mongooseclient.js")()
 app.mongooseConnection = mongooseConnection // For mocha test to close
+
+// // LOGGING
+
+var log = require("ucipass-logger")("app")
+log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "info"
+// log.transports.file.level = 'error'
+// const config = require('config');
+// var log = {}
+// log.info = function(msg){ console.log(msg)}
+
 const TESTING = process.env.NODE_ENV == "testing" ? true : false 
 const SECRET_KEY      = process.env.SECRET_KEY ? process.env.SECRET_KEY : "InsecureRandomSessionKey"
 const PREFIX          = process.env.MANAGER_PREFIX ? path.posix.join("/",process.env.MANAGER_PREFIX) : "/"
@@ -35,8 +45,8 @@ const PREFIX_WEBUSERS_UPDATE   = path.posix.join("/",PREFIX, "webusers", "update
 const PREFIX_WEBUSERS_DELETE   = path.posix.join("/",PREFIX, "webusers", "delete")
 const URL_SIO_STATUS = process.env.URL_SIO_STATUS ? process.env.URL_SIO_STATUS : "http://localhost:8081/status"
 const URL_SIO_REFRESH = process.env.URL_SIO_REFRESH ? process.env.URL_SIO_REFRESH : "http://localhost:8081/refresh"
-
-
+log.info(URL_SIO_STATUS)
+log.info(URL_SIO_REFRESH)
 
 
 mongoose.set('useCreateIndex', true);
@@ -52,15 +62,6 @@ let options ={
       authSource: 'admin'                    
   }
 }
-
-// // LOGGING
-
-var log = require("ucipass-logger")("app")
-log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "info"
-// log.transports.file.level = 'error'
-// const config = require('config');
-// var log = {}
-// log.info = function(msg){ console.log(msg)}
 
 app.use(cors({origin:true,credentials: true}));; //PLEASE REMOVE FOR PRODUCTION
 app.use(session({

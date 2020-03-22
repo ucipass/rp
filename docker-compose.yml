@@ -8,16 +8,15 @@ services:
     image: ucipass/sioserver
     environment:
       - LOG_LEVEL=info
-      # - PREFIX=rp
-      - PORT=8081      
       - NODE_ENV=production
-      # - VUE_APP_PREFIX=rp
-      - VUE_APP_SERVER_PORT=8080
-      # - DATABASE_URL=mongodb://172.18.100.8:27017
       - DATABASE_URL=mongodb://mongodb:27017
-      - DATABASE_USERNAME=admin
-      - DATABASE_PASSWORD=admin
-      - SECRET_KEY=MySuperSecretKey
+      # - DATABASE_URL=mongodb://172.18.100.8:27017
+      # - DATABASE_PASSWORD=admin
+      # - DATABASE_USERNAME=admin
+      # - PREFIX=rp
+      # - PORT=8081      
+      # - VUE_APP_PREFIX=rp
+      # - VUE_APP_SERVER_PORT=8080
     command: node sioserver/sio-server.js
     ports: 
       - 8081:8081
@@ -28,21 +27,23 @@ services:
   manager:
     container_name: "manager" 
     # build:
-    #   context: ..
+    #   context: .
     #   dockerfile: sioserver.Dockerfile    
     image: ucipass/manager
     environment:
       - LOG_LEVEL=info
-      # - MANAGER_PREFIX=rp
-      - MANAGER_PORT=8080      
       - NODE_ENV=production
-      # - VUE_APP_PREFIX=rp
-      - VUE_APP_SERVER_PORT=8080
-      # - DATABASE_URL=mongodb://172.18.100.8:27017
+      - SECRET_KEY=MySuperSecretKey #Change this for production
+      - MANAGER_PORT=8080      
       - DATABASE_URL=mongodb://mongodb:27017
-      - DATABASE_USERNAME=admin
-      - DATABASE_PASSWORD=admin
-      - SECRET_KEY=MySuperSecretKey
+      - URL_SIO_STATUS=http://sioserver:8081/status
+      - URL_SIO_REFRESH=http://sioserver:8081/refresh
+      #- DATABASE_USERNAME=admin
+      #- DATABASE_PASSWORD=admin
+      #- MANAGER_PREFIX=rp
+      #- VUE_APP_PREFIX=rp
+      #- VUE_APP_SERVER_PORT=8080
+      #- DATABASE_URL=mongodb://172.18.100.8:27017
     command: node manager/index.js
     # command: sh -c "sleep 6000"
     ports: 
