@@ -1,0 +1,19 @@
+version: '3.7'
+# INSTEAD OF: docker run -d -p27017:27017 --restart unless-stopped -v /home/aarato/mongodb:/data/db -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin --name mongodb  mongo 
+# EXEC: docker-compose --file db.yml up -d
+x-LOG_LEVEL    : &LOG_LEVEL LOG_LEVEL=info
+x-NODE_ENV     : &NODE_ENV NODE_ENV=production
+x-DATABASE_URL : &DATABASE_URL DATABASE_URL=mongodb://172.18.100.8:27017
+services:
+  mongodb: 
+    container_name: "db" 
+    image: mongo:latest 
+    volumes: 
+      - /home/aarato/mongodb:/data/db 
+    ports: 
+      - 27017:27017 
+    command: --logpath /dev/null
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin 
+      - MONGO_INITDB_ROOT_PASSWORD=admin

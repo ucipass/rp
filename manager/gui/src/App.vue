@@ -8,6 +8,7 @@
     <MainDownload/>
     <ModalCreateRoom/>
     <ModalCreateClient/>
+    <MainStatus/>
 
   </div>
 </template>
@@ -18,6 +19,7 @@ import MainWelcome from './components/MainWelcome.vue'
 import MainRendezvousPoints from './components/MainRendezvousPoints.vue'
 import MainClients from './components/MainClients.vue'
 import MainConnections from './components/MainConnections.vue'
+import MainStatus from './components/MainStatus.vue'
 import MainDownload from './components/MainDownload.vue'
 import ModalCreateRoom from './components/ModalCreateRoom.vue'
 import ModalCreateClient from './components/ModalCreateClient.vue'
@@ -30,6 +32,7 @@ export default {
     MainRendezvousPoints, 
     MainClients, 
     MainConnections, 
+    MainStatus,
     MainDownload, 
     ModalCreateRoom,
     ModalCreateClient

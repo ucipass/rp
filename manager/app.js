@@ -242,7 +242,7 @@ app.get(PREFIX_STATUS, passport.checkLogin , async (req, res) => {
     log.error(err.message)
     return err.message
   })
-  res.json(reply)
+  res.json(reply.data)
 })
 
 //=================================================

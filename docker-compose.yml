@@ -1,4 +1,7 @@
-version: '3'
+version: '3.7'
+x-LOG_LEVEL    : &LOG_LEVEL LOG_LEVEL=info
+x-NODE_ENV     : &NODE_ENV NODE_ENV=production
+x-DATABASE_URL : &DATABASE_URL DATABASE_URL=mongodb://172.18.100.8:27017
 services:
   sioserver:
     container_name: "sioserver" 
@@ -6,14 +9,13 @@ services:
     #   context: ..
     #   dockerfile: sioserver.Dockerfile    
     image: ucipass/sioserver
-    environment:
-      - LOG_LEVEL=info
-      - NODE_ENV=production
-      - DATABASE_URL=mongodb://mongodb:27017
-      # - DATABASE_URL=mongodb://172.18.100.8:27017
+    environment: 
+      - *LOG_LEVEL
+      - *NODE_ENV
+      - *DATABASE_URL
       # - DATABASE_PASSWORD=admin
       # - DATABASE_USERNAME=admin
-      # - PREFIX=rp
+      - PREFIX=r2
       # - PORT=8081      
       # - VUE_APP_PREFIX=rp
       # - VUE_APP_SERVER_PORT=8080
@@ -31,16 +33,16 @@ services:
     #   dockerfile: sioserver.Dockerfile    
     image: ucipass/manager
     environment:
-      - LOG_LEVEL=info
-      - NODE_ENV=production
+      - *LOG_LEVEL
+      - *NODE_ENV
+      - *DATABASE_URL
       - SECRET_KEY=MySuperSecretKey #Change this for production
       - MANAGER_PORT=8080      
-      - DATABASE_URL=mongodb://mongodb:27017
       - URL_SIO_STATUS=http://sioserver:8081/status
       - URL_SIO_REFRESH=http://sioserver:8081/refresh
       #- DATABASE_USERNAME=admin
       #- DATABASE_PASSWORD=admin
-      #- MANAGER_PREFIX=rp
+      - MANAGER_PREFIX=r2
       #- VUE_APP_PREFIX=rp
       #- VUE_APP_SERVER_PORT=8080
       #- DATABASE_URL=mongodb://172.18.100.8:27017
@@ -59,6 +61,7 @@ services:
       - /tmp/db:/data/db 
     ports: 
       - 27017:27017 
+    command: --logpath /dev/null
     restart: unless-stopped
     environment:
       - MONGO_INITDB_ROOT_USERNAME=admin 

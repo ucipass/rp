@@ -83,15 +83,15 @@
             "env": { 
                 "LOG_LEVEL": "info",
                 "NODE_ENV": "testing",
-                "PREFIX": "rppp",
-                "PORT": "3011",
+                // "PREFIX": "rppp",
+                // "PORT": "3011",
                 "VUE_APP_SERVER_PORT": "3011",
                 "DATABASE_URL": "mongodb://localhost:27017/rptest",
                 "DATABASE_USERNAME": "admin",
                 "DATABASE_PASSWORD": "admin",
                 "SECRET_KEY": "MySuperSecretKey"
                 },           
-            "program": "${workspaceFolder}/sio-server.js",
+            "program": "${workspaceFolder}/index.js",
             "cwd": "${workspaceRoot}",
             "runtimeExecutable": null,
             "outputCapture": "std"
