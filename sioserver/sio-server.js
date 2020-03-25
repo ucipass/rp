@@ -6,7 +6,7 @@ const mongooseclient = require("../lib/mongooseclient.js")
 const JSONData = require('../lib/jsondata.js')
 var log = require("ucipass-logger")("sio-server")
 log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "info"
-const PORT = process.env.PORT ? process.env.PORT : "8081"
+const PORT = process.env.SIO_PORT ? process.env.SIO_PORT : "8081"
 const PREFIX = process.env.PREFIX ? process.env.PREFIX : "/" 
 console.log("PORT",PORT)
 console.log("PREFIX",PREFIX)

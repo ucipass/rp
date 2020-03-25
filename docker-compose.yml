@@ -1,8 +1,10 @@
 version: '3.7'
-x-LOG_LEVEL    : &LOG_LEVEL LOG_LEVEL=info
-x-NODE_ENV     : &NODE_ENV NODE_ENV=production
-x-DATABASE_URL : &DATABASE_URL DATABASE_URL=mongodb://172.18.100.8:27017
-x-PREFIX       : &PREFIX PREFIX=rp
+x-LOG_LEVEL         : &LOG_LEVEL LOG_LEVEL=info
+x-NODE_ENV          : &NODE_ENV NODE_ENV=production
+x-PREFIX            : &PREFIX PREFIX=rp
+x-DATABASE_URL      : &DATABASE_URL DATABASE_URL=mongodb://172.18.100.8:27017
+x-DATABASE_USERNAME : &DATABASE_USERNAME DATABASE_USERNAME=admin
+x-DATABASE_PASSWORD : &DATABASE_PASSWORD DATABASE_PASSWORD=admin
 services:
   sioserver:
     container_name: "sioserver" 
@@ -13,13 +15,11 @@ services:
     environment: 
       - *LOG_LEVEL
       - *NODE_ENV
-      - *DATABASE_URL
       - *PREFIX
-      # - DATABASE_PASSWORD=admin
-      # - DATABASE_USERNAME=admin
+      - *DATABASE_URL
+      - *DATABASE_USERNAME
+      - *DATABASE_PASSWORD
       # - PORT=8081      
-      # - VUE_APP_PREFIX=rp
-      # - VUE_APP_SERVER_PORT=8080
     command: node sioserver/sio-server.js
     ports: 
       - 8081:8081
@@ -36,17 +36,14 @@ services:
     environment:
       - *LOG_LEVEL
       - *NODE_ENV
-      - *DATABASE_URL
       - *PREFIX
-      - SECRET_KEY=MySuperSecretKey #Change this for production
+      - *DATABASE_URL
+      - *DATABASE_USERNAME
+      - *DATABASE_PASSWORD
       - MANAGER_PORT=8080      
       - URL_SIO_STATUS=http://sioserver:8081/status
       - URL_SIO_REFRESH=http://sioserver:8081/refresh
-      #- DATABASE_USERNAME=admin
-      #- DATABASE_PASSWORD=admin
-      #- VUE_APP_PREFIX=rp
-      #- VUE_APP_SERVER_PORT=8080
-      #- DATABASE_URL=mongodb://172.18.100.8:27017
+      - SECRET_KEY=MySuperSecretKey #Change this for production
     command: node manager/index.js
     # command: sh -c "sleep 6000"
     ports: 
