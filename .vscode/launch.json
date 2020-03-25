@@ -19,7 +19,7 @@
             "env": { 
                 "LOG_LEVEL": "error",
                 "NODE_ENV": "testing",
-                "DATABASE_URL": "mongodb://localhost:27017/rptest",
+                "DATABASE_URL": "mongodb://localhost:27027/rptest",
                 // "DATABASE_USERNAME": "admin",
                 // "DATABASE_PASSWORD": "admin",
                 },
@@ -38,10 +38,10 @@
             "env": { 
                 "LOG_LEVEL": "error",
                 "NODE_ENV": "testing",
-                // "PREFIX": "rppp",
-                // "PORT_SIO": "3011",
+                "PREFIX": "rptest",
+                // "PORT_SIO": "9011",
                 "VUE_APP_SERVER_PORT": "3011",
-                "DATABASE_URL": "mongodb://localhost:27017/rptest",
+                "DATABASE_URL": "mongodb://localhost:27027/rptest",
                 "DATABASE_USERNAME": "admin",
                 "DATABASE_PASSWORD": "admin",
                 "SECRET_KEY": "MySuperSecretKey"
@@ -63,10 +63,10 @@
                 // "VUE_APP_PREFIX": "rp",
                 // "VUE_APP_SERVER_PORT": "3000",
                 "MANAGER_PORT": "8080",
-                "MANAGER_PREFIX": "rp",
+                "PREFIX": "rp",
                 "URL_SIO_STATUS": "http://localhost:8081/rp/status",
                 "URL_SIO_REFRESH": "http://localhost:8081/rp/refresh",
-                "DATABASE_URL": "mongodb://localhost:27017/rptest",
+                "DATABASE_URL": "mongodb://localhost:27027/rptest",
                 "DATABASE_USERNAME": "admin",
                 "DATABASE_PASSWORD": "admin",
                 "SECRET_KEY": "MySuperSecretKey"
@@ -83,8 +83,8 @@
             "env": { 
                 "LOG_LEVEL": "info",
                 "NODE_ENV": "testing",
-                // "PREFIX": "rppp",
-                // "PORT": "3011",
+                "PREFIX": "rptest",
+                "MANAGER_PORT": "9011",
                 "VUE_APP_SERVER_PORT": "3011",
                 "DATABASE_URL": "mongodb://localhost:27017/rptest",
                 "DATABASE_USERNAME": "admin",

@@ -25,7 +25,7 @@ log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "
 
 const TESTING = process.env.NODE_ENV == "testing" ? true : false 
 const SECRET_KEY      = process.env.SECRET_KEY ? process.env.SECRET_KEY : "InsecureRandomSessionKey"
-const PREFIX          = process.env.MANAGER_PREFIX ? path.posix.join("/",process.env.MANAGER_PREFIX) : "/"
+const PREFIX          = process.env.PREFIX ? path.posix.join("/",process.env.PREFIX) : "/"
 const PREFIX_LOGIN    = path.posix.join("/",PREFIX, "login")
 const PREFIX_LOGOUT   = path.posix.join("/",PREFIX, "logout")
 const PREFIX_STATUS   = path.posix.join("/",PREFIX, "status")

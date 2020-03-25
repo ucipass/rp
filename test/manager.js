@@ -15,7 +15,7 @@ const delay = require("../lib/delay.js")
 //########### Constants ######################
 
 const URL_MGR = new URL("http://localhost/")    
-URL_MGR.pathname = process.env.MANAGER_PREFIX ? process.env.MANAGER_PREFIX : ""
+URL_MGR.pathname = process.env.PREFIX ? process.env.PREFIX : ""
 URL_MGR.port   = process.env.MANAGER_PORT ? process.env.MANAGER_PORT : "3001"
 const URL_MGR_LOGIN = URL_MGR.origin + path.posix.join("/",URL_MGR.pathname,"login")
 const CLIENT_PREFIX = "sioclients"

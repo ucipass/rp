@@ -9,8 +9,8 @@ jobs:
     - uses: actions/setup-node@v1
       with:
         node-version: 10.x 
-    - name: Run Mongodb container for testing
-      run: docker run -d -p27017:27017 --restart unless-stopped -v /mongodb:/data/db -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin --name mongodb  mongo 
+    - name: Run Mongodb container for testing on port 27027
+      run: docker run -d -p27027:27017 --restart unless-stopped -v /mongodb:/data/db -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin --name mongodb  mongo 
     - name: Install Dependencies
       run: npm install 
     - name: Run Unit Tests
