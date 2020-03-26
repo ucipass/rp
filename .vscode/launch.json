@@ -84,10 +84,10 @@
             "env": { 
                 "LOG_LEVEL": "info",
                 "NODE_ENV": "testing",
-                "PREFIX": "rptest",
+                "PREFIX": "rp",
                 "MANAGER_PORT": "9011",
                 "VUE_APP_SERVER_PORT": "3011",
-                "DATABASE_URL": "mongodb://localhost:27017/rptest",
+                "DATABASE_URL": "mongodb://localhost:27027/rptest",
                 "DATABASE_USERNAME": "admin",
                 "DATABASE_PASSWORD": "admin",
                 "SECRET_KEY": "MySuperSecretKey"
