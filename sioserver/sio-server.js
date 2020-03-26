@@ -197,7 +197,7 @@ class SIO  {
             if (socket.auth) clients_authenticated++
             return {
                 name : socket.username,
-                address : socket.conn.remoteAddress,
+                address : socket.handshake.headers["x-forwarded-for"] || socket.conn.remoteAddress.split(":")[3],
                 loginDate : socket.handshake.time,
                 id : socket.id,
                 rooms: rooms,

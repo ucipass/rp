@@ -1,8 +1,8 @@
 version: '3.7'
-x-LOG_LEVEL         : &LOG_LEVEL LOG_LEVEL=info
+x-LOG_LEVEL         : &LOG_LEVEL LOG_LEVEL=debug
 x-NODE_ENV          : &NODE_ENV NODE_ENV=production
 x-PREFIX            : &PREFIX PREFIX=rp
-x-DATABASE_URL      : &DATABASE_URL DATABASE_URL=mongodb://172.18.100.8:27017
+x-DATABASE_URL      : &DATABASE_URL DATABASE_URL=mongodb://mongodb:27017
 x-DATABASE_USERNAME : &DATABASE_USERNAME DATABASE_USERNAME=admin
 x-DATABASE_PASSWORD : &DATABASE_PASSWORD DATABASE_PASSWORD=admin
 services:
@@ -41,8 +41,8 @@ services:
       - *DATABASE_USERNAME
       - *DATABASE_PASSWORD
       - MANAGER_PORT=8080      
-      - URL_SIO_STATUS=http://sioserver:8081/status
-      - URL_SIO_REFRESH=http://sioserver:8081/refresh
+      - URL_SIO_STATUS=http://sioserver:8081/rp/status
+      - URL_SIO_REFRESH=http://sioserver:8081/rp/refresh
       - SECRET_KEY=MySuperSecretKey #Change this for production
     command: node manager/index.js
     # command: sh -c "sleep 6000"
