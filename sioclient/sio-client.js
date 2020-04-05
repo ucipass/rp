@@ -112,6 +112,7 @@ class SocketIoClient  {
                     log.debug(`${this.id}: connection will restart in ${this.connectionRetryMs-counter} ms`);
                     if(counter >= this.connectionRetryMs){
                         this.stopped = false
+                        this.socket.destroy();
                         this.start()
                         break                    
                     }else{

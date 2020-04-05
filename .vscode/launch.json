@@ -119,6 +119,20 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "CLIENT",
+            "args": [],
+            "env": {
+                "NODE_ENV": "development",
+                "LOG_LEVEL": "info"
+            },            
+            "program": "${workspaceFolder}/sioclient/sio-client.js",
+            "cwd": "${workspaceRoot}",
+            "runtimeExecutable": null,
+            "outputCapture": "std"
+        },        
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Server - no Environment",
             "args": [
             ],
