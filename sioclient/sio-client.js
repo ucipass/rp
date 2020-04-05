@@ -10,6 +10,7 @@ const delay = require('../lib/delay.js')
 const axios = require('axios');
 const axiosCookieJarSupport = require('axios-cookiejar-support').default;
 const tough = require('tough-cookie');
+var readlineSync = require('readline-sync');
 axiosCookieJarSupport(axios);
 
 /**** FLOW *****
@@ -672,23 +673,63 @@ class SocketIoClient  {
 }
 
 
-async function axioslogin( webuser, webpassword, url ){
-    let urlobj = new URL(url)
-    let URL_LOGIN = new URL(path.posix.join("/",urlobj.pathname,"login"),url)
-    let URL_TOKEN = new URL(path.posix.join("/",urlobj.pathname,"token"),url)
-    let user = {username: webuser, password: webpassword}
-    let options = { jar: new tough.CookieJar() , withCredentials: true}
-    let result = await axios.post( URL_LOGIN.href, user, options).catch((err)=> { console.log(err.message); return {}; })
-    let token =  await axios.post( URL_TOKEN.href, "aaub", options).catch((err)=> { console.log(err.message); return {}; })
-    return token
+async function axioslogin( options ){
+    let webuser = options.webuser
+    let webpass = options.webpass
+    let urlobj = new URL(options.url)
+    let clientname = options.clientname
+    let filename = options.filename ? options.filename : "token.json"   
+    let URL_LOGIN = new URL(path.posix.join("/",urlobj.pathname,"login"),urlobj.href)
+    let URL_TOKEN = new URL(path.posix.join("/",urlobj.pathname,"token"),urlobj.href)
+    let user = {username: webuser, password: webpass}
+    let client = { name: clientname}
+    let axiosoptions = { jar: new tough.CookieJar() , withCredentials: true}
+    return axios.post( URL_LOGIN.href, user, axiosoptions)
+    .catch((err)=> { 
+        let msg = `Login error with username: ${webuser} , ${err.message}`
+        return Promise.reject( new Error(msg) )
+    })
+    .then((loginresult)=> { 
+        if(!loginresult.data) {
+            let msg = `Login failed with username: ${webuser}`
+            return Promise.reject(new Error(msg))  
+        } 
+    })
+    .then(()=> axios.post( URL_TOKEN.href, client, axiosoptions))
+    .then((reply) => {
+        let json = reply.data
+        if (json.token){
+            json.url = urlobj.url
+            json.tokenfilecreated = new Date().toLocaleString();
+            let file = new File(filename)
+            return file.writeString(JSON.stringify(json))
+        }else{
+            return Promise.reject("no token found")
+        }
+    })
+    .then(()=>{
+        log.info(`Created ${filename}`)
+    })
+    .catch( err => { 
+        log.error(err.message) 
+    })
 }
 
 
 module.exports = SocketIoClient
 
 if (require.main === module) {
+    let json = {}
+    var argv = require('minimist')(process.argv.slice(2));
+    let filename = typeof argv._[0] === 'string' ? argv._[0] : "token.json"
+    let webuser = "admin"
+    let webpass = "admin"
+    let url = "http://localhost:8080/"
+    let clientname = "test"
+    let input = false
+    let tokenDownload = argv.t    
     if (process.env.RP_URL && process.env.RP_CLIENT && process.env.RP_TOKEN){
-        let json = {
+        json = {
             name: process.env.RP_CLIENT,
             token: process.env.RP_TOKEN,
             url: process.env.RP_URL,
@@ -698,12 +739,25 @@ if (require.main === module) {
         .catch( error => {
         process.exit( console.log( "*****Execution Error*****\n", error ))
         })        
-    }else if(true){
-        axioslogin("admin","admin","http://localhost:8080/rp")
+    }else if(tokenDownload){
+        input      = process.env.RP_URL     ? process.env.RP_URL : readlineSync.question(`Enter url [${url}]: `);
+        url        = input ? input : url
+        input      = process.env.RP_WEBUSER ? process.env.RP_WEBUSER : readlineSync.question(`Enter username [${webuser}]: `);
+        webuser    = input ? input : webuser
+        input      = process.env.RP_WEBPASS ? process.env.RP_WEBPASS : readlineSync.question(`Enter password [*******]: `, {hideEchoBack: true});
+        webpass    = input ? input : webpass
+        input      = process.env.RP_CLIENT  ? process.env.RP_CLIENT : readlineSync.question(`Enter clientname [${clientname}]: `);
+        clientname = input ? input : clientname
+        let options = {
+            url :url,
+            webuser: webuser,
+            webpass: webpass,
+            clientname: clientname
+        }
+        axioslogin(options)
     }
     else{
-        var argv = require('minimist')(process.argv.slice(2));
-        let filename = typeof argv._[0] === 'string' ? argv._[0] : "token.json"
+
         Promise.resolve( new File(filename) )
         .then( file   => file.readJson() )
         .catch(error  => process.exit( console.log( "Invalid configuration file token.json\n", error )))
