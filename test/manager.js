@@ -9,6 +9,11 @@ const app = require("../manager/app.js")
 const httpserver = require("../lib/httpserver.js")
 const mongooseclient = require("../lib/mongooseclient.js")
 const delay = require("../lib/delay.js")
+const axios = require('axios');
+const axiosCookieJarSupport = require('axios-cookiejar-support').default;
+const tough = require('tough-cookie');
+axiosCookieJarSupport(axios);
+
 // const logg = require('why-is-node-running')
 // const log = require("ucipass-logger")("mocha")
 
@@ -18,8 +23,9 @@ const URL_MGR = new URL("http://localhost/")
 URL_MGR.pathname = process.env.PREFIX ? process.env.PREFIX : ""
 URL_MGR.port   = process.env.MANAGER_PORT ? process.env.MANAGER_PORT : "3001"
 const URL_MGR_LOGIN = URL_MGR.origin + path.posix.join("/",URL_MGR.pathname,"login")
+const URL_MGR_TOKEN = URL_MGR.origin + path.posix.join("/",URL_MGR.pathname,"token")
 const CLIENT_PREFIX = "sioclients"
-const WEBUSER_PREFIX = "webusers"
+const WEBUSER_PREFIX = "webclients"
 
 describe('=================== MANAGER TESTS ========================', () => {
 
@@ -244,7 +250,15 @@ describe('=================== MANAGER TESTS ========================', () => {
             expect(result2.body).toEqual("success");
             expect(client.token).toEqual("newtokenpass1");
         }) 
-       
+
+        it("Axios Client Read", async ()=>{
+            let options = { jar: new tough.CookieJar() , withCredentials: true}
+            let result = await axios.post(URL_MGR_LOGIN,user1, options)
+            let url = URL_MGR.origin + path.posix.join("/",URL_MGR.pathname,"token")
+            let token = await axios.post(url,client1,options)
+            expect(result.status).toEqual(200);            
+            expect(token.data.name).toEqual(client1.name);            
+        })        
     })
 
     describe('Socket.io Rooms', ()=>{

@@ -6,6 +6,7 @@ export const  hideMainAll = () => {
     console.log("Emit: hideMainAll")
     eventBus.$emit('hideMainRendezvousPoints')
     eventBus.$emit('hideMainClients')
+    eventBus.$emit('hideMainWebclients')
     eventBus.$emit('hideMainConnections')
     eventBus.$emit('hideMainWelcome')
     eventBus.$emit('hideMainDownload')

@@ -7,7 +7,10 @@ const JSONData = require('../lib/jsondata.js')
 const socks5 = require('simple-socks')
 const File = require('ucipass-file')
 const delay = require('../lib/delay.js')
-
+const axios = require('axios');
+const axiosCookieJarSupport = require('axios-cookiejar-support').default;
+const tough = require('tough-cookie');
+axiosCookieJarSupport(axios);
 
 /**** FLOW *****
 1. Client connects to server: start()
@@ -668,6 +671,19 @@ class SocketIoClient  {
 
 }
 
+
+async function axioslogin( webuser, webpassword, url ){
+    let urlobj = new URL(url)
+    let URL_LOGIN = new URL(path.posix.join("/",urlobj.pathname,"login"),url)
+    let URL_TOKEN = new URL(path.posix.join("/",urlobj.pathname,"token"),url)
+    let user = {username: webuser, password: webpassword}
+    let options = { jar: new tough.CookieJar() , withCredentials: true}
+    let result = await axios.post( URL_LOGIN.href, user, options)
+    let token =  await axios.post( URL_TOKEN.href, "aaub", options).catch((err)=> { console.log(err.message); return {}; })
+    return token
+}
+
+
 module.exports = SocketIoClient
 
 if (require.main === module) {
@@ -682,7 +698,10 @@ if (require.main === module) {
         .catch( error => {
         process.exit( console.log( "*****Execution Error*****\n", error ))
         })        
-    }else{
+    }else if(true){
+        axioslogin("admin","admin","https://aws.arato.biz/rp")
+    }
+    else{
         var argv = require('minimist')(process.argv.slice(2));
         let filename = typeof argv._[0] === 'string' ? argv._[0] : "token.json"
         Promise.resolve( new File(filename) )

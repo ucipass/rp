@@ -9,6 +9,7 @@
         <b-navbar-nav>
           <b-dropdown left variant="outline-primary" v-if="loggedIn" text='Menu'>
             <b-dropdown-item @click="showMainClients()">Rendezvous Clients</b-dropdown-item>
+            <b-dropdown-item @click="showMainWebclients()">Web Clients</b-dropdown-item>
             <b-dropdown-item v-if=false @click="showMainConnections()">Connections</b-dropdown-item>
             <b-dropdown-item @click="showMainRendezvousPoints()">Rendezvous Points</b-dropdown-item>
             <b-dropdown-item @click="showMainDownload()">Downloads</b-dropdown-item>
@@ -78,6 +79,10 @@ export default {
     showMainRendezvousPoints(){
       eventBus.$emit('showMainRendezvousPoints')
       console.log("NavBarMain: showMainRendezvousPoints")
+    },
+    showMainWebclients(){
+      eventBus.$emit('showMainWebclients')
+      console.log("NavBarMain: showMainWebclients")
     },
     showMainClients(){
       eventBus.$emit('showMainClients')

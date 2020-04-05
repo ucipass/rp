@@ -4,6 +4,7 @@
     <MainWelcome/>
     <MainRendezvousPoints/>
     <MainClients/>
+    <MainWebclients/>
     <MainConnections/>
     <MainDownload/>
     <ModalCreateRoom/>
@@ -18,6 +19,7 @@ import NavBarMain from './components/NavBarMain.vue'
 import MainWelcome from './components/MainWelcome.vue'
 import MainRendezvousPoints from './components/MainRendezvousPoints.vue'
 import MainClients from './components/MainClients.vue'
+import MainWebclients from './components/MainWebclients.vue'
 import MainConnections from './components/MainConnections.vue'
 import MainStatus from './components/MainStatus.vue'
 import MainDownload from './components/MainDownload.vue'
@@ -31,6 +33,7 @@ export default {
     MainWelcome, 
     MainRendezvousPoints, 
     MainClients, 
+    MainWebclients, 
     MainConnections, 
     MainStatus,
     MainDownload, 

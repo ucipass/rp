@@ -29,6 +29,7 @@ const PREFIX          = process.env.PREFIX ? path.posix.join("/",process.env.PRE
 const PREFIX_LOGIN    = path.posix.join("/",PREFIX, "login")
 const PREFIX_LOGOUT   = path.posix.join("/",PREFIX, "logout")
 const PREFIX_STATUS   = path.posix.join("/",PREFIX, "status")
+const PREFIX_TOKEN   = path.posix.join("/",PREFIX, "token")
 const PREFIX_SCHEMA   = path.posix.join("/",PREFIX, "schema")
 const PREFIX_DOWNLOAD = path.posix.join("/",PREFIX, "download")
 const PREFIX_CREATE   = path.posix.join("/",PREFIX, "create")
@@ -39,12 +40,12 @@ const PREFIX_SIOCLIENTS_CREATE   = path.posix.join("/",PREFIX, "sioclients", "cr
 const PREFIX_SIOCLIENTS_READ   = path.posix.join("/",PREFIX, "sioclients", "read")
 const PREFIX_SIOCLIENTS_UPDATE   = path.posix.join("/",PREFIX, "sioclients", "update")
 const PREFIX_SIOCLIENTS_DELETE   = path.posix.join("/",PREFIX, "sioclients", "delete")
-const PREFIX_WEBUSERS_CREATE   = path.posix.join("/",PREFIX, "webusers", "create")
-const PREFIX_WEBUSERS_READ   = path.posix.join("/",PREFIX, "webusers", "read")
-const PREFIX_WEBUSERS_UPDATE   = path.posix.join("/",PREFIX, "webusers", "update")
-const PREFIX_WEBUSERS_DELETE   = path.posix.join("/",PREFIX, "webusers", "delete")
-const URL_SIO_STATUS = process.env.URL_SIO_STATUS ? process.env.URL_SIO_STATUS : "http://localhost:8081/status"
-const URL_SIO_REFRESH = process.env.URL_SIO_REFRESH ? process.env.URL_SIO_REFRESH : "http://localhost:8081/refresh"
+const PREFIX_WEBCLIENTS_CREATE   = path.posix.join("/",PREFIX, "webclients", "create")
+const PREFIX_WEBCLIENTS_READ   = path.posix.join("/",PREFIX, "webclients", "read")
+const PREFIX_WEBCLIENTS_UPDATE   = path.posix.join("/",PREFIX, "webclients", "update")
+const PREFIX_WEBCLIENTS_DELETE   = path.posix.join("/",PREFIX, "webclients", "delete")
+const URL_SIO_STATUS  = "http://localhost:8081"+path.posix.join("/",PREFIX, "status" )
+const URL_SIO_REFRESH = "http://localhost:8081"+path.posix.join("/",PREFIX, "refresh")
 log.info(URL_SIO_STATUS)
 log.info(URL_SIO_REFRESH)
 
@@ -233,16 +234,16 @@ app.post(PREFIX_STATUS, passport.checkLogin , async (req, res) => {
     log.error(err.message)
     return err.message
   })
-  res.json(reply)
+  res.json(reply.data)
 })
 
-app.get(PREFIX_STATUS, passport.checkLogin , async (req, res) => {
-  let reply = await axios.get(URL_SIO_STATUS)
-  .catch( err => { 
-    log.error(err.message)
-    return err.message
-  })
-  res.json(reply.data)
+app.post(PREFIX_TOKEN, passport.checkLogin , async (req, res) => {
+  let clientsearch = req.body
+  let reply = await mongooseConnection.getClient(clientsearch.name).catch(()=>{[]})
+  let client = JSON.parse(JSON.stringify(reply))
+  delete client.__v
+  delete client._id
+  res.json(client)
 })
 
 //=================================================
@@ -321,7 +322,7 @@ app.post(PREFIX_SIOCLIENTS_DELETE, passport.checkLogin, async (req, res) => {
 //  WEB USERS
 //=================================================
 
-app.post(PREFIX_WEBUSERS_CREATE, passport.checkLogin, async (req, res) => {
+app.post(PREFIX_WEBCLIENTS_CREATE, passport.checkLogin, async (req, res) => {
   let webusers = req.body
   mongooseConnection.createWebuser(webusers)
   .then((response)=> res.json("success"))  
@@ -329,12 +330,12 @@ app.post(PREFIX_WEBUSERS_CREATE, passport.checkLogin, async (req, res) => {
   
 })
 
-app.post(PREFIX_WEBUSERS_READ, passport.checkLogin, async (req, res) => {
+app.post(PREFIX_WEBCLIENTS_READ, passport.checkLogin, async (req, res) => {
   let webusers = await mongooseConnection.getWebusers().catch(()=>{[]})  
   res.json(webusers)
 })
 
-app.post(PREFIX_WEBUSERS_DELETE, passport.checkLogin, async (req, res) => {
+app.post(PREFIX_WEBCLIENTS_DELETE, passport.checkLogin, async (req, res) => {
   let webuser = req.body
   mongooseConnection.deleteWebuser(webuser)
   .then((response)=> res.json("success"))  
@@ -342,7 +343,7 @@ app.post(PREFIX_WEBUSERS_DELETE, passport.checkLogin, async (req, res) => {
   
 })
 
-app.post(PREFIX_WEBUSERS_UPDATE, passport.checkLogin, async (req, res) => {
+app.post(PREFIX_WEBCLIENTS_UPDATE, passport.checkLogin, async (req, res) => {
   let webuser = req.body
   mongooseConnection.updateWebuser(webuser)
   .then((response)=> res.json("success"))  
