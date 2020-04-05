@@ -228,7 +228,7 @@ app.post(PREFIX_SCHEMA, passport.checkLogin ,(req, res) => {
   res.json(schema)
 })
 
-app.post(PREFIX_STATUS, passport.checkLogin , async (req, res) => {
+app.get(PREFIX_STATUS, passport.checkLogin , async (req, res) => {
   let reply = await axios.get(URL_SIO_STATUS)
   .catch( err => { 
     log.error(err.message)

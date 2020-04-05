@@ -2,7 +2,7 @@ const io = require('socket.io-client');
 const net = require('net');
 const path = require('path')
 var log = require("ucipass-logger")("sio-client")
-log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "error"
+log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "info"
 const JSONData = require('../lib/jsondata.js')
 const socks5 = require('simple-socks')
 const File = require('ucipass-file')
@@ -699,7 +699,7 @@ async function axioslogin( options ){
     .then((reply) => {
         let json = reply.data
         if (json.token){
-            json.url = urlobj.url
+            json.url = urlobj.href
             json.tokenfilecreated = new Date().toLocaleString();
             let file = new File(filename)
             return file.writeString(JSON.stringify(json))

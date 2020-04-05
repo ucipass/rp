@@ -1,6 +1,7 @@
 # Manager Dist
 dist
 client
+token.json
 
 # Logs
 logs

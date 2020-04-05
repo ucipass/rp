@@ -107,7 +107,7 @@
                 "NODE_ENV": "development",
                 "LOG_LEVEL": "info",
                 "RP_WEBPASS" : "admin",
-                "RP_WEBUSER": "admin1",
+                "RP_WEBUSER": "admin",
                 "RP_URL": "http://localhost:8080/",
                 "RP_CLIENT": "test",
             },            
