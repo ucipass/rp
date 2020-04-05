@@ -107,7 +107,7 @@
                 "NODE_ENV": "development",
                 "RP_WEBPASS" : "admin",
                 "RP_WEBUSER": "admin",
-                "RP_URL": "https://aws.arato.biz/rp",
+                "RP_URL": "http://localhost:8080/rp/",
             },            
             "program": "${workspaceFolder}/sioclient/sio-client.js",
             "cwd": "${workspaceRoot}",

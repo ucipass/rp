@@ -678,7 +678,7 @@ async function axioslogin( webuser, webpassword, url ){
     let URL_TOKEN = new URL(path.posix.join("/",urlobj.pathname,"token"),url)
     let user = {username: webuser, password: webpassword}
     let options = { jar: new tough.CookieJar() , withCredentials: true}
-    let result = await axios.post( URL_LOGIN.href, user, options)
+    let result = await axios.post( URL_LOGIN.href, user, options).catch((err)=> { console.log(err.message); return {}; })
     let token =  await axios.post( URL_TOKEN.href, "aaub", options).catch((err)=> { console.log(err.message); return {}; })
     return token
 }
@@ -699,7 +699,7 @@ if (require.main === module) {
         process.exit( console.log( "*****Execution Error*****\n", error ))
         })        
     }else if(true){
-        axioslogin("admin","admin","https://aws.arato.biz/rp")
+        axioslogin("admin","admin","http://localhost:8080/rp")
     }
     else{
         var argv = require('minimist')(process.argv.slice(2));

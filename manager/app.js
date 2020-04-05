@@ -241,9 +241,13 @@ app.post(PREFIX_TOKEN, passport.checkLogin , async (req, res) => {
   let clientsearch = req.body
   let reply = await mongooseConnection.getClient(clientsearch.name).catch(()=>{[]})
   let client = JSON.parse(JSON.stringify(reply))
-  delete client.__v
-  delete client._id
-  res.json(client)
+  if (client._id) {
+    delete client.__v
+    delete client._id
+    res.json(client)}
+  else{
+    res.json(false)
+  }
 })
 
 //=================================================

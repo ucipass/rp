@@ -6,6 +6,7 @@ const path = require('path')
 const superagent = require('superagent');
 const expect = require('expect');
 const app = require("../manager/app.js")
+const sioclient = require("../sioclient/sio-client.js")
 const httpserver = require("../lib/httpserver.js")
 const mongooseclient = require("../lib/mongooseclient.js")
 const delay = require("../lib/delay.js")
@@ -259,6 +260,7 @@ describe('=================== MANAGER TESTS ========================', () => {
             expect(result.status).toEqual(200);            
             expect(token.data.name).toEqual(client1.name);            
         })        
+      
     })
 
     describe('Socket.io Rooms', ()=>{
