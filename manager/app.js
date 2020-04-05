@@ -26,10 +26,12 @@ log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "
 const TESTING = process.env.NODE_ENV == "testing" ? true : false 
 const SECRET_KEY      = process.env.SECRET_KEY ? process.env.SECRET_KEY : "InsecureRandomSessionKey"
 const PREFIX          = process.env.PREFIX ? path.posix.join("/",process.env.PREFIX) : "/"
+const URL_SIO_STATUS  = process.env.URL_SIO_STATUS  ? process.env.URL_SIO_STATUS  : "http://localhost:8081"+path.posix.join("/",PREFIX, "status" )
+const URL_SIO_REFRESH = process.env.URL_SIO_REFRESH ? process.env.URL_SIO_REFRESH : "http://localhost:8081"+path.posix.join("/",PREFIX, "refresh")
 const PREFIX_LOGIN    = path.posix.join("/",PREFIX, "login")
 const PREFIX_LOGOUT   = path.posix.join("/",PREFIX, "logout")
 const PREFIX_STATUS   = path.posix.join("/",PREFIX, "status")
-const PREFIX_TOKEN   = path.posix.join("/",PREFIX, "token")
+const PREFIX_TOKEN    = path.posix.join("/",PREFIX, "token")
 const PREFIX_SCHEMA   = path.posix.join("/",PREFIX, "schema")
 const PREFIX_DOWNLOAD = path.posix.join("/",PREFIX, "download")
 const PREFIX_CREATE   = path.posix.join("/",PREFIX, "create")
@@ -44,8 +46,6 @@ const PREFIX_WEBCLIENTS_CREATE   = path.posix.join("/",PREFIX, "webclients", "cr
 const PREFIX_WEBCLIENTS_READ   = path.posix.join("/",PREFIX, "webclients", "read")
 const PREFIX_WEBCLIENTS_UPDATE   = path.posix.join("/",PREFIX, "webclients", "update")
 const PREFIX_WEBCLIENTS_DELETE   = path.posix.join("/",PREFIX, "webclients", "delete")
-const URL_SIO_STATUS  = "http://localhost:8081"+path.posix.join("/",PREFIX, "status" )
-const URL_SIO_REFRESH = "http://localhost:8081"+path.posix.join("/",PREFIX, "refresh")
 log.info(URL_SIO_STATUS)
 log.info(URL_SIO_REFRESH)
 

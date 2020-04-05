@@ -1,7 +1,7 @@
 <template>
 
   <b-container fluid v-if='showMainStatus'>
-    <h3>Clients Authenticated: {{ statusdata.clients_authenticated }} </h3>
+    <h3>Clients Authenticated: {{ statusdate ? statusdata.clients_authenticated : 0}} </h3>
     <div class="text-center">
       <!-- {{statusjson}} -->
       <b-card v-for="client in clients" :key="client.name" no-body class="mb-1">
