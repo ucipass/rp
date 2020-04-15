@@ -239,7 +239,8 @@ class SocketIoClient  {
 
     startProxy(proxyport){
         return new Promise((resolve, reject) => {
-            this.proxy  = socks5.createServer().listen(proxyport);    
+            this.proxy  = socks5.createServer().listen(proxyport);
+              
             this.proxy.on('error',(error)=>{
                 switch (error.code) {
                     case 'EACCES':

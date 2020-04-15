@@ -13,6 +13,9 @@
         <template v-slot:cell(ipaddr)="slot">
           <b-input v-model='receivedData[slot.index].ipaddr'></b-input>
         </template>    
+        <template v-slot:cell(proxyport)="slot">
+          <b-input v-model='receivedData[slot.index].proxyport'></b-input>
+        </template>    
         <template v-slot:cell(expiration)="slot">
           <b-input v-model='receivedData[slot.index].expiration'></b-input>
         </template>    
@@ -34,7 +37,7 @@
 <script>
 // import TableRow from './TableRow.vue'
 import axios from 'axios';
-import {URL_SIOCLIENTS_READ, URL_SIOCLIENTS_DELETE } from './constants.js';
+import {URL_SIOCLIENTS_READ, URL_SIOCLIENTS_UPDATE, URL_SIOCLIENTS_DELETE } from './constants.js';
 import { eventBus, hideMainAll } from './events.js'
 
 export default {
@@ -83,8 +86,16 @@ export default {
       // document.body.removeChild(element);
 
     },
-    updateData: function (index){
+    updateData: async function (index){
       console.log("UPDATE DATA:",this.receivedData[index])
+      console.log(URL_SIOCLIENTS_UPDATE)
+      let response = await axios
+      .post(URL_SIOCLIENTS_UPDATE,this.receivedData[index])
+      .catch(error => { console.log("ERROR",error); return null })
+      this.status = response.data
+      if(this.status == 'success'){
+        this.refresh()
+      }       
     },
     deleteData: async function (index){
       console.log("DELETE DATA:",this.receivedData[index])
@@ -102,8 +113,7 @@ export default {
       .post(URL_SIOCLIENTS_READ,{})
       .then(response => {
         console.log("URL_SIOCLIENTS_READ:",response.data)
-        let array = response.data ? response.data : []
-        this.receivedData = array.map( e => {delete e._id; delete e.__v;return e})
+        this.receivedData = response.data ? response.data : []
         if(this.receivedData && this.receivedData.length){
           let record = this.receivedData[0]
           let newcolumns = []
