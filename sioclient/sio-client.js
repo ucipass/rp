@@ -8,7 +8,7 @@ const socks5 = require('simple-socks')
 const File = require('ucipass-file')
 const delay = require('../lib/delay.js')
 const axios = require('axios');
-const Proxy = require('@ucipass/proxy')
+const proxy = require('@ucipass/proxy')
 const axiosCookieJarSupport = require('axios-cookiejar-support').default;
 const tough = require('tough-cookie');
 var readlineSync = require('readline-sync');
@@ -238,44 +238,12 @@ class SocketIoClient  {
         return (true) 
     }
 
-    startProxy(proxyport){
-        // return new Promise((resolve, reject) => {
-        //     this.proxy  = socks5.createServer().listen(proxyport);
-              
-        //     this.proxy.on('error',(error)=>{
-        //         switch (error.code) {
-        //             case 'EACCES':
-        //                 console.error(`${proxyport} requires elevated privileges`);
-        //                 process.exit(1);
-        //             case 'EADDRINUSE':
-        //                 log.error(`${proxyport} is already in use`);
-        //                 this.proxy.close()
-        //                 return(reject(`${proxyport} is already in use`))
-        //             default:
-        //                 return(reject(error))
-        //         }    
-        //     })            
-        //     this.proxy.on('listening',()=>{
-        //         return(resolve())
-        //     })            
-        // });
-            this.proxy = new Proxy(proxyport)
-            return this.proxy.start()
-
+    async startProxy(proxyport){
+            this.proxy = await proxy(proxyport)
+            return this.proxy
     }
 
     async stopProxy(){
-        // return new Promise((resolve, reject) => {
-        //     if ( this.proxy ){
-        //         this.proxy.on('close',()=>{
-        //             return(resolve())
-        //         }) 
-        //         this.proxy.close()       
-        //     }else{
-        //         resolve()
-        //     }
-    
-        // });
         if (this.proxy) return this.proxy.stop()
     }
 
