@@ -2,27 +2,23 @@ const express = require('express');
 const app = express();
 const axios = require('axios');
 const createError = require('http-errors');
-const serveIndex = require('serve-index');
 const path = require('path')
 const JSONData = require("../lib/jsondata.js")
 const session = require('express-session');
-const mongoose = require('mongoose')
 const MongoStore = require('connect-mongo')(session);
 let cors = require('cors') // ONLY FOR DEVELOPMENT!!!
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const mongooseConnection  =  require("../lib/mongooseclient.js")()
 app.mongooseConnection = mongooseConnection // For mocha test to close
-
 // // LOGGING
 
 var log = require("ucipass-logger")("app")
 log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "info"
-// log.transports.file.level = 'error'
-// const config = require('config');
-// var log = {}
-// log.info = function(msg){ console.log(msg)}
 
+const DATABASE_URL      = process.env.DATABASE_URL
+const DATABASE_USERNAME = process.env.DATABASE_USERNAME
+const DATABASE_PASSWORD = process.env.DATABASE_PASSWORD
 const TESTING = process.env.NODE_ENV == "testing" ? true : false 
 const SECRET_KEY      = process.env.SECRET_KEY ? process.env.SECRET_KEY : "InsecureRandomSessionKey"
 const PREFIX          = process.env.PREFIX ? path.posix.join("/",process.env.PREFIX) : "/"
@@ -49,20 +45,22 @@ const PREFIX_WEBCLIENTS_DELETE   = path.posix.join("/",PREFIX, "webclients", "de
 log.info(URL_SIO_STATUS)
 log.info(URL_SIO_REFRESH)
 
-
-mongoose.set('useCreateIndex', true);
-const DATABASE_URL      = process.env.DATABASE_URL
-const DATABASE_USERNAME = process.env.DATABASE_USERNAME
-const DATABASE_PASSWORD = process.env.DATABASE_PASSWORD
-let options ={
-  useUnifiedTopology: true,
-  useNewUrlParser: true,
-  user: DATABASE_USERNAME,
-  pass: DATABASE_PASSWORD,                  
-  auth:{
-      authSource: 'admin'                    
+//Create admin User If not yet created
+mongooseConnection
+.then(()=> mongooseConnection.getWebuser(DATABASE_USERNAME))
+.then( user => {
+  if ( ! user ) {
+      log.info(`creating database user ${DATABASE_USERNAME}`)
+      return mongooseConnection.createWebuser(DATABASE_USERNAME,DATABASE_PASSWORD)
   }
-}
+  return true
+})
+.catch( error => {
+  log.error("Database connection failure, exiting...")
+  log.error(error.message)
+  process.exit()
+})
+
 
 app.use(cors({origin:true,credentials: true}));; //PLEASE REMOVE FOR PRODUCTION
 app.use(session({
@@ -98,14 +96,7 @@ app.use(function (req, res, next) {
 app.use(passport.initialize());
 app.use(passport.session());
 
-passport.use(new LocalStrategy(function(username, password, done) {  // THIS MUST come from POST on body.username and body.passport
-
-  // const WebuserSchema = new mongoose.Schema({
-  //   username: { type: String, required: true, unique: true },
-  //   password: { type: String, required: true },
-  //   expiration: { type: Date, required: true, default: Date.now },
-  // });
-  // const Webuser = mongooseConnection.model( "Webuser", WebuserSchema)
+passport.use(new LocalStrategy((username, password, done)=> {  // THIS MUST come from POST on body.username and body.passport
 
   mongooseConnection.getWebuser(username)
   .then((user)=>{

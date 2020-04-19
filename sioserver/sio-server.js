@@ -87,7 +87,7 @@ class SIO  {
         this.db = await mongooseclient()
         .catch((error)=>{
             log.error("Database connection failure, exiting...")
-            log.error(error)
+            log.error(error.message)
             process.exit()
         })
         await this.refresh() // Load rooms from database
