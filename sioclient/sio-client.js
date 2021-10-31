@@ -9,10 +9,12 @@ const File = require('ucipass-file')
 const delay = require('../lib/delay.js')
 const axios = require('axios');
 const proxy = require('@ucipass/proxy')
-const axiosCookieJarSupport = require('axios-cookiejar-support').default;
+const axiosCookieJarSupport = require('axios-cookiejar-support');
+// import { wrapper } from 'axios-cookiejar-support';
 const tough = require('tough-cookie');
 var readlineSync = require('readline-sync');
-axiosCookieJarSupport(axios);
+// axiosCookieJarSupport(axios);
+
 
 /**** FLOW *****
 1. Client connects to server: start()
@@ -396,7 +398,7 @@ class SocketIoClient  {
 
             })
 
-            room.tcpserver.listen(room.rcvPort, ()=> { //'listening' listener
+            room.tcpserver.listen(room.rcvPort, "0.0.0.0", ()=> { //'listening' listener
                 log.info(`${this.id}: Listening on TCP port ${room.rcvPort}`)
                 resolve(room)
             })
@@ -646,7 +648,7 @@ class SocketIoClient  {
 }
 
 
-async function axioslogin( options ){
+async function webLogin( options ){
     let webuser = options.webuser
     let webpass = options.webpass
     let urlobj = new URL(options.url)
@@ -655,9 +657,10 @@ async function axioslogin( options ){
     let URL_LOGIN = new URL(path.posix.join("/",urlobj.pathname,"login"),urlobj.href)
     let URL_TOKEN = new URL(path.posix.join("/",urlobj.pathname,"token"),urlobj.href)
     let user = {username: webuser, password: webpass}
-    let client = { name: clientname}
+    let webClient = { name: clientname}
     let axiosoptions = { jar: new tough.CookieJar() , withCredentials: true}
-    return axios.post( URL_LOGIN.href, user, axiosoptions)
+    const client = axiosCookieJarSupport.wrapper(axios.create(axiosoptions));
+    return webClient.post( URL_LOGIN.href, user)
     .catch((err)=> { 
         let msg = `Login error with username: ${webuser} , ${err.message}`
         return Promise.reject( new Error(msg) )
@@ -668,7 +671,7 @@ async function axioslogin( options ){
             return Promise.reject(new Error(msg))  
         } 
     })
-    .then(()=> axios.post( URL_TOKEN.href, client, axiosoptions))
+    .then(()=> webClient.post( URL_TOKEN.href, client))
     .then((reply) => {
         let json = reply.data
         if (json.token){
@@ -727,7 +730,7 @@ if (require.main === module) {
             webpass: webpass,
             clientname: clientname
         }
-        axioslogin(options)
+        webLogin(options)
     }
     else{
 

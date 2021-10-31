@@ -12,8 +12,8 @@
             "env": {
                 "LOG_LEVEL": "info",
                 "NODE_ENV": "testing",                
-                "RP_CLIENT" : "client1",
-                "RP_TOKEN": "253d2d67b3c95fca29823a842ec529a9ff5a3739a7202609",
+                "RP_CLIENT" : "test1",
+                "RP_TOKEN": "51c7572f6816570f9b3e41b382915b7713817a6004371328",
                 "RP_URL": "http://localhost:8081/rp",
             },            
             "program": "${workspaceFolder}/sio-client.js",

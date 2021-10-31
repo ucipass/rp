@@ -22,6 +22,8 @@
   },
   "dependencies": {
     "@ucipass/proxy": "^1.2.0",
+    "axios": "^0.24.0",
+    "axios-cookiejar-support": "^2.0.3",
     "connect-mongo": "^3.2.0",
     "cors": "^2.8.5",
     "cross-env": "^6.0.3",
