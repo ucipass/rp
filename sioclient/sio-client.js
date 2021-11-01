@@ -74,7 +74,7 @@ class SocketIoClient  {
                 this.socketId = this.socket.id
                 let result = await this.login.call(this, this.username, this.password)
                 if (result == "ack"){
-                    log.info(`${this.socket.id} login scucces!`)
+                    log.info(`${this.socket.id} login success!`)
                     return resolve(this.socket)
                 }
                 else{

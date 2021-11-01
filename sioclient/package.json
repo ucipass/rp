@@ -38,12 +38,11 @@
     "pkg": "^4.4.2",
     "serve-index": "^1.9.1",
     "simple-socks": "^1.0.3",
-    "socket.io": "^2.3.0",
-    "socket.io-client": "^2.3.0",
-    "ucipass-file": "^1.0.24",
-    "ucipass-logger": "^1.0.5",
+    "socket.io-client": "^4.3.2",
+    "ucipass-file": "^1.0.25",
+    "ucipass-logger": "^1.0.6",
     "websocket-stream": "^5.5.0",
-    "winston": "^3.2.1"
+    "winston": "^3.3.3"
   },
   "devDependencies": {
     "expect": "^24.9.0",

@@ -13,7 +13,7 @@
                 "LOG_LEVEL": "info",
                 "NODE_ENV": "testing",                
                 "RP_CLIENT" : "test1",
-                "RP_TOKEN": "51c7572f6816570f9b3e41b382915b7713817a6004371328",
+                "RP_TOKEN": "7eaedddf7a07cdcc55224ef9f75a19640443dab0540aa911",
                 "RP_URL": "http://localhost:8081/rp",
             },            
             "program": "${workspaceFolder}/sio-client.js",

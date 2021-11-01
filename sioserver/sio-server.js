@@ -90,6 +90,7 @@ class SIO  {
             log.error(error.message)
             process.exit()
         })
+        log.info("Connected to Mongodb.")
         await this.refresh() // Load rooms from database
         this.io.on('connection', this.onConnection.bind(this))
         return this; 
@@ -121,10 +122,7 @@ class SIO  {
 
     async httpcontrol(){
         const app = express()
-        // app.use((req, res, next) => {
-        //     console.log('Time:', Date.now(),req.path)
-        //     next()
-        //   }) 
+
         const url_status  = path.posix.join("/",PREFIX,"/status") 
         const url_refresh = path.posix.join("/",PREFIX,"/refresh")     
         app.get( url_status , async (req, res) => {
@@ -142,10 +140,12 @@ class SIO  {
     }
 
     async refresh(){
-        let newrooms = Array.from (await this.db.getRooms())
-        let oldrooms = Array.from (this.rooms.values()) //this.rooms.values()
-        let clients = await this.db.getClients()
+        let clients = await this.db.getClients()        // Pull client list from database
+        let roomarray = await this.db.getRooms()        // Pull room list from database
+        let newrooms = Array.from (roomarray)
+        let oldrooms = Array.from (this.rooms.values()) // This is the in memory room list
 
+        // delete rooms from memory if they are no in the database
         for (const oldroom of oldrooms ) {
             let match = newrooms.find( (newroom)=>  {
                 let result =                     
@@ -163,12 +163,21 @@ class SIO  {
             }
         }
 
+        // Send new rooms to clients if the room name is not in memory
         for (const newroom of newrooms) {
             if( ! this.rooms.has(newroom.name) ){
-                await this.openRoom(newroom)
+                newroom.connections = new Map()
+                this.rooms.set(newroom.name,newroom)
+                let sockets = this.sockets.values()
+                for (const socket of sockets) {
+                    if (socket.username == newroom.rcvName || socket.username == newroom.fwdName){
+                        await this.sendOpenRoom(socket,newroom)
+                    }          
+                }                
             }
         }
 
+        // Disconnect invalid clients
         for (const socket of this.sockets.values()) {
             let valid = false;
             for (const client of clients ) {            
@@ -180,8 +189,6 @@ class SIO  {
                 log.info(`${socket.id}(${socket.username}) disconnecting invalid client`)
                 socket.disconnect()
             }    
-
-
         }        
 
         return this.rooms
@@ -215,6 +222,7 @@ class SIO  {
         if (socket.auth) {
             socket.username = data.username
             log.info(`${socket.id}(${socket.username}) login success`)
+            replyFn('ack')
             // goes through the room list and sends client the assigned rooms
             for (const room of this.rooms.values()) {
                 if( room.rcvName == socket.username  || room.fwdName == socket.username ){
@@ -226,7 +234,7 @@ class SIO  {
             if ( parseFloat(client.proxyport) > 0 ){
                 await this.sendStartProxy(socket,client.proxyport)
             }
-            replyFn('ack')
+            
         }else{
             log.warn(`${socket.id} login ${data.username} failure`)
             replyFn('reject')
@@ -239,28 +247,11 @@ class SIO  {
         replyFn('ack')
     }
 
-    // Called when new room opened and sends it to all clients registered with that room
-    async openRoom(room){
-        room.connections = new Map()
-        this.rooms.set(room.name,room)
-        let sockets = this.sockets.values()
-        for (const socket of sockets) {
-            if (socket.username == room.rcvName || socket.username == room.fwdName){
-                await this.sendOpenRoom(socket,room)   
-            }          
-        }
-        return true
-    }
-
     // Called by onOpenRoom and onNewClient to send room info to client
     async sendOpenRoom(socket,room){
         return new Promise((resolve, reject) => {
             let json = new JSONData("server","onOpenRoom",{room:room})
-            socket.join(room.name,(err)=>{
-                if (err){
-                    log.error(`${socket.id}(${socket.username}) failed to join ${room.name} room !`, err)
-                    reject(`${socket.id}(${socket.username}) failed to join ${room.name} room !`)
-                }else{
+                    socket.join(room.name)  ///New
                     socket.emit("onOpenRoom",json,()=>{
                         if (socket.username == room.rcvName){
                             room.rcvId = socket.id
@@ -271,8 +262,6 @@ class SIO  {
                         log.info(`${socket.id}(${socket.username}) joined ${room.name} room !`) 
                         resolve(true)
                     })              
-                }
-            })              
         });
 
     }
@@ -292,7 +281,6 @@ class SIO  {
             }) 
         });        
     }
-    
     
     async closeRoom(room){
         let socketIds = room.name ? await this.getRoomMembers(room.name) : []
@@ -416,24 +404,25 @@ class SIO  {
         }
         
     }
-    
-    getRooms(){
-        return this.io.sockets.adapter.rooms  
-    }
 
-    getRoomMembers(room){
-        return new Promise((resolve, reject) => {
-            this.io.of('/').in(room).clients((error, clients) => {
-                if (error) {
-                    log.error(error)
-                    reject(error)
-                }else{
-                    log.debug(`clients in ${room}:`,clients)
-                    resolve(clients)
-                }
+    async getRoomMembers(room){
+        log.info("Room",room)
+        let sockets = await this.io.of("/").in("room1").fetchSockets()
+        let newsockets = sockets.map( socket => socket.id)
+        return newsockets
+
+        // return new Promise((resolve, reject) => {
+        //     this.io.of('/').in(room).clients((error, clients) => {
+        //         if (error) {
+        //             log.error(error)
+        //             reject(error)
+        //         }else{
+        //             log.debug(`clients in ${room}:`,clients)
+        //             resolve(clients)
+        //         }
                 
-            });              
-        });
+        //     });              
+        // });
     }
 
     getSocketById(socketId){

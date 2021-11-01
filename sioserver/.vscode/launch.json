@@ -15,7 +15,7 @@
                 "LOG_LEVEL": "info",
                 "NODE_ENV": "testing",
                 "PREFIX": "rp",
-                "PORT": "8081",
+                "SIO_PORT": "8081",
                 "VUE_APP_SERVER_PORT": "8081",
                 "DATABASE_URL": "mongodb://localhost:27017/rp",
                 "DATABASE_USERNAME": "admin",
