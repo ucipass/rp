@@ -6,15 +6,19 @@ const mongooseclient = require("../lib/mongooseclient.js")
 const JSONData = require('../lib/jsondata.js')
 var log = require("ucipass-logger")("sio-server")
 log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "info"
-const PORT = process.env.SIO_PORT ? process.env.SIO_PORT : "8081"
-const PREFIX = process.env.PREFIX ? process.env.PREFIX : "/" 
-console.log("PORT",PORT)
-console.log("PREFIX",PREFIX)
+
+const DATABASE_URL      = process.env.DATABASE_URL ? process.env.DATABASE_URL : "mongodb://localhost:27017/rp"
+const DATABASE_USERNAME = process.env.DATABASE_USERNAME ? process.env.DATABASE_USERNAME : "admin"
+const DATABASE_PASSWORD = process.env.DATABASE_PASSWORD ? process.env.DATABASE_USERNAME : "admin"
+const PORT = process.env.PORT ? process.env.PORT : "80"
+const PREFIX = process.env.PREFIX ? process.env.PREFIX : "/"
 class SIO  {
     constructor() {
-        this.httpserver = null
         this.port = PORT
-        this.app = null
+        this.app = express()
+        this.httpserver = new HTTPServer( { port: this.port , app:this.app})
+        this.url_status  = path.posix.join("/",PREFIX,"/status") 
+        this.url_refresh = path.posix.join("/",PREFIX,"/refresh")          
         this.prefix = PREFIX
         this.sio_path = path.posix.join("/", this.prefix, "socket.io")
         this.sio_opts = { path: this.sio_path }
@@ -26,6 +30,75 @@ class SIO  {
         this.io = null
         this.events = null
         this.db = null
+        this.localModeRoom = {  // Used when manager and external database is not available
+            name:'room1',
+            connections: new Map(),
+            rcvName:'client1',
+            rcvPort:'2222',
+            rcvPass: "client1pass",
+            fwdName:'client2',
+            fwdHost:'localhost',
+            fwdPort:'22',
+            fwdPass: "client2pass",
+            proxyport: "1081",
+            expiration: new Date( (new Date()).setDate((new Date()).getDate() + 1) ) // +1 day expiration
+        }
+    }
+    
+    async start(){
+        // Load Rooms from database
+        try {
+            this.db = await mongooseclient()
+            let newrooms = Array.from (await this.db.getRooms() )        
+            for (const newroom of newrooms) {
+                    this.rooms.set(newroom.name,newroom)
+            }
+            log.info("Connected to Mongodb.")            
+        } catch (error) {
+            log.warn("Database connection failure, using localmode. Settings:\n", JSON.stringify(this.localModeRoom,2,2))
+            this.rooms.set(this.localModeRoom.name,this.localModeRoom)
+        }
+
+        // HTTP Server for management (refresh & status)
+        this.app.get( this.url_status , async (req, res) => {
+            res.json(await this.status())
+          })
+        this.app.get( this.url_refresh, async (req, res) => {
+            await this.refresh()
+            res.json(await this.status())
+        })
+        this.app.all( path.posix.join("/*", this.prefix) , async (req, res) => {
+            res.json("sio")
+        })
+
+        log.info(`Listening at http://<server>:${this.port}${this.sio_path.toString()}`)
+        let server = await this.httpserver.start()
+        this.io = socketio( server, this.sio_opts)
+        this.io.on('connection', this.onConnection.bind(this))
+        return this; 
+    }
+    
+    async stop(){
+        log.debug("Before DB Server close")
+        await this.db.close()        
+        let sockets = Array.from(this.sockets.values())
+        for (const socket of sockets) {
+            log.debug("Force Close Starting of Socket:",socket.id)
+            socket.disconnect()
+        }
+
+        log.debug("Before Socket.io close number of connected sockets:",this.io.sockets.connected.length ? this.io.sockets.connected.length : 0)
+        await new Promise((resolve, reject) => {
+            this.io.close(()=>{
+                log.info("Socket.io close complete")
+                resolve(true)
+            })
+        })
+        log.debug("Before HTTP Server close")
+        await this.httpserver.stop().catch( err => {
+            log.error(err)
+        })
+        return true
     }
 
     onConnection(socket){
@@ -75,68 +148,6 @@ class SIO  {
             else log.error(`${socketId}(${socket.username}) client intiated unauthenticated onSendPrivateMsg`);
         });
 
-    }
-    
-    async start(){
-        this.app = await this.httpcontrol()
-        this.httpserver = new HTTPServer( { port:this.port, app:this.app})
-        let server = await this.httpserver.start()
-        this.io = socketio( server, this.sio_opts)
-        log.info("Listening path:", this.sio_path.toString() )
-
-        this.db = await mongooseclient()
-        .catch((error)=>{
-            log.error("Database connection failure, exiting...")
-            log.error(error.message)
-            process.exit()
-        })
-        log.info("Connected to Mongodb.")
-        await this.refresh() // Load rooms from database
-        this.io.on('connection', this.onConnection.bind(this))
-        return this; 
-
-    }
-    
-    async stop(){
-        log.debug("Before DB Server close")
-        await this.db.close()        
-        let sockets = Array.from(this.sockets.values())
-        for (const socket of sockets) {
-            log.debug("Force Close Starting of Socket:",socket.id)
-            socket.disconnect()
-        }
-
-        log.debug("Before Socket.io close number of connected sockets:",this.io.sockets.connected.length ? this.io.sockets.connected.length : 0)
-        await new Promise((resolve, reject) => {
-            this.io.close(()=>{
-                log.info("Socket.io close complete")
-                resolve(true)
-            })
-        })
-        log.debug("Before HTTP Server close")
-        await this.httpserver.stop().catch( err => {
-            log.error(err)
-        })
-        return true
-    }
-
-    async httpcontrol(){
-        const app = express()
-
-        const url_status  = path.posix.join("/",PREFIX,"/status") 
-        const url_refresh = path.posix.join("/",PREFIX,"/refresh")     
-        app.get( url_status , async (req, res) => {
-            res.json(await this.status())
-          })
-        app.get( url_refresh, async (req, res) => {
-            await this.refresh()
-            res.json(await this.status())
-        })
-        app.all( path.posix.join("/*",PREFIX) , async (req, res) => {
-            res.json("sio")
-        })
-          
-        return app
     }
 
     async refresh(){
@@ -215,10 +226,14 @@ class SIO  {
         return { clients: clients, rooms: Array.from(this.rooms.values()), clients_authenticated: clients_authenticated}
     }
 
-    // Calls onNewClient if login successful
     async onLogin (socket,data,replyFn){
         
-        socket.auth = await this.db.verifyClient(data.username,data.password)
+        if (this.db) {
+            socket.auth = await this.db.verifyClient(data.username,data.password)
+        }else{
+            socket.auth = data.username == this.localModeRoom.rcvName && data.password == this.localModeRoom.rcvPass || data.username == this.localModeRoom.fwdName && data.password == this.localModeRoom.fwdPass
+        }
+        
         if (socket.auth) {
             socket.username = data.username
             log.info(`${socket.id}(${socket.username}) login success`)
@@ -229,11 +244,17 @@ class SIO  {
                     await this.sendOpenRoom(socket,room)                                   
                 }
             }
-            // starts proxy server if allowed
-            let client = await this.db.getClient(data.username)
-            if ( parseFloat(client.proxyport) > 0 ){
-                await this.sendStartProxy(socket,client.proxyport)
+            // starts proxy server if needed
+            if (this.db){
+                let client = await this.db.getClient(data.username)
+                if ( parseFloat(client.proxyport) > 0 ){
+                    await this.sendStartProxy(socket,client.proxyport)
+                }                
             }
+            else if (this.localModeRoom.proxyport && this.localModeRoom.fwdName == socket.username  ){
+                await this.sendStartProxy(socket, parseFloat(this.localModeRoom.proxyport))
+            }
+
             
         }else{
             log.warn(`${socket.id} login ${data.username} failure`)
@@ -247,7 +268,6 @@ class SIO  {
         replyFn('ack')
     }
 
-    // Called by onOpenRoom and onNewClient to send room info to client
     async sendOpenRoom(socket,room){
         return new Promise((resolve, reject) => {
             let json = new JSONData("server","onOpenRoom",{room:room})
@@ -425,10 +445,6 @@ class SIO  {
         // });
     }
 
-    getSocketById(socketId){
-        return this.sockets.get(socketId)
-    }
-
     async joinRoom(room,socketId){
         return new Promise((resolve, reject) => {
             let socket = this.getSocketById(socketId)
@@ -462,6 +478,9 @@ class SIO  {
                 }
             })            
         });
+    }
+    getSocketById(socketId){
+        return this.sockets.get(socketId)
     }
 
 }
