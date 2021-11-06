@@ -27,3 +27,7 @@ jobs:
       run: |
         docker build -f Dockerfile.rp_client -t ucipass/rp_client .
         docker push ucipass/rp_client
+    - name: Docker Build & Publish RP Sserver
+      run: |
+        docker build -f Dockerfile.rp_server -t ucipass/rp_server .
+        docker push ucipass/rp_server
