@@ -1,33 +1,29 @@
 on: push
 name: npm build, lint, test and publish
 jobs:
-  build-and-publish:
-    name: build and publish
+  build_publish_rp_client:
+    name: build and publish rp_client
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-    - uses: actions/setup-node@v1
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
       with:
-        node-version: 10.x 
-    - name: Run Mongodb container for testing on port 27017
-      run: docker run -d -p27017:27017 --restart unless-stopped -v /mongodb:/data/db -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin --name mongodb  mongo 
-    - name: Install Dependencies
-      run: npm install 
-    - name: Run Unit Tests
-      run: |
-        npm run testdb
-        npm run testmgr
-        npm run testsio
+        node-version: 14 
+    # - name: Run Mongodb container for testing on port 27017
+    #   run: docker run -d -p27017:27017 --restart unless-stopped -v /mongodb:/data/db -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin --name mongodb  mongo 
+    # - name: Install Dependencies
+    #   run: npm install 
+    # - name: Run Unit Tests
+    #   run: |
+    #     npm run testdb
+    #     npm run testmgr
+    #     npm run testsio
     - name: Docker Login
       env:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-    - name: Docker Build & Publish Manager
+    - name: Docker Build & Publish RP Client
       run: |
-        docker build -f manager.Dockerfile -t ucipass/manager .
-        docker push ucipass/manager
-    - name: Docker Build & Publish Socket.IO Server
-      run: |
-        docker build -f sioserver.Dockerfile -t ucipass/sioserver .
-        docker push ucipass/sioserver
+        docker build -f Dockerfile.rp_client -t ucipass/rp_client .
+        docker push ucipass/rp_client

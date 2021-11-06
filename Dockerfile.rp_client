@@ -1,0 +1,16 @@
+FROM node:14-alpine
+
+WORKDIR /source/rp
+COPY ./rp_client ./rp_client
+COPY ./lib ./lib
+WORKDIR /source/rp/rp_client
+RUN npm install  --only=production
+# RUN npm run client_win  --only=production
+# RUN npm run client_lin  --only=production
+# RUN npm run client_mac  --only=production
+
+# DELETE EVERYTHING EXCEPT dist to save space
+# RUN ls | grep -v dist | xargs rm -rf 
+
+CMD ["sh", "-c", "node rp_client.js"]
+#CMD ["sh", "-c", "sleep 6000"]

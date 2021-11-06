@@ -1,0 +1,54 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "server - mongodb",
+            "args": [
+                ""
+            ],
+            "env": { 
+                "PORT": "8081",
+                "PREFIX": "rp",
+                "LOG_LEVEL": "info",
+                "DATABASE_URL": "mongodb://localhost:27017/rp",
+                "DATABASE_USERNAME": "admin",
+                "DATABASE_PASSWORD": "admin",
+                },           
+            "program": "${workspaceFolder}/sio-server.js",
+            "cwd": "${workspaceRoot}",
+            "runtimeExecutable": null,
+            "outputCapture": "std"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "server - local",
+            "args": [
+                ""
+            ],
+            "env": { 
+                "PORT": "8081",
+                "PREFIX": "rp",
+                "LOG_LEVEL": "info",
+                "rcvName":    "client1",
+                "rcvPass":    "client1pass",
+                "rcvPort":    "3127",
+                "fwdName":    "client2",
+                "fwdPass":    "client2pass",
+                "fwdHost":    "localhost",
+                "fwdPort":    "3128",
+                "proxyport":  "3128",                
+                // "VUE_APP_SERVER_PORT": "8081",
+                },           
+            "program": "${workspaceFolder}/sio-server.js",
+            "cwd": "${workspaceRoot}",
+            "runtimeExecutable": null,
+            "outputCapture": "std"
+        },
+    ]
+}
