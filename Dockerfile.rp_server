@@ -1,7 +1,7 @@
 FROM node:14-alpine
 
 WORKDIR /source/rp
-COPY ./rp_client ./rp_server
+COPY ./rp_server ./rp_server
 COPY ./lib ./lib
 WORKDIR /source/rp/rp_server
 RUN npm install  --only=production
