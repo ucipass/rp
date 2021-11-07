@@ -45,7 +45,7 @@
     "socket.io-client": "^2.3.0",
     "tough-cookie": "^4.0.0",
     "ucipass-file": "^1.0.24",
-    "ucipass-logger": "^1.0.6",
+    "ucipass-logger": "^1.0.7",
     "websocket-stream": "^5.5.0",
     "winston": "^3.2.1"
   },
