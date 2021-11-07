@@ -1,17 +1,16 @@
 FROM node:16-alpine
 RUN apk --no-cache add git
 WORKDIR /source/rp
-COPY rp_server ./rp_server
-COPY lib ./lib
+COPY ./rp_server ./rp_server
+COPY ./lib ./lib
 WORKDIR /source/rp/rp_server
-RUN ls -l
-RUN npm install
+RUN npm install --only=production
 # RUN npm run client_win  --only=production
 # RUN npm run client_lin  --only=production
 # RUN npm run client_mac  --only=production
 
 # DELETE EVERYTHING EXCEPT dist to save space
 # RUN ls | grep -v dist | xargs rm -rf 
-
+ENV NODE_PATH=/source/rp/rp_server/node_modules
 CMD ["sh", "-c", "node rp_server.js"]
 #CMD ["sh", "-c", "sleep 6000"]
