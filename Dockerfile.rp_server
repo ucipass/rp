@@ -1,9 +1,10 @@
-FROM node:14-alpine
-
+FROM node:16-alpine
+RUN apk --no-cache add git
 WORKDIR /source/rp
-COPY ./rp_server ./rp_server
-COPY ./lib ./lib
+COPY rp_server ./rp_server
+COPY lib ./lib
 WORKDIR /source/rp/rp_server
+RUN ls -l
 RUN npm install
 # RUN npm run client_win  --only=production
 # RUN npm run client_lin  --only=production
