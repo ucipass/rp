@@ -1,12 +1,20 @@
 # Rendezvous Client
-In order to connect to the server, the following 3 parameters will need to be provided so that the client can connect tot he server
-- RP_URL: Socket.io URL
-- RP_CLIENT: Client name set by the manager
-- RP_TOKEN: Authentication token set by the manager
+The client will connect to the Rendezvous Server in order to proxy outbound and/or inbound TCP connections. The configuration of the client is controlled from the server. There is a single TOKEN environment variable that is required for the client to connect and authenticate.
+## Settings TOKEN environment variable
+This token can be retrieved from either the Rendezvous Server in local configuration mode, or from the Rendezvous Manager if a backend Mongo Database is used.
 ```
-export RP_URL=http://localhost:8081/rp
-export RP_CLIENT=client1
-export RP_TOKEN=client1pass
-export LOG_LEVEL=info
-node rp_client.js 
+export TOKEN=2o1i3u4op2314uqkwlejhrkwlqjrkljweqhrklwqejhosiufposadufdsafdsaf
+```
+## Running the client with node.js intalled
+```
+git clone https://github.com/ucipass/rp
+cd rp/rp_client
+npm install
+npm start
+```
+## Running the server with docker
+if you are planning on using the client to listen on certain TCP ports. Docker ports will have to be specified.
+This is not needed,  if the client is used to forward TCP ports.
+```
+docker run --rm -it -e TOKEN="$TOKEN" -p 3128:3128 -p 2222:2222 ucipass/rp_client
 ```
