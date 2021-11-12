@@ -42,7 +42,7 @@ class SIO  {
             config.rooms.forEach(room => {
                 room.connections = new Map()
                 this.rooms.set(room.name, room)
-                log.info(`${room.name}: ${room.rcvName}:${room.rcvPort} ->  ${room.fwdName}:${room.fwdHost}:${room.fwdPort}  expires:${room.expiration} `)
+                log.info(`(${room.rcvName}):${room.rcvPort} ->  (${room.fwdName}) ${room.fwdHost}:${room.fwdPort}  ${room.name} expires on: ${room.expiration} `)
 
             });
             config.clients.forEach(client => {
@@ -53,7 +53,7 @@ class SIO  {
                     username: client.username,
                     password: client.password
                 }
-                log.info(client.username, base64.encode( JSON.stringify(token),  true ) )
+                log.info(`${client.username} token:`, base64.encode( JSON.stringify(token),  true ) )
             });
         }
     }
@@ -253,9 +253,9 @@ class SIO  {
         }
         
         if (socket.auth) {
+            replyFn('ack')
             socket.username = data.username
             log.info(`${socket.id}(${socket.username}) login success`)
-            replyFn('ack')
             // goes through the room list and sends client the assigned rooms
             for (const room of this.rooms.values()) {
                 if( room.rcvName == socket.username  || room.fwdName == socket.username ){
@@ -310,11 +310,11 @@ class SIO  {
             let json = new JSONData("server","onStartProxy",{proxyport:proxyport})
             socket.emit("onStartProxy",json,(result)=>{
                 if (result){
-                    log.info(`${socket.id}(${socket.username}) started proxy in port ${proxyport}!`) 
+                    log.info(`${socket.id}(${socket.username}) started proxy on port ${proxyport}!`) 
                     resolve(result)
                 }
                 else {
-                    log.error(`${socket.id}(${socket.username}) failed proxy in port ${proxyport}!`) 
+                    log.error(`${socket.id}(${socket.username}) failed proxy on port ${proxyport}!`) 
                     resolve(result)
                 }
             }) 
@@ -537,6 +537,13 @@ if (require.main === module) {
         }  
     }
     
-    let sio = new SIO(config)
-    sio.start()
+    if(config){
+        let sio = new SIO(config)
+        sio.start()
+    }
+    else{
+        log.error(`NO VALID CONFIGURATION PROVIDED! \n`)
+        process.exit(1)
+    }
+
 }

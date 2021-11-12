@@ -71,15 +71,13 @@ class SocketIoClient  {
 
             this.socket.on('connect', async ()=>{
                 this.reconnectAttempt = 0
-                log.info(`${this.socket.id} connected to: ${this.sio_url} path: ${this.sio_opts.path}`)
+                log.debug(`${this.socket.id} connected to: ${this.sio_url} path: ${this.sio_opts.path}`)
                 this.socketId = this.socket.id
                 let result = await this.login.call(this, this.username, this.password)
                 if (result == "ack"){
-                    log.info(`${this.id} login success!`)
                     return resolve(this.socket)
                 }
                 else{
-                    log.warn(`${this.socket.id} login failure!`)
                     let socket = this.socket
                     return resolve(socket)                     
                 }
@@ -99,7 +97,7 @@ class SocketIoClient  {
                             room.tcpserver.unref()
                         })                        
                     }
-                    // Disconnect TCP Forwarder, if present
+                    // Disconnect TCP Forwarder sockets, if present
                     let connections = room.connections
                     connections.forEach((connection)=>{
                         if (connection && connection.tcpsocket) {
@@ -126,14 +124,6 @@ class SocketIoClient  {
                     } 
                 }
                 return true
-                // if (this.stopped){
-                //     log.debug(`${this.id}: connection will not restart`);
-                //     return true
-                // }else{
-                //     log.debug(`${this.id}: connection will restart in ${this.connectionRetryMs} ms`);
-                //     await delay(this.connectionRetryMs)
-                //     this.start()                    
-                // }
 
             });
 
@@ -276,9 +266,11 @@ class SocketIoClient  {
         return new Promise((resolve, reject) => {
             this.socket.emit('login',{username:username, password:password},(replyData)=>{
                 if(replyData == 'ack'){
+                    log.info(`${this.id}: login success!`)
                     this.auth = true;
                     return resolve(replyData) 
                 }else{
+                    log.info(`${this.id}: login failed!`)
                     this.auth = false;
                     return resolve(replyData)
                 }
@@ -290,10 +282,10 @@ class SocketIoClient  {
         return new Promise((resolve, reject) => {
             this.socket.emit('logout','logout',(replyData)=>{
                 if(replyData == 'ack'){
-                    log.info(`${this.id} logout success`)
+                    log.info(`${this.id}: logout success`)
                     resolve(replyData) 
                 }else{
-                    log.error(`${this.id} logout failure`)
+                    log.error(`${this.id}: logout failure`)
                     resolve(replyData)
                 }
             })            
@@ -302,9 +294,9 @@ class SocketIoClient  {
 
     async emit(json){
         let reply = new Promise((resolve, reject) => {
-            log.debug(`${this.id} sent json`)
+            log.debug(`${this.id}: sent json`)
             this.socket.emit(json.type,json,(replyData)=>{
-                log.debug(`${this.id} received json acknowledment`)
+                log.debug(`${this.id}: received json acknowledment`)
                 let jsondata = new JSONData()
                 jsondata = jsondata.setjson(replyData.json)
                 return resolve(jsondata) 
@@ -317,7 +309,7 @@ class SocketIoClient  {
         let json = (new JSONData()).setjson(data.json)
         json.id = this.username
         json.att.msg = 'ack'
-        log.debug(`${this.id} received onSendPrivateMsg JSON message`)
+        log.debug(`${this.id}: received onSendPrivateMsg JSON message`)
         return replyFn(json)        
     }
 
@@ -326,7 +318,7 @@ class SocketIoClient  {
         let json = (new JSONData().setjson(data.json))
         let room = json.att.room
         if ( room.rcvName == this.username){
-            log.info(`${this.id} received ${room.name} config: Listening on localhost:${room.rcvPort} to remote-end ${room.fwdHost}:${room.fwdPort}` )
+            log.info(`${this.id}: Listening on port ${room.rcvPort} -> (${room.fwdName}) ${room.fwdHost}:${room.fwdPort}` )
             room = await this.getTcpListener(room)
             this.rooms.set(json.att.room.name,room)
             json.att.msg = 'ack'
@@ -334,7 +326,8 @@ class SocketIoClient  {
             return;
         }
         if ( room.fwdName == this.username){
-            log.info(`${this.id} received ${room.name} config: Forwarding to ${room.fwdHost}:${room.fwdPort} from remote-end localhost:${room.rcvPort}` )
+            log.debug(`${this.id}: received ${room.name} config: Forwarding to ${room.fwdHost}:${room.fwdPort} from remote-end localhost:${room.rcvPort}` )
+            log.info(`${this.id}: Forwarding from (${room.rcvName}):${room.rcvPort} -> ${room.fwdHost}:${room.fwdPort} ` )
             room.connections = new Map()
             this.rooms.set(json.att.room.name,room)
             json.att.msg = 'ack'
@@ -390,7 +383,7 @@ class SocketIoClient  {
         let json = (new JSONData().setjson(data.json))
         let room = json.att.room
         if ( room.rcvName == this.username){
-            log.info(`${this.id} received ${room.name} config: Listening on localhost:${room.rcvPort} to remote-end ${room.fwdHost}:${room.fwdPort}` )
+            log.info(`${this.id}: received ${room.name} config: Listening on localhost:${room.rcvPort} to remote-end ${room.fwdHost}:${room.fwdPort}` )
             room = await this.getTcpListener(room)
             this.rooms.set(json.att.room.name,room)
             json.att.msg = 'ack'
@@ -398,7 +391,7 @@ class SocketIoClient  {
             return;
         }
         if ( room.fwdName == this.username){
-            log.info(`${this.id} received ${room.name} config: Forwarding to ${room.fwdHost}:${room.fwdPort} from remote-end localhost:${room.rcvPort}` )
+            log.info(`${this.id}: received ${room.name} config: Forwarding to ${room.fwdHost}:${room.fwdPort} from remote-end localhost:${room.rcvPort}` )
             room.connections = new Map()
             this.rooms.set(json.att.room.name,room)
             json.att.msg = 'ack'
@@ -419,7 +412,7 @@ class SocketIoClient  {
             })
 
             room.tcpserver.listen(room.rcvPort, "0.0.0.0", ()=> { //'listening' listener
-                log.info(`${this.id}: Listening on TCP port ${room.rcvPort}`)
+                log.debug(`${this.id}: Listening on TCP port ${room.rcvPort}`)
                 resolve(room)
             })
 
@@ -436,12 +429,12 @@ class SocketIoClient  {
         socket.connect(parseInt(port), address == "localproxy" ? "localhost" : address)
         socket.on("connect", (data)=>{
             connectionStr = `localhost:${socket.localPort.toString()} -> ${address}:${port}`
-            log.info(`${this.id} Outgoing TCP: ${connectionStr}`)
+            log.info(`${this.id}: Outgoing TCP: ${connectionStr}`)
             resolve(socket)
         });
 
         socket.on("close", (data)=>{
-            log.info(`${this.id} TCP Forwarder Event:close for ${connectionStr}`)
+            log.info(`${this.id}: TCP Forwarder Event:close for ${connectionStr}`)
             this.rcvTcpConnClose.call(this,room,connection.connectionID)
             // socket.destroy()
         });
@@ -458,7 +451,7 @@ class SocketIoClient  {
 
         socket.on("error", (error)=>{
             if (!socket.destroyed){
-                log.info(`${this.id} TCP Event:error ${error.message}`)
+                log.info(`${this.id}: TCP Event:error ${error.message}`)
                 reject(socket)                
             }
         });
@@ -481,7 +474,7 @@ class SocketIoClient  {
         connection.localDstPort = tcpsocket.localPort.toString()
         connection.id = this.socket.id + connection.localSrcPort + connection.localDstPort
 
-        log.info(`${this.id} Incoming TCP: ${connection.localSrcIP}:${connection.localSrcPort} -> localhost:${connection.localDstPort}`)
+        log.info(`${this.id}: Incoming TCP: ${connection.localSrcIP}:${connection.localSrcPort} -> localhost:${connection.localDstPort}`)
 
 
         let json = new JSONData(this.username,"onTcpConnRequest",{})
@@ -495,7 +488,7 @@ class SocketIoClient  {
         this.socket.emit("onTcpConnRequest",json,(reply)=>{
             let replyJson = (new JSONData()).setjson(reply.json)
             if (replyJson.err){
-                log.error(`${this.id} TCP CONNECTION REQUEST REJECT:`, replyJson.err)
+                log.error(`${this.id}: TCP CONNECTION REQUEST REJECT:`, replyJson.err)
                 tcpsocket.destroy()
             }
             else{
@@ -505,7 +498,7 @@ class SocketIoClient  {
                 let socket = this.socket
                 let username = this.username;
                 function myWrite (chunk, encoding, next) {
-                    // log.debug(`${this.id} TCP data received:`,data.toString())
+                    // log.debug(`${this.id}: TCP data received:`,data.toString())
                     let json = { username: username, room:room.name, connectionId: connection.id, data: chunk}
                     socket.emit( "onData", json, ()=>{
                         next()
@@ -517,13 +510,13 @@ class SocketIoClient  {
                 tcpsocket.pipe(myWritable)                
 
                 // tcpsocket.on('data', async (data)=>{
-                //     log.debug(`${this.id} TCP data received:`,data.toString())
+                //     log.debug(`${this.id}: TCP data received:`,data.toString())
                 //     let json = { username: this.username, room:room.name, connectionId: connection.id, data: data}
                 //     this.socket.emit( "onData", json )
                 // })
        
                 tcpsocket.on("close", (data)=>{
-                    log.info(`${this.id} TCP Listener Event:close for ${connection.localSrcIP}:${connection.localSrcPort} -> ${connection.localDstPort}`)
+                    log.info(`${this.id}: TCP Listener Event:close for ${connection.localSrcIP}:${connection.localSrcPort} -> ${connection.localDstPort}`)
                     let o = this
                     this.rcvTcpConnClose.call(this,room.name,connection.id)
                     
@@ -540,7 +533,7 @@ class SocketIoClient  {
                 });
         
                 tcpsocket.on("error", (data)=>{
-                    log.info(`${this.id} TCP Event:error `)
+                    log.info(`${this.id}: TCP Event:error `)
                     
                 });
         
@@ -565,7 +558,7 @@ class SocketIoClient  {
 
     // Event "onTcpConnRequest" socket.io server requests ws -> tcp connection
     async onTcpConnRequest(data,replyFn){
-        log.debug(`${this.id} received onTcpConnRequest`)
+        log.debug(`${this.id}: received onTcpConnRequest`)
         if (!data.json){
             return replyFn({json:{data:data,err:"invalid JSON received"}})
         }
@@ -586,7 +579,7 @@ class SocketIoClient  {
             let room = json.att.room
             let connectionId = json.att.connection.connectionID
             function myWrite (chunk, encoding, next) {
-                // log.debug(`${this.id} TCP data received:`,data.toString())
+                // log.debug(`${this.id}: TCP data received:`,data.toString())
                 let json = { username: username, room: room, connectionId: connectionId, data: chunk}
                 socket.emit( "onData", json, ()=>{
                     next()
@@ -618,14 +611,14 @@ class SocketIoClient  {
         json.att.connectionID = connectionId
 
         this.socket.emit("onTcpConnClose",json,(reply)=>{
-            log.debug(`${this.id} connection close acknowledge room: ${roomName} ${connectionId}`)
+            log.debug(`${this.id}: connection close acknowledge room: ${roomName} ${connectionId}`)
         })
     }
 
     // Received by the server when the other end's TCP connection closes
     async onTcpConnClose(data,replyFn){
         let json = (new JSONData().setjson(data.json))
-        log.debug(`${this.id} Received TCP Close form ${json.id}`)
+        log.debug(`${this.id}: Received TCP Close form ${json.id}`)
         let room = this.rooms.get(json.att.room)
         if ( room && room.connections && room.connections.size){
             let connections = room.connections
@@ -643,12 +636,12 @@ class SocketIoClient  {
 
     // Event when either the receiving or sending client receives data
     onData (json){
-        log.silly(`${this.id} received data`)
+        log.silly(`${this.id}: received data`)
         try {
             let connections = this.rooms.get(json.room).connections
             let connection = connections.get(json.connectionId)
             if (! connection){
-                log.debug(`${this.id} invalid data received for non-existent connection (probably closed already..)`)
+                log.debug(`${this.id}: invalid data received for non-existent connection (probably closed already..)`)
                 return true
             }
             if ( this.username == connection.fwdName){
@@ -659,7 +652,7 @@ class SocketIoClient  {
             }
                   
         } catch (error) {
-            log.error(`${this.id} invalid data received`)
+            log.error(`${this.id}: invalid data received`)
         }
         return true
 

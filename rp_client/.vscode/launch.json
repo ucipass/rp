@@ -10,7 +10,7 @@
             "name": "CONFIG ENV",
             "args": [],
             "env": {
-                "CONFIG" : "eyJ1cmwiOiJodHRwOi8vbG9jYWxob3N0OjgwODAvcnAiLCJ1c2VybmFtZSI6ImNsaWVudDIiLCJwYXNzd29yZCI6ImNsaWVudDJwYXNzIn0"
+                "TOKEN" : "eyJ1cmwiOiJodHRwOi8vbG9jYWxob3N0OjgwODAvcnAiLCJ1c2VybmFtZSI6ImNsaWVudDEiLCJwYXNzd29yZCI6ImNsaWVudDFwYXNzIn0"
             },            
             "program": "${workspaceFolder}/rp_client.js",
             "cwd": "${workspaceRoot}",
