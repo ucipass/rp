@@ -7,6 +7,19 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "CONFIG ENV",
+            "args": [],
+            "env": {
+                "CONFIG" : "eyJ1cmwiOiJodHRwOi8vbG9jYWxob3N0OjgwODAvcnAiLCJ1c2VybmFtZSI6ImNsaWVudDIiLCJwYXNzd29yZCI6ImNsaWVudDJwYXNzIn0"
+            },            
+            "program": "${workspaceFolder}/rp_client.js",
+            "cwd": "${workspaceRoot}",
+            "runtimeExecutable": null,
+            "outputCapture": "std"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "client_env",
             "args": [],
             "env": {

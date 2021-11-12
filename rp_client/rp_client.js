@@ -1,5 +1,6 @@
 const io = require('socket.io-client');
 const net = require('net');
+const base64 = require("js-base64")
 const path = require('path')
 var log = require("ucipass-logger")("sio-client")
 log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "info"
@@ -74,11 +75,11 @@ class SocketIoClient  {
                 this.socketId = this.socket.id
                 let result = await this.login.call(this, this.username, this.password)
                 if (result == "ack"){
-                    log.info(`${this.socket.id} login success!`)
+                    log.info(`${this.id} login success!`)
                     return resolve(this.socket)
                 }
                 else{
-                    log.info(`${this.socket.id} login failure!`)
+                    log.warn(`${this.socket.id} login failure!`)
                     let socket = this.socket
                     return resolve(socket)                     
                 }
@@ -275,11 +276,9 @@ class SocketIoClient  {
         return new Promise((resolve, reject) => {
             this.socket.emit('login',{username:username, password:password},(replyData)=>{
                 if(replyData == 'ack'){
-                    log.info(`${this.id} login success`)
                     this.auth = true;
                     return resolve(replyData) 
                 }else{
-                    log.warn(`${this.id} login failure`)
                     this.auth = false;
                     return resolve(replyData)
                 }
@@ -719,55 +718,19 @@ if (require.main === module) {
     process.on( "SIGINT", function() {
         console.log( "\ngracefully shutting down from SIGINT (Crtl-C)" );
         process.exit();
-      } );    
-    let json = {}
-    var argv = require('minimist')(process.argv.slice(2));
-    let filename = typeof argv._[0] === 'string' ? argv._[0] : "token.json"
-    let webuser = "admin"
-    let webpass = "admin"
-    let url = "http://localhost:8080/"
-    let clientname = "test"
-    let input = false
-    let tokenDownload = argv.t    
-    if (process.env.RP_URL && process.env.RP_CLIENT && process.env.RP_TOKEN){
-        json = {
-            name: process.env.RP_CLIENT,
-            token: process.env.RP_TOKEN,
-            url: process.env.RP_URL,
-        }
-        Promise.resolve(new SocketIoClient(json.name,json.token,json.url) )
-        .then( client => client.start() )
-        .catch( error => {
-        process.exit( console.log( "*****Execution Error*****\n", error ))
-        })        
-    }else if(tokenDownload){
-        input      = process.env.RP_URL     ? process.env.RP_URL : readlineSync.question(`Enter url [${url}]: `);
-        url        = input ? input : url
-        input      = process.env.RP_WEBUSER ? process.env.RP_WEBUSER : readlineSync.question(`Enter username [${webuser}]: `);
-        webuser    = input ? input : webuser
-        input      = process.env.RP_WEBPASS ? process.env.RP_WEBPASS : readlineSync.question(`Enter password [*******]: `, {hideEchoBack: true});
-        webpass    = input ? input : webpass
-        input      = process.env.RP_CLIENT  ? process.env.RP_CLIENT : readlineSync.question(`Enter clientname [${clientname}]: `);
-        clientname = input ? input : clientname
-        let options = {
-            url :url,
-            webuser: webuser,
-            webpass: webpass,
-            clientname: clientname
-        }
-        webLogin(options)
-    }
-    else{
+    });    
+    try {
+        const token = process.env.TOKEN ? process.env.TOKEN : readlineSync.question(`Enter token: `, {encoding: "ascii"});
+        const decodedString = base64.decode(token);
+        const config = JSON.parse(decodedString)
+        log.info(`RP Client connecting to: ${config.url}`)
+        const client = new SocketIoClient(config.username,config.password,config.url) 
+        client.start()         
+    } catch (e) {
+        log.info(e);
+        log.error(`Invalid configuration.`)
+        process.exit(1)
+    }  
 
-        Promise.resolve( new File(filename) )
-        .then( file   => file.readJson() )
-        .catch(error  => process.exit( console.log( "Invalid configuration file token.json\n", error )))
-        .then( json   => new SocketIoClient(json.name,json.token,json.url) )
-        .then( client => client.start() )
-        .catch( error => {
-        process.exit( console.log( "*****Execution Error*****\n", error ))
-        })
-        
-    }
 
 }

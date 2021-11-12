@@ -5,6 +5,33 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "node",
+            "request": "launch",
+            "name": "Server",
+            "args": [
+                "--trace-warnings"
+            ],
+            "env": { 
+                "NODE_PATH": "${workspaceFolder}/node_modules",
+                "NODE_ENV": "testing",
+                "LOG_LEVEL": "info",
+                // "VUE_APP_PREFIX": "rp",
+                // "VUE_APP_SERVER_PORT": "3000",
+                "PORT": "8089",
+                "PREFIX": "manager",
+                "URL_SIO_STATUS" : "http://localhost:8081/rp/status",
+                "URL_SIO_REFRESH" : "http://localhost:8081/rp/refresh",
+                "DATABASE_URL": "mongodb://172.18.2.8:27017/rp",
+                "DATABASE_USERNAME": "admin",
+                "DATABASE_PASSWORD": "admin",
+                "SECRET_KEY": "MySuperSecretKey"
+                },
+            "program": "${workspaceFolder}/rp_manager.js",
+            "cwd": "${workspaceRoot}",
+            "runtimeExecutable": null,
+            "outputCapture": "std"
+        },            
+        {
             "name": "Mocha",
             "type": "node",
             "request": "launch",
@@ -29,53 +56,5 @@
                 },
             "outputCapture": "std"
         },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Server",
-            "args": [
-                ""
-            ],
-            "env": { 
-                "NODE_ENV": "testing",
-                "LOG_LEVEL": "info",
-                // "VUE_APP_PREFIX": "rp",
-                // "VUE_APP_SERVER_PORT": "3000",
-                "MANAGER_PORT": "8080",
-                "MANAGER_PREFIX": "rp",
-                "URL_SIO_STATUS" : "http://localhost:8081/rp/status",
-                "URL_SIO_REFRESH" : "http://localhost:8081/rp/refresh",
-                "DATABASE_URL": "mongodb://localhost:27017/rp",
-                "DATABASE_USERNAME": "admin",
-                "DATABASE_PASSWORD": "admin",
-                "SECRET_KEY": "MySuperSecretKey"
-                },
-            "program": "${workspaceFolder}/index.js",
-            "cwd": "${workspaceRoot}",
-            "runtimeExecutable": null,
-            "outputCapture": "std"
-        },        
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Server - No Environment",
-            "args": [
-                ""
-            ],
-            "env": { 
-                // "NODE_ENV": "testing",
-                // "LOG_LEVEL": "info",
-                // "MANAGER_PORT": "8080",
-                // "MANAGER_PREFIX": "rp",
-                // "DATABASE_URL": "mongodb://localhost:27017/rptest",
-                // "DATABASE_USERNAME": "admin",
-                // "DATABASE_PASSWORD": "admin",
-                // "SECRET_KEY": "MySuperSecretKey"
-                },
-            "program": "${workspaceFolder}/index.js",
-            "cwd": "${workspaceRoot}",
-            "runtimeExecutable": null,
-            "outputCapture": "std"
-        },        
     ]
 }

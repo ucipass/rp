@@ -7,19 +7,36 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "CONFIG_FILE",
+            "args": [
+                ""
+            ],
+            "env": { 
+                "NODE_PATH": "${workspaceFolder}/node_modules",
+                "CONFIG_FILE": "${workspaceFolder}/config.yml",
+                },           
+            "program": "${workspaceFolder}/rp_server.js",
+            "cwd": "${workspaceRoot}",
+            "runtimeExecutable": null,
+            "outputCapture": "std"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "server - mongodb",
             "args": [
                 ""
             ],
             "env": { 
-                "PORT": "8081",
+                "NODE_PATH": "${workspaceFolder}/node_modules",
+                "PORT": "8082",
                 "PREFIX": "rp",
                 "LOG_LEVEL": "info",
-                "DATABASE_URL": "mongodb://localhost:27017/rp",
+                "DATABASE_URL": "mongodb://172.18.2.8:27017/rp",
                 "DATABASE_USERNAME": "admin",
                 "DATABASE_PASSWORD": "admin",
                 },           
-            "program": "${workspaceFolder}/sio-server.js",
+            "program": "${workspaceFolder}/rp_server.js",
             "cwd": "${workspaceRoot}",
             "runtimeExecutable": null,
             "outputCapture": "std"
@@ -32,6 +49,7 @@
                 ""
             ],
             "env": { 
+                "NODE_PATH": "${workspaceFolder}/node_modules",
                 "PORT": "8081",
                 "PREFIX": "rp",
                 "LOG_LEVEL": "info",
@@ -45,7 +63,7 @@
                 "proxyport":  "3128",                
                 // "VUE_APP_SERVER_PORT": "8081",
                 },           
-            "program": "${workspaceFolder}/sio-server.js",
+            "program": "${workspaceFolder}/rp_server.js",
             "cwd": "${workspaceRoot}",
             "runtimeExecutable": null,
             "outputCapture": "std"

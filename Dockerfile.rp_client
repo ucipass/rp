@@ -11,6 +11,6 @@ RUN npm install  --only=production
 
 # DELETE EVERYTHING EXCEPT dist to save space
 # RUN ls | grep -v dist | xargs rm -rf 
-
+ENV NODE_PATH=/source/rp/rp_client/node_modules
 CMD ["sh", "-c", "node rp_client.js"]
 #CMD ["sh", "-c", "sleep 6000"]

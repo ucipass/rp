@@ -1,0 +1,66 @@
+version: '3.7'
+x-LOG_LEVEL         : &LOG_LEVEL LOG_LEVEL=debug
+x-NODE_ENV          : &NODE_ENV NODE_ENV=production
+x-PREFIX            : &PREFIX PREFIX=rp
+x-DATABASE_URL      : &DATABASE_URL DATABASE_URL=mongodb://mongodb:27017
+x-DATABASE_USERNAME : &DATABASE_USERNAME DATABASE_USERNAME=admin
+x-DATABASE_PASSWORD : &DATABASE_PASSWORD DATABASE_PASSWORD=admin
+services:
+  sioserver:
+    container_name: "sioserver" 
+    # build:
+    #   context: ..
+    #   dockerfile: sioserver.Dockerfile    
+    image: ucipass/sioserver
+    environment: 
+      - *LOG_LEVEL
+      - *NODE_ENV
+      - *PREFIX
+      - *DATABASE_URL
+      - *DATABASE_USERNAME
+      - *DATABASE_PASSWORD
+      # - PORT=8081      
+    command: node sioserver/sio-server.js
+    ports: 
+      - 8081:8081
+    links: 
+      - mongodb 
+    depends_on: 
+      - mongodb       
+  manager:
+    container_name: "manager" 
+    # build:
+    #   context: .
+    #   dockerfile: sioserver.Dockerfile    
+    image: ucipass/manager
+    environment:
+      - *LOG_LEVEL
+      - *NODE_ENV
+      - *PREFIX
+      - *DATABASE_URL
+      - *DATABASE_USERNAME
+      - *DATABASE_PASSWORD
+      - MANAGER_PORT=8080      
+      - URL_SIO_STATUS=http://sioserver:8081/rp/status
+      - URL_SIO_REFRESH=http://sioserver:8081/rp/refresh
+      - SECRET_KEY=MySuperSecretKey #Change this for production
+    command: node manager/index.js
+    # command: sh -c "sleep 6000"
+    ports: 
+      - 8080:8080
+    links: 
+      - mongodb 
+    depends_on: 
+      - mongodb 
+  mongodb: 
+    container_name: "mongodb" 
+    image: mongo:latest 
+    volumes: 
+      - /tmp/db:/data/db 
+    ports: 
+      - 27017:27017 
+    command: --logpath /dev/null
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin 
+      - MONGO_INITDB_ROOT_PASSWORD=admin

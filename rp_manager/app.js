@@ -1,11 +1,9 @@
 const express = require('express');
 const app = express();
 const axios = require('axios');
-const createError = require('http-errors');
 const path = require('path')
-const JSONData = require("../lib/jsondata.js")
 const session = require('express-session');
-const MongoStore = require('connect-mongo')(session);
+const MongoStore = require('connect-mongo')
 let cors = require('cors') // ONLY FOR DEVELOPMENT!!!
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
@@ -42,6 +40,33 @@ const PREFIX_WEBCLIENTS_CREATE   = path.posix.join("/",PREFIX, "webclients", "cr
 const PREFIX_WEBCLIENTS_READ   = path.posix.join("/",PREFIX, "webclients", "read")
 const PREFIX_WEBCLIENTS_UPDATE   = path.posix.join("/",PREFIX, "webclients", "update")
 const PREFIX_WEBCLIENTS_DELETE   = path.posix.join("/",PREFIX, "webclients", "delete")
+
+const PATH_LOGIN           = path.posix.join("/",PREFIX, "login")
+const PATH_LOGOUT          = path.posix.join("/",PREFIX, "logout")
+const PATH_SERVERS_CREATE  = path.posix.join("/",PREFIX, "servers", "create")
+const PATH_SERVERS_READ    = path.posix.join("/",PREFIX, "servers", "read")
+const PATH_SERVERS_UPDATE  = path.posix.join("/",PREFIX, "servers", "update")
+const PATH_SERVERS_DELETE  = path.posix.join("/",PREFIX, "servers", "delete")
+const PATH_SERVERS_SCHEMA  = path.posix.join("/",PREFIX, "servers", "schema")
+const PATH_SERVERS_STATUS  = path.posix.join("/",PREFIX, "servers", "status")
+const PATH_ROOMS_CREATE    = path.posix.join("/",PREFIX, "rooms", "create")
+const PATH_ROOMS_READ      = path.posix.join("/",PREFIX, "rooms", "read")
+const PATH_ROOMS_UPDATE    = path.posix.join("/",PREFIX, "rooms", "update")
+const PATH_ROOMS_DELETE    = path.posix.join("/",PREFIX, "rooms", "delete")
+const PATH_ROOMS_SCHEMA    = path.posix.join("/",PREFIX, "rooms", "schema")
+const PATH_CLIENTS_CREATE  = path.posix.join("/",PREFIX, "clients", "create")
+const PATH_CLIENTS_READ    = path.posix.join("/",PREFIX, "clients", "read")
+const PATH_CLIENTS_UPDATE  = path.posix.join("/",PREFIX, "clients", "update")
+const PATH_CLIENTS_DELETE  = path.posix.join("/",PREFIX, "clients", "delete")
+const PATH_CLIENTS_SCHEMA  = path.posix.join("/",PREFIX, "clients", "schema")
+const PATH_MGRUSERS_CREATE = path.posix.join("/",PREFIX, "mgrusers", "create")
+const PATH_MGRUSERS_READ   = path.posix.join("/",PREFIX, "mgrusers", "read")
+const PATH_MGRUSERS_UPDATE = path.posix.join("/",PREFIX, "mgrusers", "update")
+const PATH_MGRUSERS_DELETE = path.posix.join("/",PREFIX, "mgrusers", "delete")
+const PATH_MGRUSERS_SCHEMA = path.posix.join("/",PREFIX, "mgrusers", "schema")
+
+
+
 log.info(URL_SIO_STATUS)
 log.info(URL_SIO_REFRESH)
 
@@ -61,11 +86,15 @@ mongooseConnection
   process.exit()
 })
 
-
+const clientP = mongooseConnection.getClient()
 app.use(cors({origin:true,credentials: true}));; //PLEASE REMOVE FOR PRODUCTION
 app.use(session({
-  store: new MongoStore({
-      mongooseConnection: mongooseConnection
+  store: MongoStore.create({
+    // mongooseConnection: mongooseConnection
+    mongoUrl: 'mongodb://admin:admin@172.18.2.8',
+    // clientPromise: clientP,
+    dbName: 'rp',
+    mongoOptions: {    useUnifiedTopology: true }
   }),
   secret: SECRET_KEY,
   resave: false,
@@ -354,7 +383,7 @@ app.post(PREFIX_WEBCLIENTS_UPDATE, passport.checkLogin, async (req, res) => {
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
   log.error("INVALID URL:",req.url)
-  next(createError(404));
+  res.status(404).send('Sorry, we cannot find that!')
 });
 
 // error handler

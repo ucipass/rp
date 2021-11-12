@@ -6,52 +6,6 @@ x-DATABASE_URL      : &DATABASE_URL DATABASE_URL=mongodb://mongodb:27017
 x-DATABASE_USERNAME : &DATABASE_USERNAME DATABASE_USERNAME=admin
 x-DATABASE_PASSWORD : &DATABASE_PASSWORD DATABASE_PASSWORD=admin
 services:
-  sioserver:
-    container_name: "sioserver" 
-    # build:
-    #   context: ..
-    #   dockerfile: sioserver.Dockerfile    
-    image: ucipass/sioserver
-    environment: 
-      - *LOG_LEVEL
-      - *NODE_ENV
-      - *PREFIX
-      - *DATABASE_URL
-      - *DATABASE_USERNAME
-      - *DATABASE_PASSWORD
-      # - PORT=8081      
-    command: node sioserver/sio-server.js
-    ports: 
-      - 8081:8081
-    links: 
-      - mongodb 
-    depends_on: 
-      - mongodb       
-  manager:
-    container_name: "manager" 
-    # build:
-    #   context: .
-    #   dockerfile: sioserver.Dockerfile    
-    image: ucipass/manager
-    environment:
-      - *LOG_LEVEL
-      - *NODE_ENV
-      - *PREFIX
-      - *DATABASE_URL
-      - *DATABASE_USERNAME
-      - *DATABASE_PASSWORD
-      - MANAGER_PORT=8080      
-      - URL_SIO_STATUS=http://sioserver:8081/rp/status
-      - URL_SIO_REFRESH=http://sioserver:8081/rp/refresh
-      - SECRET_KEY=MySuperSecretKey #Change this for production
-    command: node manager/index.js
-    # command: sh -c "sleep 6000"
-    ports: 
-      - 8080:8080
-    links: 
-      - mongodb 
-    depends_on: 
-      - mongodb 
   mongodb: 
     container_name: "mongodb" 
     image: mongo:latest 
@@ -62,5 +16,79 @@ services:
     command: --logpath /dev/null
     restart: unless-stopped
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin 
+      - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=admin
+  wait_mongodb: 
+    container_name: "mongodb_wait" 
+    image: busybox
+    command: [ "/bin/sh", "-c", "sleep 4 && exit"]
+  mongoku:
+    container_name: "mongoku" 
+    image: huggingface/mongoku
+    environment:
+      - MONGOKU_DEFAULT_HOST=admin:admin@mongodb:27017
+    depends_on:
+      wait_mongodb:
+        condition: service_completed_successfully
+    labels:
+      - "traefik.http.routers.mongoku.rule=Host(`mongoku.lb.home`)"      
+  rp_server:
+    container_name: "rp_server" 
+    image: ucipass/rp_server
+    environment:
+      - PREFIX=rp
+      - LOG_LEVEL=info
+      - DATABASE_URL=mongodb://mongodb:27017/rp
+      - DATABASE_USERNAME=admin
+      - DATABASE_PASSWORD=admin
+    depends_on:
+      wait_mongodb:
+        condition: service_completed_successfully
+    labels:
+      - "traefik.http.routers.rp_server.rule= Host(`localhost`) && PathPrefix(`/rp`) "      
+  rp_manager:
+    container_name: "rp_manager" 
+    image: ucipass/rp_manager
+    environment:
+      - PREFIX=manager
+      - LOG_LEVEL=info
+      - DATABASE_URL=mongodb://mongodb:27017/rp
+      - DATABASE_USERNAME=admin
+      - DATABASE_PASSWORD=admin
+    ports:
+      - "8081:80"
+    depends_on:
+      wait_mongodb:
+        condition: service_completed_successfully
+    labels:
+      - "traefik.http.routers.rp_manager.rule= Host(`localhost`) && PathPrefix(`/manager`) "      
+  rp_frontend:
+    container_name: "rp_frontend" 
+    image: ucipass/rp_frontend
+    # environment:
+    #   - PREFIX=manager
+    #   - LOG_LEVEL=info
+    #   - DATABASE_URL=mongodb://mongodb:27017/rp
+    #   - DATABASE_USERNAME=admin
+    #   - DATABASE_PASSWORD=admin
+    # ports:
+    #   - "8081:80"
+    # depends_on:
+    #   wait_mongodb:
+    #     condition: service_completed_successfully
+    labels:
+      - "traefik.http.routers.rp_frontend.rule= Host(`localhost`)  "      
+  traefik-proxy:
+    container_name: "traefik" 
+    image: traefik:v2.5
+    # Enables the web UI and tells Traefik to listen to docker
+    command: --api.insecure=true --providers.docker
+    ports:
+      - "8888:80"
+      # The Web UI (enabled by --api.insecure=true)
+      - "8080:8080"
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik.yml:/etc/traefik/traefik.yml
+    

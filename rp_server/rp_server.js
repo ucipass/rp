@@ -1,56 +1,66 @@
 const socketio = require('socket.io')
 const path = require('path')
+const fs = require('fs')
+const yaml = require('js-yaml');
 const express = require('express')
 const HTTPServer = require("../lib/httpserver.js")
 const mongooseclient = require("../lib/mongooseclient.js")
 const JSONData = require('../lib/jsondata.js')
-var log = require("ucipass-logger")("sio-server")
-log.transports.console.level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "info"
+const log = require("ucipass-logger")("rp-server")
+const base64 = require("js-base64")
 
-const DATABASE_URL      = process.env.DATABASE_URL ? process.env.DATABASE_URL : "mongodb://localhost:27017/rp"
-const DATABASE_USERNAME = process.env.DATABASE_USERNAME ? process.env.DATABASE_USERNAME : "admin"
-const DATABASE_PASSWORD = process.env.DATABASE_PASSWORD ? process.env.DATABASE_USERNAME : "admin"
+
+// const DATABASE_URL      = process.env.DATABASE_URL ? process.env.DATABASE_URL : "mongodb://localhost:27017/rp"
+// const DATABASE_USERNAME = process.env.DATABASE_USERNAME ? process.env.DATABASE_USERNAME : "admin"
+// const DATABASE_PASSWORD = process.env.DATABASE_PASSWORD ? process.env.DATABASE_USERNAME : "admin"
+
 class SIO  {
-    constructor() {
-        this.port           = process.env.PORT ? process.env.PORT : "80"
-        this.prefix         = process.env.PREFIX ? process.env.PREFIX : "/"
+    constructor(config) {
+        this.localMode      = config ? true : false
+        this.port           = config.server.port ? config.server.port : "80"
+        this.hostname       = config.server.hostname ? config.server.hostname : "localhost"
+        this.prefix         = config.server.prefix ? config.server.prefix : "/"
+        this.log            = log;
+        this.log.transports.console.level = config.server.logLevel ? config.server.logLevel : "info"
+
         this.url_status     = path.posix.join("/", this.prefix ,"/status") 
         this.url_refresh    = path.posix.join("/", this.prefix ,"/refresh")          
+        this.url_catchall    = path.posix.join("/", this.prefix ,"*")          
         this.sio_path       = path.posix.join("/", this.prefix, "socket.io")
         this.sio_opts       = { path: this.sio_path }
         this.sockets        = new Map()
         this.rooms          = new Map()
-        this.users          = new Map()
+        this.clients        = new Map()
         this.latency        = 0
-        this.log            = log;
         this.io             = null
         this.events         = null
-        this.db             = null
+        this.db             = ! this.localMode
         this.app            = express()
         this.httpserver     = new HTTPServer( { port: this.port , app:this.app})
-        this.localModeRoom  = {  // Used when mongodb/manager is not available
-            connections: new Map(),
-            name:       "DefaultRoom",
-            rcvName:    process.env.rcvName,
-            rcvPort:    process.env.rcvPort,
-            rcvPass:    process.env.rcvPass,
-            fwdName:    process.env.fwdName,
-            fwdHost:    process.env.fwdHost,
-            fwdPort:    process.env.fwdPort,
-            fwdPass:    process.env.fwdPass,
-            proxyport:  process.env.proxyport,
-            expiration: process.env.expiration ? process.env.expiration : new Date( (new Date()).setDate((new Date()).getDate() + 1) ) // +1 day expiration
+
+        if (this.localMode) {
+            config.rooms.forEach(room => {
+                room.connections = new Map()
+                this.rooms.set(room.name, room)
+                log.info(`${room.name}: ${room.rcvName}:${room.rcvPort} ->  ${room.fwdName}:${room.fwdHost}:${room.fwdPort}  expires:${room.expiration} `)
+
+            });
+            config.clients.forEach(client => {
+                this.clients.set(client.username, client)
+                const url = new URL(this.prefix,`http://${this.hostname}:${this.port}`);
+                const token = {
+                    url: url.toString(),
+                    username: client.username,
+                    password: client.password
+                }
+                log.info(client.username, base64.encode( JSON.stringify(token),  true ) )
+            });
         }
     }
     
     async start(){
-        //Check if local mode is used to load room configuration
-        const localMode = Object.values(this.localModeRoom).every(item => item)
-        if (localMode) {
-            this.rooms.set(this.localModeRoom.name,this.localModeRoom)
-            log.info("Using localmode. Settings:\n", JSON.stringify(this.localModeRoom,2,2))
-        // Load Rooms from database
-        } else {
+        // If not localmode load rooms from DB
+        if (! this.localMode) {
             try {
                 this.db = await mongooseclient()
                 let newrooms = Array.from (await this.db.getRooms() )        
@@ -72,11 +82,11 @@ class SIO  {
             await this.refresh()
             res.json(await this.status())
         })
-        this.app.all( path.posix.join("/*", this.prefix) , async (req, res) => {
+        this.app.all( this.url_catchall, async (req, res) => {
             res.json("sio")
         })
 
-        log.info(`Listening at http://<server>:${this.port}${this.sio_path.toString()}`)
+        log.info(`Listening at http://<server>:${this.port} ${this.sio_path.toString()}`)
         let server = await this.httpserver.start()
         this.io = socketio( server, this.sio_opts)
         this.io.on('connection', this.onConnection.bind(this))
@@ -85,7 +95,7 @@ class SIO  {
     
     async stop(){
         log.debug("Before DB Server close")
-        await this.db.close()        
+        await this.db.close()
         let sockets = Array.from(this.sockets.values())
         for (const socket of sockets) {
             log.debug("Force Close Starting of Socket:",socket.id)
@@ -236,7 +246,10 @@ class SIO  {
         if (this.db) {
             socket.auth = await this.db.verifyClient(data.username,data.password)
         }else{
-            socket.auth = data.username == this.localModeRoom.rcvName && data.password == this.localModeRoom.rcvPass || data.username == this.localModeRoom.fwdName && data.password == this.localModeRoom.fwdPass
+            const client = this.clients.get(data.username)
+            if (client && client.password == data.password) {
+                    socket.auth = true
+            }
         }
         
         if (socket.auth) {
@@ -250,15 +263,16 @@ class SIO  {
                 }
             }
             // starts proxy server if needed
+            let client = null
             if (this.db){
-                let client = await this.db.getClient(data.username)
-                if ( parseFloat(client.proxyport) > 0 ){
-                    await this.sendStartProxy(socket,client.proxyport)
-                }                
+                client = await this.db.getClient(data.username)
             }
-            else if (this.localModeRoom.proxyport && this.localModeRoom.fwdName == socket.username  ){
-                await this.sendStartProxy(socket, parseFloat(this.localModeRoom.proxyport))
+            else {
+                client = this.clients.get(data.username)
             }
+            if ( parseFloat(client.proxyport) > 0 ){
+                await this.sendStartProxy(socket,client.proxyport)
+            }                
 
             
         }else{
@@ -493,6 +507,36 @@ class SIO  {
 module.exports = SIO
 
 if (require.main === module) {
-    let sio = new SIO()
+    process.on( "SIGINT", function() {
+        console.log( "\ngracefully shutting down from SIGINT (Crtl-C)" );
+        process.exit();
+    });  
+
+    let config = null
+    if( process.env.DATABASE_URL && process.env.DATABASE_USERNAME && process.env.DATABASE_PASSWORD ){
+        log.info(`RP Server is pulling configuration from: ${process.env.DATABASE_URL}`)
+    }
+    else if(process.env.CONFIG){
+        try {
+            config = yaml.load(process.env.CONFIG);
+            log.info(`RP Server is starting in local-mode on port: ${config.server.port}, prefix: ${config.server.prefix}`)
+        } catch (e) {
+            log.debug(e);
+            log.error(`Invalid YAML configuration file: ${process.env.CONFIG}\n`)
+            process.exit(1)
+        }  
+    }
+    else if(process.env.CONFIG_FILE){
+        try {
+            config = yaml.load(fs.readFileSync(process.env.CONFIG_FILE, 'utf8'));
+            log.info(`RP Server is starting local-mode on port: ${config.server.port}, prefix: ${config.server.prefix}, config file: ${process.env.CONFIG_FILE}`)
+        } catch (e) {
+            log.debug(e);
+            log.error(`Invalid YAML configuration:\n ${process.env.CONFIG}\n`)
+            process.exit(1)
+        }  
+    }
+    
+    let sio = new SIO(config)
     sio.start()
 }

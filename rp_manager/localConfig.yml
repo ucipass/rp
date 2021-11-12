@@ -1,0 +1,28 @@
+---
+server:
+  hostname: localhost
+  port: 8080
+  prefix: rp
+  logLevel: info
+rooms:
+- name:    SSH_Room
+  rcvName: client1
+  rcvPort: 2222
+  fwdName: client2
+  fwdHost: localhost
+  fwdPort: 22
+  expiration: yyyy-MM-ddTHH:mm:ss
+- name:    Proxy_Room
+  rcvName: client1
+  rcvPort: 3127
+  fwdName: client2
+  fwdHost: localhost
+  fwdPort: 3128
+  expiration: yyyy-MM-ddTHH:mm:ss
+clients:
+- username: client1
+  password: client1pass
+  proxyport: 0
+- username: client2
+  password: client2pass
+  proxyport: 3128
