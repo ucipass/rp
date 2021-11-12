@@ -39,6 +39,7 @@ class SIO  {
         this.httpserver     = new HTTPServer( { port: this.port , app:this.app})
 
         if (this.localMode) {
+            log.info(`URL: http://${this.hostname}:${this.port}/${this.prefix}`)
             config.rooms.forEach(room => {
                 room.connections = new Map()
                 this.rooms.set(room.name, room)
@@ -86,7 +87,6 @@ class SIO  {
             res.json("sio")
         })
 
-        log.info(`Listening at http://<server>:${this.port} ${this.sio_path.toString()}`)
         let server = await this.httpserver.start()
         this.io = socketio( server, this.sio_opts)
         this.io.on('connection', this.onConnection.bind(this))
