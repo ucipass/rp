@@ -22,7 +22,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
       - name: build the image
-        working-directory: ./rp_server
         run: |
           docker buildx build \
           --push \
