@@ -27,4 +27,5 @@ jobs:
           docker buildx build \
           --push \
           --tag ${{ secrets.DOCKER_USERNAME }}/rp_server:latest \
+          -f Dockerfile.rp_server \
           --platform linux/amd64,linux/arm64 . 
