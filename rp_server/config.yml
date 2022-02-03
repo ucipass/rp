@@ -1,6 +1,6 @@
 ---
 server:
-  hostname: 172.18.2.8
+  url: "http://172.18.2.8:8081/rp"
   port: 8081
   prefix: rp
   logLevel: info

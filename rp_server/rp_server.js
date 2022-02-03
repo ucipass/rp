@@ -18,8 +18,8 @@ class SIO  {
     constructor(config) {
         this.localMode      = config ? true : false
         this.port           = config.server.port ? config.server.port : "80"
-        this.hostname       = config.server.hostname ? config.server.hostname : "localhost"
         this.prefix         = config.server.prefix ? config.server.prefix : "/"
+        this.url            = config.server.url
         this.log            = log;
         this.log.transports.console.level = config.server.logLevel ? config.server.logLevel : "info"
 
@@ -39,7 +39,7 @@ class SIO  {
         this.httpserver     = new HTTPServer( { port: this.port , app:this.app})
 
         if (this.localMode) {
-            log.info(`URL: http://${this.hostname}:${this.port}/${this.prefix}`)
+            log.info(`URL: ${this.url}`)
             config.rooms.forEach(room => {
                 room.connections = new Map()
                 this.rooms.set(room.name, room)
@@ -48,9 +48,8 @@ class SIO  {
             });
             config.clients.forEach(client => {
                 this.clients.set(client.username, client)
-                const url = new URL(this.prefix,`http://${this.hostname}:${this.port}`);
                 const token = {
-                    url: url.toString(),
+                    url: this.url,
                     username: client.username,
                     password: client.password
                 }

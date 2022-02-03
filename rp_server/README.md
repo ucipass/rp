@@ -7,7 +7,7 @@ Hostname, port, HTTP path are all customizable and it is expected that this prog
 export CONFIG=$(cat <<EOF
 ---
 server:
-  hostname: 172.18.2.8
+  url: "http://172.18.2.8:8081/rp"
   port: 8081
   prefix: rp
   logLevel: info
