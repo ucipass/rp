@@ -708,20 +708,27 @@ async function webLogin( options ){
 module.exports = SocketIoClient
 
 if (require.main === module) {
+    let config = {}
     process.on( "SIGINT", function() {
         console.log( "\ngracefully shutting down from SIGINT (Crtl-C)" );
         process.exit();
     });    
     try {
-        const token = process.env.TOKEN ? process.env.TOKEN : readlineSync.question(`Enter token: `, {encoding: "ascii"});
-        const decodedString = base64.decode(token);
-        const config = JSON.parse(decodedString)
-        log.info(`RP Client connecting to: ${config.url}`)
+        if (process.env.USERNAME && process.env.PASSWORD  && process.env.URL ) {
+            config.username = process.env.USERNAME 
+            config.password = process.env.PASSWORD 
+            config.url      = process.env.URL 
+        } else {
+            const token = process.env.TOKEN ? process.env.TOKEN : readlineSync.question(`Enter token: `, {encoding: "ascii"});
+            const decodedString = base64.decode(token);
+            config = JSON.parse(decodedString)                
+        }
+        log.info(`RP user ${config.username} connecting to: ${config.url}`)
         const client = new SocketIoClient(config.username,config.password,config.url) 
         client.start()         
     } catch (e) {
         log.info(e);
-        log.error(`Invalid configuration.`)
+        log.error(`Invalid configuration - username:${config.username},  url:${config.url}`)
         process.exit(1)
     }  
 

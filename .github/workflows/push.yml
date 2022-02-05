@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - "main"  
+    paths:
+      - "rp_server"
 jobs:
   buildx:
     runs-on: ubuntu-latest

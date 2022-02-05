@@ -7,11 +7,9 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "CONFIG ENV",
+            "name": "TOKEN",
             "args": [],
-            "env": {
-                "TOKEN" : "eyJ1cmwiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvcnAiLCJ1c2VybmFtZSI6ImNsaWVudDEiLCJwYXNzd29yZCI6ImNsaWVudDFwYXNzIn0"
-            },            
+            "envFile": "${workspaceFolder}/.env-token",       
             "program": "${workspaceFolder}/rp_client.js",
             "cwd": "${workspaceRoot}",
             "runtimeExecutable": null,
@@ -20,15 +18,9 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "client_env",
+            "name": "URL,USERNAME,PASSWORD",
             "args": [],
-            "env": {
-                "RP_CLIENT" : "client2",
-                "RP_TOKEN": "client2pass",
-                "RP_URL": "http://localhost:8081/rp",
-                "LOG_LEVEL": "info",
-                "NODE_ENV": "testing",                
-            },            
+            "envFile": "${workspaceFolder}/.env",       
             "program": "${workspaceFolder}/rp_client.js",
             "cwd": "${workspaceRoot}",
             "runtimeExecutable": null,

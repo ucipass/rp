@@ -3,6 +3,8 @@ dist
 client
 token*
 
+# env
+
 # Logs
 logs
 *.log
@@ -61,6 +63,8 @@ typings/
 
 # dotenv environment variables file
 .env
+.env-token
+
 
 # next.js build output
 .next
