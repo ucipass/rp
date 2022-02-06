@@ -444,7 +444,7 @@ class SIO  {
     }
 
     async getRoomMembers(room){
-        log.info("Room",room)
+        log.debug("Room",room)
         let sockets = await this.io.of("/").in(room).fetchSockets()
         let newsockets = sockets.map( socket => socket.id)
         return newsockets
