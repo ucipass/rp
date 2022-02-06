@@ -14,7 +14,7 @@ npm start
 ```
 ## Running the server with docker
 if you are planning on using the client to listen on certain TCP ports. Docker ports will have to be specified.
-This is not needed,  if the client is used to forward TCP ports.
+This is not needed,  if the client is used to forward TCP ports. 
 ```
 docker run --rm -it -e TOKEN="$TOKEN" -p 3128:3128 -p 2222:2222 ucipass/rp_client 
 ```
