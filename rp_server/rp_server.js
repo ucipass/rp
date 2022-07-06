@@ -121,6 +121,9 @@ class SIO  {
         this.sockets.set(socketId,socket)
         // socket.auth = true //temporary allowed
         log.info(`${socketId} connected`);
+        const ip = socket.handshake.headers['x-forwarded-for'] || socket.conn.remoteAddress.split(":")[3];
+        const stringip = JSON.stringify(ip)
+        log.info(`${socketId} IP: ${stringip}`);
 
         socket.on('disconnect', (data)=>{
             log.info(`${socketId}(${socket.username}) disconnect event`);

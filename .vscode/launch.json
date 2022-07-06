@@ -106,12 +106,26 @@
             "env": {
                 "NODE_ENV": "development",
                 "LOG_LEVEL": "info",
-                "RP_WEBPASS" : "admin",
-                "RP_WEBUSER": "admin",
-                "RP_URL": "http://localhost:8080/",
-                "RP_CLIENT": "test",
+                "TOKEN": "eyJ1cmwiOiJodHRwczovL2FyYXRvLmJpei9ycCIsInVzZXJuYW1lIjoiY2xpZW50MSIsInBhc3N3b3JkIjoiY2xpZW50MXBhc3NAIn0"
             },            
-            "program": "${workspaceFolder}/sioclient/sio-client.js",
+            "program": "${workspaceFolder}/rp_client/rp_client.js",
+            "cwd": "${workspaceRoot}",
+            "runtimeExecutable": null,
+            "outputCapture": "std"
+        },        
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "CLIENT USER_PASS_URL",
+            "args": ["-t"],
+            "env": {
+                "NODE_ENV": "development",
+                "LOG_LEVEL": "info",
+                "URL": "http://172.18.2.63/rp",
+                "USERNAME": "client1",
+                "PASSWORD": "client1pass"
+            },            
+            "program": "${workspaceFolder}/rp_client/rp_client.js",
             "cwd": "${workspaceRoot}",
             "runtimeExecutable": null,
             "outputCapture": "std"
