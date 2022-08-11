@@ -4,6 +4,8 @@ client
 token*
 
 # env
+.env
+*/.env
 
 # Logs
 logs
