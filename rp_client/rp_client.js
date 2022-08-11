@@ -1,3 +1,4 @@
+require('dotenv').config()
 const io = require('socket.io-client');
 const net = require('net');
 const base64 = require("js-base64")
